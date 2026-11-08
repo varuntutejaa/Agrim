@@ -51,8 +51,9 @@ def validate(row: dict, known: dict) -> list:
                 problems.append("duration_hours cannot be negative")
         except ValueError:
             problems.append("duration_hours must be a number (or blank if unknown)")
-    if not row["source_url"].startswith(("http://", "https://")):
-        problems.append("source_url is required and must be a link")
+    # A web link, or "mcg-data:<reference>" for official data imported by pipeline/import_mcg.py.
+    if not row["source_url"].startswith(("http://", "https://", "mcg-data:")):
+        problems.append("source_url is required and must be a link (or an mcg-data: reference)")
     return problems
 
 

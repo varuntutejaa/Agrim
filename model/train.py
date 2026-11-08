@@ -92,7 +92,7 @@ def train(labels: list[dict], save: bool = True) -> dict:
         "n_storm_days": int(len(set(groups))),
         "n_skipped": len(skipped),
         "skipped_reasons": sorted({s["why"] for s in skipped}),
-        "sources": {s: sum(1 for lab in labels if s in lab["sources"]) for s in ("report", "officer")},
+        "sources": {s: sum(1 for lab in labels if s in lab["sources"]) for s in ("report", "mcg", "officer")},
         "needs": {"min_labels": MIN_LABELS, "min_per_class": MIN_PER_CLASS},
         "features": FEATURES,
         "is_synthetic": False,

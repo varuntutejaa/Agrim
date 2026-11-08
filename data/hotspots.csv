@@ -10,13 +10,13 @@ H008,Udyog Vihar,,,28.491735,77.081972,,area,found,nominatim,"Udyog Vihar, Delhi
 H009,Old Gurugram-Delhi road,,,28.491523,77.057749,,road,found,nominatim,"Old Delhi Gurgaon Road, Noble Enclave, Sector 22, Gurgaon, Gurugram, Haryana, 122007, India [highway/secondary]",Long road; pin the exact waterlogging spot
 H010,Dwarka Expressway service lane near Sector 104,,,28.479532,76.993720,,road,found,nominatim,"Sector 104, Gurgaon, Gurugram, Haryana, 122006, India [boundary/administrative]",Point is the Sector 104 centre; pin the service-lane spot
 H011,Mahavir Chowk,,,,,,junction,not_found,,,
-H012,Sector 15,,,28.461449,77.046010,,area,found,nominatim,"Sector 15-II, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
-H013,Sector 39,,,28.442367,77.050472,,area,found,nominatim,"Sector 39, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
-H014,Islampur,,,28.433446,77.037012,,area,found,nominatim,"Islampur, Sector 38, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
-H015,Civil Lines,,,28.461685,77.033902,,area,found,nominatim,"Civil Lines, Shivaji Nagar, Sector 11A, Gurgaon, Gurugram, Haryana, India [landuse/residential]",
-H016,Patel Nagar,,,28.465564,77.039294,,area,found,nominatim,"Patel Nagar, Mehrauli-Gurgaon Road, Sector 16, Gurgaon, Gurugram, Haryana, 122001, India [highway/bus_stop]",
-H017,Sector 5,,,28.480392,77.019095,,area,found,nominatim,"Sector 5, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
-H018,Rajendra Park,,,28.507165,77.023255,,area,found,nominatim,"Rajendra Park Road, Sector 110, Gurgaon, Gurugram, Haryana, 122017, India [highway/tertiary]",
-H019,Surat Nagar,,,28.483546,77.002372,,area,found,nominatim,"Surat Nagar Phase 1, Sector 104, Gurgaon, Gurugram, Haryana, India [place/neighbourhood]",
-H020,Wazirabad,,,28.433762,77.087757,,area,found,nominatim,"Wazirabad, Sector 52, Gurgaon, Gurugram, Haryana, 122011, India [place/locality]",
-H021,Sushant Lok,,,28.454569,77.082625,,area,found,nominatim,"C Block, Sushant Lok Phase 1, C Block Sushant Lok 1, Sector 43, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
+H012,Sector 15,VI,,28.461449,77.046010,,area,found,nominatim,"Sector 15-II, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H013,Sector 39,VI,,28.442367,77.050472,,area,found,nominatim,"Sector 39, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H014,Islampur,VI,,28.433446,77.037012,,area,found,nominatim,"Islampur, Sector 38, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H015,Civil Lines,VI,,28.461685,77.033902,,area,found,nominatim,"Civil Lines, Shivaji Nagar, Sector 11A, Gurgaon, Gurugram, Haryana, India [landuse/residential]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H016,Patel Nagar,VI,,28.465564,77.039294,,area,found,nominatim,"Patel Nagar, Mehrauli-Gurgaon Road, Sector 16, Gurgaon, Gurugram, Haryana, 122001, India [highway/bus_stop]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H017,Sector 5,VI,,28.480392,77.019095,,area,found,nominatim,"Sector 5, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H018,Rajendra Park,III,,28.507165,77.023255,,area,found,nominatim,"Rajendra Park Road, Sector 110, Gurgaon, Gurugram, Haryana, 122017, India [highway/tertiary]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H019,Surat Nagar,III,,28.483546,77.002372,,area,found,nominatim,"Surat Nagar Phase 1, Sector 104, Gurgaon, Gurugram, Haryana, India [place/neighbourhood]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H020,Wazirabad,VII,,28.433762,77.087757,,area,found,nominatim,"Wazirabad, Sector 52, Gurgaon, Gurugram, Haryana, 122011, India [place/locality]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)
+H021,Sushant Lok,VII,,28.454569,77.082625,,area,found,nominatim,"C Block, Sushant Lok Phase 1, C Block Sushant Lok 1, Sector 43, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",Zone per The Tribune 31 Jul 2026 (MCG 155-point watch list)

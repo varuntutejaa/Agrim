@@ -15,6 +15,7 @@ import MapKey from "./components/MapKey";
 import MapStamp from "./components/MapStamp";
 import Masthead from "./components/Masthead";
 import OpsDesk from "./components/OpsDesk";
+import DataPage from "./components/DataPage";
 import SimulatorPanel, { type SimMode } from "./components/SimulatorPanel";
 import { ExerciseBand } from "./components/ui";
 import type {
@@ -154,6 +155,15 @@ export default function App() {
   const updated = risk
     ? new Date(risk.meta.generated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) + " IST"
     : undefined;
+
+  if (view === "data") {
+    return (
+      <div className="flex h-full flex-col">
+        <Masthead view={view} onView={setView} updated={updated} />
+        <div className="min-h-0 flex-1 overflow-y-auto bg-paper"><DataPage /></div>
+      </div>
+    );
+  }
 
   if (view === "ops") {
     return (

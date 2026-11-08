@@ -1,8 +1,10 @@
 """Flood labels for training: did this hotspot flood on this day?
 
-Two real sources, nothing invented:
-  report   data/incidents.csv: compiled by the team from news and other
+Real sources only, nothing invented:
+  report   data/incidents.csv rows compiled by the team from news and other
            sources, every row with a source_url
+  mcg      data/incidents.csv rows imported from MCG post-storm records
+           (source "mcg-data:<reference>", see pipeline/import_mcg.py)
   officer  post-rain reports from MCG officers on the desk (Neon database)
 
 If both sources describe the same hotspot and day, the day counts as
@@ -17,7 +19,8 @@ from pipeline.config import INCIDENTS_CSV
 def from_incidents() -> list[dict]:
     with open(INCIDENTS_CSV, newline="") as f:
         return [{"date": r["date"], "hotspot_id": r["hotspot_id"], "flooded": r["flooded"] == "yes",
-                 "source": "report"} for r in csv.DictReader(f) if r["flooded"] in ("yes", "no")]
+                 "source": "mcg" if r["source_url"].startswith("mcg-data:") else "report"}
+                for r in csv.DictReader(f) if r["flooded"] in ("yes", "no")]
 
 
 def from_officers() -> list[dict]:

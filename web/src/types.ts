@@ -107,7 +107,7 @@ export type DrainageLayers = {
   drains: GeoJSON.FeatureCollection;
 };
 
-export type View = "forecast" | "simulator" | "drainage" | "ops";
+export type View = "forecast" | "simulator" | "drainage" | "ops" | "data";
 
 // --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
 

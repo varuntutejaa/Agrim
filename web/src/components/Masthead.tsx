@@ -6,6 +6,7 @@ const VIEWS: { key: View; label: string }[] = [
   { key: "simulator", label: "Simulator" },
   { key: "drainage", label: "Drainage" },
   { key: "ops", label: "MCG desk" },
+  { key: "data", label: "Data" },
 ];
 
 export default function Masthead({ view, onView, updated }: { view: View; onView: (v: View) => void; updated?: string }) {
@@ -37,13 +38,13 @@ export default function Masthead({ view, onView, updated }: { view: View; onView
         )}
       </div>
       {/* Phone: views as a full-width row */}
-      <nav aria-label="Views" className="mt-2 grid grid-cols-4 md:hidden">
+      <nav aria-label="Views" className="mt-2 grid grid-cols-5 md:hidden">
         {VIEWS.map((v) => (
           <button
             key={v.key}
             onClick={() => onView(v.key)}
             aria-current={view === v.key ? "page" : undefined}
-            className={`-mb-px border-b-2 py-2 text-[14px] ${
+            className={`-mb-px border-b-2 py-2 text-[13px] ${
               view === v.key ? "border-ink font-medium text-ink" : "border-transparent text-ink-3"
             }`}
           >

@@ -7,6 +7,11 @@ before the rain arrives.
 
 SustainX 2026, Round 2 prototype.
 
+> **Data and assumptions:** Agrim runs on public data today. What it would
+> gain from MCG's unreleased data, with evidence that data exists, is in
+> [docs/DATA_REQUIREMENTS.md](docs/DATA_REQUIREMENTS.md) (also the app's **Data** tab).
+> MCG data can be imported with `python -m pipeline.import_mcg` (templates in `data/templates/`).
+
 > **Data rule:** nothing shown as real is made up. Illustrative data lives
 > only in `data/synthetic/`, carries `is_synthetic = true`, and is labelled
 > "Illustrative data" in the UI. Every source is listed in
@@ -26,7 +31,7 @@ data/       hotspots_seed.csv, hotspots.csv, incidents.csv (committed)
             model/replay_days.csv, replay_events.json (simulator replays, committed)
             cache/, rain/, dem/, landcover/, osm/, forecast/ (regenerated, gitignored)
             synthetic/ (illustrative data only)
-docs/       SOURCES.md, NETWORK.md, MODEL.md, DESIGN.md, SOP.md, DEMO_SCRIPT.md
+docs/       DATA_REQUIREMENTS.md, SOURCES.md, NETWORK.md, MODEL.md, DESIGN.md, SOP.md, DEMO_SCRIPT.md
 reference/  code kept from our earlier JalNetra project, for later milestones
             (not run by Agrim; see reference/jalnetra/README.md)
 ```
