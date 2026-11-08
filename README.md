@@ -23,6 +23,8 @@ data/       hotspots_seed.csv, hotspots.csv, incidents.csv (committed)
             cache/, rain/ (regenerated, gitignored)
             synthetic/ (illustrative data only)
 docs/       SOURCES.md, MODEL.md, SOP.md, DEMO_SCRIPT.md
+reference/  code kept from our earlier JalNetra project, for later milestones
+            (not run by Agrim; see reference/jalnetra/README.md)
 ```
 
 ## Setup

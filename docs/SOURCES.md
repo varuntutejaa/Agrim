@@ -27,9 +27,9 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 
 | Milestone | Data | Source |
 |-----------|------|--------|
-| 2 | Elevation, 30 m | NASA SRTM GL1 via [OpenTopography](https://opentopography.org/) (free API key) |
+| 2 | Elevation, 30 m | [Copernicus DEM GLO-30](https://registry.opendata.aws/copernicus-dem/) from the public AWS bucket `copernicus-dem-30m` (no account needed; © DLR/Airbus, free licence). Fallback: NASA SRTM GL1 via [OpenTopography](https://opentopography.org/) (free API key) |
 | 2 | Drains, canals, roads | OpenStreetMap via Overpass (`waterway=drain/canal`, `highway=*`) |
-| 2/3 | Land cover, 10 m (built-up share) | [ESA WorldCover 2021](https://esa-worldcover.org/), CC BY 4.0 |
+| 2/3 | Land cover, 10 m (built-up share) | [ESA WorldCover](https://esa-worldcover.org/) v200 (2021), CC BY 4.0, read via [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/dataset/esa-worldcover) (anonymous access) |
 | 3+ | Ground-truth rainfall (optional cross-check) | IMD gridded rainfall (0.25°, daily) from [IMD Pune](https://www.imdpune.gov.in/); IMD AWS station data if obtainable |
 
 ## Resolution caveat (read before pitching "rain per hotspot")
