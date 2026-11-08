@@ -18,6 +18,7 @@ Checklist
 """
 import glob
 import json
+import time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -62,12 +63,13 @@ def create_override(officer: str, hotspot_id: str, new_level: str, reason: str, 
     if not 1 <= valid_hours <= 72:
         raise OpsError("An override can last between 1 and 72 hours.")
     with db.connect() as conn:
-        row = conn.execute(
-            """INSERT INTO overrides (officer, hotspot_id, model_level, new_level, reason, valid_until, is_exercise, run_id)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *""",
+        row = conn.execute(db.q(
+            """INSERT INTO {overrides} (officer, hotspot_id, model_level, new_level, reason, valid_until, is_exercise, run_id)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""),
             (officer, hotspot_id, model_level, new_level, reason, now() + timedelta(hours=valid_hours),
              is_exercise, run_id),
         ).fetchone()
+    _forget_active()
     return _jsonable(row)
 
 
@@ -77,21 +79,42 @@ def revoke_override(override_id: int, officer: str) -> dict:
         raise OpsError("Enter your name to cancel an override.")
     with db.connect() as conn:
         row = conn.execute(
-            "UPDATE overrides SET revoked_at = now(), revoked_by = %s WHERE id = %s AND revoked_at IS NULL RETURNING *",
+            db.q("UPDATE {overrides} SET revoked_at = now(), revoked_by = %s WHERE id = %s AND revoked_at IS NULL RETURNING *"),
             (officer, override_id),
         ).fetchone()
+    _forget_active()
     if row is None:
         raise OpsError("No active override with that id.")
     return _jsonable(row)
 
 
+# Active overrides are read on every forecast request and every simulator
+# slider move, and the database is a few hundred ms away, so they are cached
+# briefly. Any change made through this server clears the cache at once.
+_CACHE_SECONDS = 15
+_active_cache: dict = {}
+
+
+def _forget_active():
+    _active_cache.clear()
+
+
 def active_overrides(is_exercise: bool) -> dict:
-    """Latest unexpired, unrevoked override per hotspot."""
+    """Latest unexpired, unrevoked override per hotspot (cached for a few seconds)."""
+    hit = _active_cache.get(is_exercise)
+    if hit and hit[0] > time.monotonic():
+        return hit[1]
+    result = _load_active(is_exercise)
+    _active_cache[is_exercise] = (time.monotonic() + _CACHE_SECONDS, result)
+    return result
+
+
+def _load_active(is_exercise: bool) -> dict:
     with db.connect() as conn:
         found = conn.execute(
-            """SELECT DISTINCT ON (hotspot_id) * FROM overrides
+            db.q("""SELECT DISTINCT ON (hotspot_id) * FROM {overrides}
                WHERE is_exercise = %s AND revoked_at IS NULL AND valid_until > now()
-               ORDER BY hotspot_id, created_at DESC""",
+               ORDER BY hotspot_id, created_at DESC"""),
             (is_exercise,),
         ).fetchall()
     return {r["hotspot_id"]: _jsonable(r) for r in found}
@@ -99,7 +122,7 @@ def active_overrides(is_exercise: bool) -> dict:
 
 def override_log(limit: int = 50) -> list[dict]:
     with db.connect() as conn:
-        found = conn.execute("SELECT * FROM overrides ORDER BY created_at DESC LIMIT %s", (limit,)).fetchall()
+        found = conn.execute(db.q("SELECT * FROM {overrides} ORDER BY created_at DESC LIMIT %s"), (limit,)).fetchall()
     return [_jsonable(r) for r in found]
 
 
@@ -179,10 +202,10 @@ def create_feedback(officer: str, hotspot_id: str, event_date: str, flooded: boo
         raise OpsError("Duration must be between 0 and 240 hours.")
     predicted, run_id = predicted_level_for(hotspot_id, day)
     with db.connect() as conn:
-        row = conn.execute(
-            """INSERT INTO feedback (officer, hotspot_id, event_date, flooded, depth, duration_hours, notes,
+        row = conn.execute(db.q(
+            """INSERT INTO {feedback} (officer, hotspot_id, event_date, flooded, depth, duration_hours, notes,
                                      predicted_level, run_id)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *""",
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""),
             (officer, hotspot_id, day, flooded, depth, duration_hours, _clean(notes, 1000) or None, predicted, run_id),
         ).fetchone()
     return _jsonable(row)
@@ -190,7 +213,7 @@ def create_feedback(officer: str, hotspot_id: str, event_date: str, flooded: boo
 
 def feedback_log(limit: int = 50) -> list[dict]:
     with db.connect() as conn:
-        found = conn.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT %s", (limit,)).fetchall()
+        found = conn.execute(db.q("SELECT * FROM {feedback} ORDER BY created_at DESC LIMIT %s"), (limit,)).fetchall()
     return [_jsonable(r) for r in found]
 
 
@@ -203,12 +226,12 @@ def set_check(run_key: str, zone: str, hotspot_id: str, item: str, done: bool, o
     if item not in CHECK_ITEMS:
         raise OpsError("Unknown checklist item.")
     with db.connect() as conn:
-        row = conn.execute(
-            """INSERT INTO checklist (run_key, zone, hotspot_id, item, done, officer)
+        row = conn.execute(db.q(
+            """INSERT INTO {checklist} (run_key, zone, hotspot_id, item, done, officer)
                VALUES (%s, %s, %s, %s, %s, %s)
                ON CONFLICT (run_key, zone, hotspot_id, item)
                DO UPDATE SET done = EXCLUDED.done, officer = EXCLUDED.officer, updated_at = now()
-               RETURNING *""",
+               RETURNING *"""),
             (_clean(run_key, 40), _clean(zone, 40), _clean(hotspot_id, 20), item, done, officer),
         ).fetchone()
     return _jsonable(row)
@@ -216,16 +239,17 @@ def set_check(run_key: str, zone: str, hotspot_id: str, item: str, done: bool, o
 
 def checklist(run_key: str) -> list[dict]:
     with db.connect() as conn:
-        found = conn.execute("SELECT * FROM checklist WHERE run_key = %s", (run_key,)).fetchall()
+        found = conn.execute(db.q("SELECT * FROM {checklist} WHERE run_key = %s"), (run_key,)).fetchall()
     return [_jsonable(r) for r in found]
 
 
 def reset_exercise() -> None:
     """Clear exercise ticks and overrides, to start a fresh drill."""
     with db.connect() as conn:
-        conn.execute("DELETE FROM checklist WHERE run_key = %s", (EXERCISE_RUN,))
-        conn.execute("UPDATE overrides SET revoked_at = now(), revoked_by = 'exercise reset' "
-                     "WHERE is_exercise AND revoked_at IS NULL")
+        conn.execute(db.q("DELETE FROM {checklist} WHERE run_key = %s"), (EXERCISE_RUN,))
+        conn.execute(db.q("UPDATE {overrides} SET revoked_at = now(), revoked_by = 'exercise reset' "
+                          "WHERE is_exercise AND revoked_at IS NULL"))
+    _forget_active()
 
 
 def _jsonable(row: dict) -> dict:

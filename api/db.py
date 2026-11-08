@@ -4,8 +4,11 @@ Connection string: DATABASE_URL in .env (never committed). Tables are created
 on first use (CREATE TABLE IF NOT EXISTS), so there is no separate migration
 step. Plain SQL via psycopg 3; no ORM, so either team member can read it.
 
-AGRIM_DB_SCHEMA (optional) puts the tables in another Postgres schema. The
-tests use a throwaway schema so they never touch the real tables.
+Queries name tables as {overrides}, {feedback}, {checklist}; q() fills in the
+schema-qualified name. (Nothing relies on search_path: Neon's pooler shares
+server connections, so a session setting could leak between clients.)
+AGRIM_DB_SCHEMA (optional) uses another schema; the tests use a throwaway one
+so they never touch the real tables.
 """
 import os
 import re
@@ -18,7 +21,7 @@ from psycopg_pool import ConnectionPool
 from pipeline.config import ROOT
 
 SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS overrides (
+CREATE TABLE IF NOT EXISTS {overrides} (
     id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     officer      TEXT NOT NULL,
@@ -32,7 +35,7 @@ CREATE TABLE IF NOT EXISTS overrides (
     revoked_at   TIMESTAMPTZ,
     revoked_by   TEXT
 );
-CREATE TABLE IF NOT EXISTS feedback (
+CREATE TABLE IF NOT EXISTS {feedback} (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     officer         TEXT NOT NULL,
@@ -45,7 +48,7 @@ CREATE TABLE IF NOT EXISTS feedback (
     predicted_level TEXT,                    -- level shown for that hotspot and day, if any run covered it
     run_id          TEXT
 );
-CREATE TABLE IF NOT EXISTS checklist (
+CREATE TABLE IF NOT EXISTS {checklist} (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     run_key     TEXT NOT NULL,               -- forecast run id, or 'exercise'
     zone        TEXT NOT NULL,
@@ -56,7 +59,7 @@ CREATE TABLE IF NOT EXISTS checklist (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (run_key, zone, hotspot_id, item)
 );
-CREATE INDEX IF NOT EXISTS overrides_active ON overrides (hotspot_id, is_exercise, valid_until);
+CREATE INDEX IF NOT EXISTS overrides_active ON {overrides} (hotspot_id, is_exercise, valid_until);
 """
 
 _pool: ConnectionPool | None = None
@@ -86,30 +89,34 @@ def pool() -> ConnectionPool:
         url = _url()
         if not url:
             raise RuntimeError("DATABASE_URL is not set. Add your Neon connection string to .env.")
-        schema = _schema()
-
-        def configure(conn):
-            if schema:
-                conn.execute(f"SET search_path TO {schema}")
-                conn.commit()
-
         # Small pool: Neon's pooled endpoint does the heavy lifting.
-        _pool = ConnectionPool(url, min_size=0, max_size=4, configure=configure,
-                               kwargs={"row_factory": dict_row}, open=True)
+        # prepare_threshold=None: Neon's pooler (PgBouncer, transaction mode)
+        # can hand each transaction a different server connection, so
+        # server-side prepared statements must be off.
+        _pool = ConnectionPool(url, min_size=0, max_size=4,
+                               kwargs={"row_factory": dict_row, "prepare_threshold": None}, open=True)
     return _pool
+
+
+TABLES = ("overrides", "feedback", "checklist")
+
+
+def q(sql: str) -> str:
+    """Fill {overrides} / {feedback} / {checklist} with schema-qualified table names."""
+    schema = _schema() or "public"
+    return sql.format(**{t: f"{schema}.{t}" for t in TABLES})
 
 
 @contextmanager
 def connect():
-    """A connection that commits on success and rolls back on error."""
+    """One transaction: commits on success, rolls back on error."""
     global _ready
     with pool().connection() as conn:
         if not _ready:
             schema = _schema()
             if schema:
                 conn.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
-                conn.execute(f"SET search_path TO {schema}")
-            conn.execute(SCHEMA_SQL)
+            conn.execute(q(SCHEMA_SQL))
             _ready = True
         yield conn
 

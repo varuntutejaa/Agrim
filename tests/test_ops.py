@@ -42,7 +42,9 @@ def ops_db(monkeypatch):
     monkeypatch.setenv("AGRIM_DB_SCHEMA", schema)
     db.close()
     from api import ops
+    ops._forget_active()
     yield ops
+    ops._forget_active()
     with db.connect() as conn:
         conn.execute(f"DROP SCHEMA {schema} CASCADE")
     db.close()
