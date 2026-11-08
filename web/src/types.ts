@@ -107,15 +107,26 @@ export type DrainageLayers = {
   drains: GeoJSON.FeatureCollection;
 };
 
-export type View = "forecast" | "simulator" | "drainage";
+export type View = "forecast" | "simulator" | "drainage" | "ops";
 
 // --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
 
 export type RiskLevel = "red" | "amber" | "green";
 export type RiskWindowKey = "next_24h" | "day_2";
 
+export type OverrideInfo = {
+  id: number;
+  officer: string;
+  reason: string;
+  created_at: string;
+  valid_until: string;
+  model_level: RiskLevel | null;
+};
+
 export type WindowRisk = {
   level: RiskLevel;
+  model_level?: RiskLevel;     // set when an MCG officer overrode the level
+  override?: OverrideInfo;
   outlook: "likely" | "possible" | "unlikely";
   confidence: "high" | "medium" | "low" | null;
   high_impact: boolean;
@@ -200,3 +211,37 @@ export type SimResult = {
   };
   hotspots: HotspotRisk[];
 };
+
+// --- MCG operations desk (milestone 5, see api/ops.py and model/orders.py) ---
+
+export type OrderItem = {
+  hotspot_id: string; name: string; zone: string; level: RiskLevel;
+  onset: string; t12: string; t3: string; t24: string; overridden: boolean;
+};
+
+export type Orders = {
+  zone: string;
+  window: RiskWindowKey;
+  exercise: boolean;
+  issued_at: string;
+  counts: Record<RiskLevel, number>;
+  text: string;
+  items: OrderItem[];
+  sms: { hotspot_id: string; level: RiskLevel; text: string }[];
+  zones: string[];
+};
+
+export type OverrideRecord = OverrideInfo & {
+  hotspot_id: string; new_level: RiskLevel; is_exercise: boolean; run_id: string | null;
+  revoked_at: string | null; revoked_by: string | null;
+};
+
+export type FeedbackRecord = {
+  id: number; created_at: string; officer: string; hotspot_id: string; event_date: string;
+  flooded: boolean; depth: string | null; duration_hours: number | null; notes: string | null;
+  predicted_level: RiskLevel | null; run_id: string | null;
+};
+
+export type CheckItem = "list_issued" | "gullies_cleared" | "pump_moved" | "pump_tested";
+export type CheckTick = { run_key: string; zone: string; hotspot_id: string; item: CheckItem; done: boolean; officer: string; updated_at: string };
+export type OpsSource = "live" | "exercise";

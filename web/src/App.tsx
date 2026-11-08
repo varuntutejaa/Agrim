@@ -2,6 +2,7 @@
 //   Forecast   live Red/Amber/Green risk per hotspot
 //   Simulator  design a storm or replay a past day (always marked as an exercise)
 //   Drainage   how water moves between hotspots
+//   MCG desk   orders, SOP checklist, overrides and feedback for MCG officers
 // Phone: map on top, panel below. Desktop: panel on the left, map on the right.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -13,11 +14,12 @@ import HotspotMap, { type Storm } from "./components/HotspotMap";
 import MapKey from "./components/MapKey";
 import MapStamp from "./components/MapStamp";
 import Masthead from "./components/Masthead";
+import OpsDesk from "./components/OpsDesk";
 import SimulatorPanel, { type SimMode } from "./components/SimulatorPanel";
 import { ExerciseBand } from "./components/ui";
 import type {
-  DrainageLayers, HotspotCollection, RainCollection, RainWindow, ReplayEvent, RiskResult, RiskWindowKey,
-  SimResult, StormParams, View,
+  DrainageLayers, HotspotCollection, OpsSource, RainCollection, RainWindow, ReplayEvent, RiskResult, RiskWindowKey,
+  SimRequest, SimResult, StormParams, View,
 } from "./types";
 
 // ?pin=1 turns on the "click to read coordinates" helper for the team.
@@ -37,18 +39,21 @@ export default function App() {
   const [showRain, setShowRain] = useState(false);
   const [rainWindow, setRainWindow] = useState<RainWindow>("next_24h");
 
+  const refreshRisk = useCallback(() => {
+    fetchRisk().then(setRisk).catch((e) => setError(String(e)));
+  }, []);
   useEffect(() => {
     fetchHotspots().then(setHotspots).catch((e) => setError(String(e)));
     fetchRain().then(setRain).catch((e) => setError(String(e)));
-    fetchRisk().then(setRisk).catch((e) => setError(String(e)));
-  }, []);
+    refreshRisk();
+  }, [refreshRisk]);
 
   // Drainage layers: downloaded the first time the drainage or simulator view opens.
   const [drainage, setDrainage] = useState<DrainageLayers | null>(null);
   const [drainageLoading, setDrainageLoading] = useState(false);
   const drainageRequested = useRef(false);
   useEffect(() => {
-    if (view === "forecast" || drainageRequested.current) return;
+    if (view === "forecast" || view === "ops" || drainageRequested.current) return;
     drainageRequested.current = true;
     setDrainageLoading(true);
     fetchDrainage().then(setDrainage).catch((e) => setError(String(e))).finally(() => setDrainageLoading(false));
@@ -62,7 +67,11 @@ export default function App() {
   const [dates, setDates] = useState<string[]>([]);
   const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [simBusy, setSimBusy] = useState(false);
+  const [simNonce, setSimNonce] = useState(0); // bump to re-run after an exercise override
   const simListsRequested = useRef(false);
+  const [opsSource, setOpsSource] = useState<OpsSource>("live");
+  const simActive = view === "simulator" || (view === "ops" && opsSource === "exercise");
+  const simRequest: SimRequest = simMode === "replay" && replayDate ? { mode: "replay", date: replayDate } : { mode: "storm", ...storm };
 
   useEffect(() => {
     if (view !== "simulator" || simListsRequested.current) return;
@@ -73,7 +82,7 @@ export default function App() {
 
   // Re-run the simulation whenever its inputs change (debounced; older requests cancelled).
   useEffect(() => {
-    if (view !== "simulator") return;
+    if (!simActive) return;
     if (simMode === "replay" && !replayDate) return;
     const ctrl = new AbortController();
     const timer = setTimeout(() => {
@@ -95,7 +104,7 @@ export default function App() {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [view, simMode, storm, replayDate]);
+  }, [simActive, simMode, storm, replayDate, simNonce]);
 
   const onSimMode = (m: SimMode) => {
     setSimMode(m);
@@ -145,6 +154,27 @@ export default function App() {
   const updated = risk
     ? new Date(risk.meta.generated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) + " IST"
     : undefined;
+
+  if (view === "ops") {
+    return (
+      <div className="flex h-full flex-col">
+        <Masthead view={view} onView={setView} updated={updated} />
+        <div className="min-h-0 flex-1 overflow-y-auto bg-paper">
+          <OpsDesk
+            source={opsSource}
+            onSource={setOpsSource}
+            risk={risk}
+            riskWindow={riskWindow}
+            onRiskWindow={setRiskWindow}
+            simResult={simResult}
+            simRequest={simRequest}
+            onChanged={() => (opsSource === "exercise" ? setSimNonce((n) => n + 1) : refreshRisk())}
+            onOpenSimulator={() => setView("simulator")}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">

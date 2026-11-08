@@ -40,7 +40,7 @@ Needs Python 3.11 and Node 20+.
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-pipeline.txt   # pipeline + API (the API alone needs only requirements.txt)
-cp .env.example .env            # optional settings; never commit .env
+cp .env.example .env            # then paste your Neon DATABASE_URL into it; never commit .env
 
 # Web
 cd web && npm install && cp .env.example .env.local && cd ..
@@ -76,7 +76,7 @@ python -m model.run_forecast --fetch   # fresh forecast -> data/forecast/latest_
 #    SCHEDULER=on in .env re-runs the forecast twice a day (hourly in storm mode)
 uvicorn api.main:app --reload --port 8000
 
-# 7. Web app on http://localhost:5173 (Forecast / Simulator / Drainage)
+# 7. Web app on http://localhost:5173 (Forecast / Simulator / Drainage / MCG desk)
 cd web && npm run dev
 ```
 
@@ -108,13 +108,24 @@ as useful as flood reports.
 (or the seed file) with ids that don't clash, e.g. `MCG-001`. Fill `zone` and
 `mcg_severity_grade` from the MCG document, and cite it in SOURCES.md.
 
+## MCG desk and the database
+
+The **MCG desk** tab is for officers: orders per zone (order sheet + crew SMS),
+the SOP checklist (T-24 / T-12 / T-3 / T+24), overrides with name and reason,
+and the post-rain report form. Switch it to **Exercise** to drill on the
+simulator's storm; exercise actions are logged separately. Details: docs/SOP.md.
+
+Officer actions are stored in **Neon Postgres**: set `DATABASE_URL` in `.env`.
+Tables are created automatically. Without it, the desk still shows orders
+but actions are switched off.
+
 ## Milestones
 
 1. ✅ Hotspots geocoded, rainfall fetch, map showing hotspots
 2. ✅ DEM drainage network graph + critical nodes view
 3. ✅ Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
 4. ✅ Simulator and past-event replay
-5. MCG dashboard: ranked list, orders, override log, feedback
+5. ✅ MCG dashboard: ranked list, orders, override log, feedback
 6. XGBoost + SHAP once `incidents.csv` has data; honest evaluation
 7. Alerts, scorecard, Hindi toggle, deploy, 3-minute demo script
 

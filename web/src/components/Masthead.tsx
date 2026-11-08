@@ -5,6 +5,7 @@ const VIEWS: { key: View; label: string }[] = [
   { key: "forecast", label: "Forecast" },
   { key: "simulator", label: "Simulator" },
   { key: "drainage", label: "Drainage" },
+  { key: "ops", label: "MCG desk" },
 ];
 
 export default function Masthead({ view, onView, updated }: { view: View; onView: (v: View) => void; updated?: string }) {
@@ -36,7 +37,7 @@ export default function Masthead({ view, onView, updated }: { view: View; onView
         )}
       </div>
       {/* Phone: views as a full-width row */}
-      <nav aria-label="Views" className="mt-2 grid grid-cols-3 md:hidden">
+      <nav aria-label="Views" className="mt-2 grid grid-cols-4 md:hidden">
         {VIEWS.map((v) => (
           <button
             key={v.key}

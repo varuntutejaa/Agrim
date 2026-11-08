@@ -81,7 +81,7 @@ export function ExerciseBand({ label, note, compact = false, className = "" }: {
 }) {
   return (
     <div className={`exercise-band flex items-center gap-3 ${compact ? "px-3 py-1.5" : "px-4 py-2.5"} ${className}`}>
-      <span className="bg-risk-amber px-1.5 py-0.5 font-mono text-[11px] font-medium tracking-wider text-ink">
+      <span className="shrink-0 whitespace-nowrap bg-risk-amber px-1.5 py-0.5 font-mono text-[11px] font-medium tracking-wider text-ink">
         {label}
       </span>
       {note && <span className="text-[12px] text-paper/80">{note}</span>}

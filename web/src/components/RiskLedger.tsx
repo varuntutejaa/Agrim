@@ -68,6 +68,12 @@ function Details({ h, windowKey }: { h: Extract<HotspotRisk, { scored: true }>; 
   const facts = [confidenceLabel(w), when && `Wettest ${when}`, `Score ${w.score} / 100`].filter(Boolean);
   return (
     <div className="space-y-2.5 pb-3.5 pl-7 pr-2 text-[13px]">
+      {w.override && (
+        <div className="text-[12.5px] text-ink-2">
+          <span className="kicker mr-1.5">Adjusted by MCG</span>
+          {w.override.officer} changed this from {w.model_level ?? "the model's level"}: "{w.override.reason}"
+        </div>
+      )}
       {active && (
         <div className="border-l-2 pl-2.5" style={{ borderColor: LEVEL_COLOR[w.level] }}>
           <div className="kicker" style={{ color: LEVEL_COLOR[w.level] }}>Action</div>

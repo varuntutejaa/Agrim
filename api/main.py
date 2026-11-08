@@ -19,7 +19,18 @@ Endpoints so far:
   GET  /simulate/events     curated past days for one-tap replay
   GET  /simulate/dates      every monsoon day on record with rain
 
-Later milestones add /override, /feedback, /orders/{zone}, /scorecard.
+  MCG operations (milestone 5; stored in Neon Postgres, see api/db.py):
+  GET  /orders/{zone}       SMS-style orders per zone from the live forecast ("all" for every zone)
+  POST /orders/exercise     the same, for a simulated storm (marked EXERCISE)
+  POST /override            officer sets a hotspot's level, with name and reason (logged)
+  POST /override/{id}/revoke
+  GET  /overrides           override log
+  POST /feedback            after an event: flooded yes/no, depth, duration
+  GET  /feedback            feedback log
+  GET  /checklist           SOP ticks for a run;  POST /checklist to tick/untick
+  POST /exercise/reset      clear exercise ticks and overrides
+
+Milestone 7 adds /scorecard.
 """
 import os
 from contextlib import asynccontextmanager
@@ -31,7 +42,7 @@ from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from api import data, scheduler
+from api import data, db, ops, scheduler
 from pipeline.config import TIMEZONE
 
 
@@ -41,6 +52,7 @@ async def lifespan(_app):
     yield
     if sched:
         sched.shutdown(wait=False)
+    db.close()
 
 
 app = FastAPI(title="Agrim API", version="0.3.0", lifespan=lifespan,
@@ -111,7 +123,7 @@ def forecast_latest():
         result = scheduler.run_now(fetch=not data.FORECAST_CSV.exists(), reason="first request")
     if result is None:
         raise HTTPException(503, "No forecast yet; try again in a minute.")
-    return result
+    return ops.apply_overrides(result, is_exercise=False)
 
 
 class RunRequest(BaseModel):
@@ -155,11 +167,12 @@ def simulate(body: SimulateRequest):
         if not body.date:
             raise HTTPException(422, "date is required for replay")
         try:
-            return sim.run_replay(body.date)
+            return ops.apply_overrides(sim.run_replay(body.date), is_exercise=True)
         except ValueError as err:
             raise HTTPException(404, str(err))
     centre = tuple(body.centre) if body.centre else None
-    return sim.run_storm(body.rain_24h, body.peak1h, body.past_72h, centre, body.radius_km)
+    return ops.apply_overrides(sim.run_storm(body.rain_24h, body.peak1h, body.past_72h, centre, body.radius_km),
+                               is_exercise=True)
 
 
 @app.get("/simulate/events")
@@ -172,3 +185,131 @@ def simulate_events():
 def simulate_dates():
     from model import simulate as sim
     return {"dates": sim.replay_dates()}
+
+
+# --- MCG operations (milestone 5) -------------------------------------------------------
+
+def _desk_guard(x_agrim_desk: str | None):
+    """Writes need the database, and the desk code if OPS_TOKEN is set."""
+    if not db.configured():
+        raise HTTPException(503, "Database not configured: add DATABASE_URL (Neon) to .env.")
+    token = os.getenv("OPS_TOKEN", "")
+    if token and x_agrim_desk != token:
+        raise HTTPException(401, "Desk code missing or wrong.")
+
+
+def _known_ids() -> set:
+    return {f["properties"]["id"] for f in data.hotspots_geojson()["features"]}
+
+
+def _ops_call(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except ops.OpsError as err:
+        raise HTTPException(422, str(err))
+
+
+@app.get("/orders/{zone}")
+def orders(zone: str, window: str = "next_24h"):
+    from model.orders import build_orders
+    if window not in ("next_24h", "day_2"):
+        raise HTTPException(422, "window must be next_24h or day_2")
+    return build_orders(forecast_latest(), zone=zone, window=window, exercise=False)
+
+
+class ExerciseOrdersRequest(SimulateRequest):
+    zone: str = "all"
+
+
+@app.post("/orders/exercise")
+def orders_exercise(body: ExerciseOrdersRequest):
+    from model.orders import build_orders
+    return build_orders(simulate(body), zone=body.zone, window="next_24h", exercise=True)
+
+
+class OverrideRequest(BaseModel):
+    officer: str
+    hotspot_id: str
+    new_level: str
+    reason: str
+    valid_hours: float = 24
+    is_exercise: bool = False
+    model_level: str | None = None
+    run_id: str | None = None
+
+
+@app.post("/override")
+def create_override(body: OverrideRequest, x_agrim_desk: str | None = Header(default=None)):
+    _desk_guard(x_agrim_desk)
+    return _ops_call(ops.create_override, body.officer, body.hotspot_id, body.new_level, body.reason,
+                     body.valid_hours, body.is_exercise, body.model_level, body.run_id, _known_ids())
+
+
+class RevokeRequest(BaseModel):
+    officer: str
+
+
+@app.post("/override/{override_id}/revoke")
+def revoke_override(override_id: int, body: RevokeRequest, x_agrim_desk: str | None = Header(default=None)):
+    _desk_guard(x_agrim_desk)
+    return _ops_call(ops.revoke_override, override_id, body.officer)
+
+
+@app.get("/overrides")
+def overrides(limit: int = 50):
+    if not db.configured():
+        return {"available": False, "overrides": []}
+    return {"available": True, "overrides": ops.override_log(min(limit, 200))}
+
+
+class FeedbackRequest(BaseModel):
+    officer: str
+    hotspot_id: str
+    event_date: str
+    flooded: bool
+    depth: str | None = None
+    duration_hours: float | None = None
+    notes: str | None = None
+
+
+@app.post("/feedback")
+def create_feedback(body: FeedbackRequest, x_agrim_desk: str | None = Header(default=None)):
+    _desk_guard(x_agrim_desk)
+    return _ops_call(ops.create_feedback, body.officer, body.hotspot_id, body.event_date, body.flooded,
+                     body.depth, body.duration_hours, body.notes, _known_ids())
+
+
+@app.get("/feedback")
+def feedback(limit: int = 50):
+    if not db.configured():
+        return {"available": False, "feedback": []}
+    return {"available": True, "feedback": ops.feedback_log(min(limit, 200))}
+
+
+class CheckRequest(BaseModel):
+    run_key: str
+    zone: str
+    hotspot_id: str = ""
+    item: str
+    done: bool
+    officer: str
+
+
+@app.get("/checklist")
+def get_checklist(run_key: str):
+    if not db.configured():
+        return {"available": False, "ticks": []}
+    return {"available": True, "ticks": ops.checklist(run_key)}
+
+
+@app.post("/checklist")
+def set_checklist(body: CheckRequest, x_agrim_desk: str | None = Header(default=None)):
+    _desk_guard(x_agrim_desk)
+    return _ops_call(ops.set_check, body.run_key, body.zone, body.hotspot_id, body.item, body.done, body.officer)
+
+
+@app.post("/exercise/reset")
+def exercise_reset(x_agrim_desk: str | None = Header(default=None)):
+    _desk_guard(x_agrim_desk)
+    ops.reset_exercise()
+    return {"ok": True}
