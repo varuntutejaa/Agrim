@@ -5,6 +5,7 @@ docs/SOURCES.md. Times are cumulative.
 
 ## Before you start (5 minutes ahead)
 
+- [ ] App: https://agrim-two.vercel.app · API: https://agrim-api.onrender.com
 - [ ] Open the API URL `/health` 2 minutes before. The free Render instance sleeps and needs 30–60 s to wake.
 - [ ] Open the app on the laptop **and** on a phone (Forecast view).
 - [ ] MCG desk: enter an officer name, switch to **Exercise**, click **Reset drill**.

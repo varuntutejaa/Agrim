@@ -7,6 +7,10 @@ before the rain arrives.
 
 SustainX 2026, Round 2 prototype.
 
+**Live:** https://agrim-two.vercel.app (app) · https://agrim-api.onrender.com/docs (API).
+The API runs on Render's free plan and sleeps when idle; the first request after
+a pause takes 30–60 s.
+
 > **Data and assumptions:** Agrim runs on public data today. What it would
 > gain from MCG's unreleased data, with evidence that data exists, is in
 > [docs/DATA_REQUIREMENTS.md](docs/DATA_REQUIREMENTS.md) (also the app's **Data** tab).
@@ -161,4 +165,13 @@ to the Neon database), free plan, auto-deploys from `main`.
 - Free instances sleep after ~15 minutes idle, and the first request then
   takes ~30–60 s. Open the URL a minute before a demo.
 
-**Frontend: Vercel** (milestone 7), with `VITE_API_URL` set to the Render URL.
+**Frontend: Vercel**, project `agrim`, live at https://agrim-two.vercel.app.
+Deploy from `web/`:
+
+```bash
+cd web
+vercel deploy --prod --build-env VITE_API_URL=https://agrim-api.onrender.com
+```
+
+The API allows that address (and this project's Vercel preview builds) in
+`api/main.py`. `CORS_ORIGINS` can add more.

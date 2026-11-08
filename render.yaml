@@ -18,6 +18,8 @@ services:
         value: 3.11.11
       - key: SCHEDULER
         value: "on"
+      # The public site (https://agrim-two.vercel.app) and its previews are
+      # allowed in api/main.py; CORS_ORIGINS can add more.
       - key: CORS_ORIGINS
         value: http://localhost:5173
       - key: DATABASE_URL

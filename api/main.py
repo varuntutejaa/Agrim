@@ -67,8 +67,14 @@ app = FastAPI(title="Agrim API", version="0.3.0", lifespan=lifespan,
               description="Flood early-warning for Gurugram's waterlogging hotspots.")
 
 # The React app runs on a different origin (Vite dev server / Vercel).
-origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
+# Allowed: local dev, the public site, and this project's Vercel preview builds.
+# CORS_ORIGINS (comma-separated) can add more without a code change.
+PUBLIC_SITE = "https://agrim-two.vercel.app"
+origins = {"http://localhost:5173", PUBLIC_SITE}
+origins |= {o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()}
+app.add_middleware(CORSMiddleware, allow_origins=sorted(origins),
+                   allow_origin_regex=r"https://agrim-[a-z0-9]+-varuntutejaas-projects\.vercel\.app",
+                   allow_methods=["*"], allow_headers=["*"])
 # Map layers are mostly repeated coordinates; gzip cuts them ~5x (matters on phones).
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 

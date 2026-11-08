@@ -26,3 +26,6 @@ data/forecast/
 .vscode/
 .idea/
 *.tsbuildinfo
+
+# Vercel project link (local)
+web/.vercel/
