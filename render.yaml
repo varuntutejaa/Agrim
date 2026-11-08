@@ -1,0 +1,24 @@
+# Render Blueprint for the Agrim API (documents the live setup; the service
+# was created with the Render CLI using the same values).
+# Secrets are NOT in this file: set DATABASE_URL in the Render dashboard
+# (Service -> Environment). OPS_TOKEN and RUN_TOKEN are optional.
+services:
+  - type: web
+    name: agrim-api
+    runtime: python
+    region: ohio            # same region as the Neon database (us-east-2)
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SCHEDULER
+        value: "on"
+      - key: CORS_ORIGINS
+        value: http://localhost:5173
+      - key: DATABASE_URL
+        sync: false         # set by hand in the dashboard

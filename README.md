@@ -131,5 +131,18 @@ but actions are switched off.
 
 ## Deploy
 
-Done in milestone 7: backend on Render or Railway, frontend on Vercel, one
-public URL.
+**Backend: Render** (`render.yaml`). Web service `agrim-api`, Ohio region (next
+to the Neon database), free plan, auto-deploys from `main`.
+
+- Build: `pip install -r requirements.txt` (the light API requirements; the
+  geo stack is only needed to rebuild `data/network/` locally).
+- Start: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health`.
+- Environment: `PYTHON_VERSION=3.11.11`, `SCHEDULER=on`, `CORS_ORIGINS`
+  (add the Vercel URL once the frontend is deployed), and **`DATABASE_URL`, set
+  by hand in the Render dashboard** (never committed).
+- The server fetches its own forecast on start-up. Committed files it relies
+  on: `data/hotspots.csv`, `data/network/`, `data/model/`.
+- Free instances sleep after ~15 minutes idle, and the first request then
+  takes ~30–60 s. Open the URL a minute before a demo.
+
+**Frontend: Vercel** (milestone 7), with `VITE_API_URL` set to the Render URL.
