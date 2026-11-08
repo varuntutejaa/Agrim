@@ -262,3 +262,71 @@ def _jsonable(row: dict) -> dict:
         else:
             out[k] = v
     return out
+
+
+# --- Alerts log (milestone 7) --------------------------------------------------------
+
+def log_alerts(officer: str, is_exercise: bool, records: list[dict]) -> None:
+    """Store one row per alert per recipient (recipient already masked)."""
+    with db.connect() as conn:
+        for r in records:
+            conn.execute(db.q(
+                """INSERT INTO {alerts_log} (officer, hotspot_id, level, is_exercise, channel, recipient, status,
+                                             detail, sms_en, sms_hi)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""),
+                (officer, r["hotspot_id"], r["level"], is_exercise, r["channel"], r["to"], r["status"],
+                 r.get("detail"), r["sms_en"], r["sms_hi"]))
+
+
+def alert_log(limit: int = 50) -> list[dict]:
+    with db.connect() as conn:
+        found = conn.execute(db.q("SELECT * FROM {alerts_log} ORDER BY created_at DESC LIMIT %s"), (limit,)).fetchall()
+    return [_jsonable(r) for r in found]
+
+
+# --- Scorecard (milestone 7) -------------------------------------------------------
+
+def scorecard() -> dict:
+    """How Agrim's live calls compared with what officers reported afterwards.
+
+    Only real (non-exercise) reports with a recorded forecast count. An alarm
+    is Red or Amber. Overrides are judged against reports for the same hotspot
+    made while the override applied.
+    """
+    reports = feedback_log(limit=10000)
+    judged = [f for f in reports if f["predicted_level"]]
+    alarm = lambda lvl: lvl in ("red", "amber")
+    counts = {
+        "hits": sum(1 for f in judged if alarm(f["predicted_level"]) and f["flooded"]),
+        "misses": sum(1 for f in judged if not alarm(f["predicted_level"]) and f["flooded"]),
+        "false_alarms": sum(1 for f in judged if alarm(f["predicted_level"]) and not f["flooded"]),
+        "correct_clear": sum(1 for f in judged if not alarm(f["predicted_level"]) and not f["flooded"]),
+    }
+    floods = counts["hits"] + counts["misses"]
+    alarms = counts["hits"] + counts["false_alarms"]
+
+    outcomes = []
+    for o in override_log(limit=500):
+        if o["is_exercise"]:
+            continue
+        start, end = o["created_at"][:10], o["valid_until"][:10]
+        match = [f for f in reports if f["hotspot_id"] == o["hotspot_id"] and start <= f["event_date"] <= end]
+        if not match:
+            outcomes.append({**{k: o[k] for k in ("id", "hotspot_id", "officer", "model_level", "new_level", "created_at")},
+                             "outcome": None, "officer_right": None, "model_right": None})
+            continue
+        flooded = any(f["flooded"] for f in match)
+        outcomes.append({**{k: o[k] for k in ("id", "hotspot_id", "officer", "model_level", "new_level", "created_at")},
+                         "outcome": "flooded" if flooded else "stayed clear",
+                         "officer_right": alarm(o["new_level"]) == flooded,
+                         "model_right": None if not o["model_level"] else alarm(o["model_level"]) == flooded})
+    return {
+        "counts": counts,
+        "reports_total": len(reports),
+        "reports_judged": len(judged),
+        "reports_without_forecast": len(reports) - len(judged),
+        "flood_catch_rate": round(counts["hits"] / floods, 3) if floods else None,
+        "alarm_accuracy": round(counts["hits"] / alarms, 3) if alarms else None,
+        "overrides": outcomes,
+        "note": "Live operations only; exercise actions are excluded. An alarm means Red or Amber.",
+    }

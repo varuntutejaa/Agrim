@@ -1,37 +1,32 @@
 // The headline sentence, the three big counts and the proportion bar.
 // Used by both the live forecast and the simulator.
 import type { RiskLevel } from "../types";
-import { LEVEL_COLOR, plural } from "../risk";
+import { LEVEL_COLOR } from "../risk";
+import { type Lang, t } from "../i18n";
 
 type Props = {
   counts: Record<RiskLevel, number> | undefined;
   /** "In this scenario," for the simulator; empty for the live forecast. */
   lead?: string;
   sub?: string;
+  lang?: Lang;
 };
 
-function headline(c: Record<RiskLevel, number>, lead: string) {
-  const total = c.red + c.amber + c.green;
-  const start = lead ? `${lead} f` : "F";
-  if (c.red + c.amber === 0) return `${lead ? `${lead} n` : "N"}o waterlogging expected at any of the ${total} hotspots.`;
-  if (c.red === 0) return `${start}looding possible at ${plural(c.amber, "hotspot")}.`;
-  return `${start}looding likely at ${plural(c.red, "hotspot")}${c.amber ? `, possible at ${c.amber} more` : ""}.`;
-}
-
-export default function RiskSummary({ counts, lead = "", sub }: Props) {
+export default function RiskSummary({ counts, lead = "", sub, lang = "en" }: Props) {
+  const s = t(lang);
   if (!counts) {
     return <div className="h-[132px] animate-pulse bg-paper-2" aria-label="Loading" />;
   }
   const total = counts.red + counts.amber + counts.green || 1;
   const cells: { level: RiskLevel; label: string }[] = [
-    { level: "red", label: "Likely" },
-    { level: "amber", label: "Possible" },
-    { level: "green", label: "Low risk" },
+    { level: "red", label: s.countLabel.red },
+    { level: "amber", label: s.countLabel.amber },
+    { level: "green", label: s.countLabel.green },
   ];
   return (
     <div>
       <h2 className="font-display text-[27px] font-medium leading-[1.15] tracking-[-0.01em] text-ink md:text-[30px]">
-        {headline(counts, lead)}
+        {s.headline(counts, lead)}
       </h2>
       {sub && <p className="mt-2 text-[13px] leading-snug text-ink-2">{sub}</p>}
 

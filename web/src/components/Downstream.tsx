@@ -2,17 +2,20 @@
 import type { HotspotRisk, RiskWindowKey } from "../types";
 import { LEVEL_COLOR, spreadingLinks } from "../risk";
 import { Kicker } from "./ui";
+import { type Lang, t } from "../i18n";
 
-export default function Downstream({ hotspots, windowKey, onSelect }: {
+export default function Downstream({ hotspots, windowKey, onSelect, lang = "en" }: {
   hotspots: HotspotRisk[];
   windowKey: RiskWindowKey;
   onSelect: (id: string) => void;
+  lang?: Lang;
 }) {
+  const s = t(lang);
   const links = spreadingLinks(hotspots, windowKey);
   if (!links.length) return null;
   return (
     <section>
-      <Kicker>Risk travels downstream</Kicker>
+      <Kicker>{s.downstream}</Kicker>
       <ul className="mt-2 space-y-1.5 text-[13.5px]">
         {links.map(({ from, to, level }) => (
           <li key={`${from.id}-${to.id}`} className="flex items-baseline gap-2">
@@ -23,7 +26,7 @@ export default function Downstream({ hotspots, windowKey, onSelect }: {
         ))}
       </ul>
       <p className="mt-2 text-[12px] text-ink-3">
-        Clearing drains at the first hotspot also eases the second.
+        {s.downstreamNote}
       </p>
     </section>
   );

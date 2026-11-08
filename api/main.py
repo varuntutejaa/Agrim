@@ -33,7 +33,12 @@ Endpoints so far:
   Model (milestone 6):
   GET  /model/status        Tier B (XGBoost) training status and honest check results
 
-Milestone 7 adds /scorecard.
+  Alerts and scorecard (milestone 7):
+  GET  /alerts/public       Red/Amber hotspots in plain English and Hindi ("roads to avoid")
+  POST /alerts/draft        citizen SMS (EN + HI) and IVR script for each Red hotspot
+  POST /alerts/send         officer-approved send via the configured channel (console by default)
+  GET  /alerts/log          what was sent, when, by whom (numbers masked)
+  GET  /scorecard           hits, misses, false alarms, override outcomes (live only)
 """
 import os
 from contextlib import asynccontextmanager
@@ -329,3 +334,77 @@ def model_status():
     reports = from_incidents()
     st["labels_now"] = {"reports": len(reports), "report_floods": sum(r["flooded"] for r in reports)}
     return st
+
+
+# --- Alerts and scorecard (milestone 7) --------------------------------------------------
+
+class AlertRequest(BaseModel):
+    source: str = Field("live", pattern="^(live|exercise)$")
+    window: str = Field("next_24h", pattern="^(next_24h|day_2)$")
+    sim: SimulateRequest | None = None      # the storm, for exercise alerts
+
+
+def _result_for(req: AlertRequest) -> tuple[dict, str, bool]:
+    if req.source == "exercise":
+        return simulate(req.sim or SimulateRequest()), "next_24h", True
+    return forecast_latest(), req.window, False
+
+
+@app.get("/alerts/public")
+def alerts_public(window: str = "next_24h"):
+    from model.alerts import citizen_items
+    if window not in ("next_24h", "day_2"):
+        raise HTTPException(422, "window must be next_24h or day_2")
+    return {"items": citizen_items(forecast_latest(), window)}
+
+
+@app.post("/alerts/draft")
+def alerts_draft(req: AlertRequest):
+    from model.alerts import alert_for, citizen_items
+    result, window, exercise = _result_for(req)
+    items = [i for i in citizen_items(result, window, exercise) if i["level"] == "red"]
+    from api import notify
+    return {"exercise": exercise, "channel": notify.channel(), "alerts": [alert_for(i, exercise) for i in items]}
+
+
+class SendRequest(AlertRequest):
+    officer: str
+    hotspot_ids: list[str] = Field(min_length=1, max_length=200)
+
+
+@app.post("/alerts/send")
+def alerts_send(req: SendRequest, x_agrim_desk: str | None = Header(default=None)):
+    """Re-creates the messages on the server (never sends text from the request) and sends them."""
+    from api import notify
+    from model.alerts import alert_for, citizen_items
+    _desk_guard(x_agrim_desk)
+    officer = " ".join(req.officer.split())[:80]
+    if len(officer) < 2:
+        raise HTTPException(422, "Enter your name to approve alerts.")
+    result, window, exercise = _result_for(req)
+    chosen = set(req.hotspot_ids)
+    alerts = [alert_for(i, exercise) for i in citizen_items(result, window, exercise)
+              if i["level"] == "red" and i["hotspot_id"] in chosen]
+    if not alerts:
+        raise HTTPException(422, "None of those hotspots is Red right now; nothing sent.")
+    records = []
+    for a in alerts:
+        for r in notify.send(f"{a['sms_hi']}\n{a['sms_en']}"):
+            records.append({**r, "hotspot_id": a["hotspot_id"], "level": a["level"],
+                            "sms_en": a["sms_en"], "sms_hi": a["sms_hi"]})
+    ops.log_alerts(officer, exercise, records)
+    return {"sent": len(alerts), "results": records}
+
+
+@app.get("/alerts/log")
+def alerts_log(limit: int = 50):
+    if not db.configured():
+        return {"available": False, "alerts": []}
+    return {"available": True, "alerts": ops.alert_log(min(limit, 200))}
+
+
+@app.get("/scorecard")
+def scorecard():
+    if not db.configured():
+        return {"available": False}
+    return {"available": True, **ops.scorecard()}

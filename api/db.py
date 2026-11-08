@@ -59,6 +59,20 @@ CREATE TABLE IF NOT EXISTS {checklist} (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (run_key, zone, hotspot_id, item)
 );
+CREATE TABLE IF NOT EXISTS {alerts_log} (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    officer      TEXT NOT NULL,              -- who approved the send
+    hotspot_id   TEXT NOT NULL,
+    level        TEXT NOT NULL,
+    is_exercise  BOOLEAN NOT NULL,
+    channel      TEXT NOT NULL,              -- console / twilio
+    recipient    TEXT NOT NULL,              -- masked, never a full number
+    status       TEXT NOT NULL,              -- logged / sent / failed / unknown / refused / not_configured
+    detail       TEXT,
+    sms_en       TEXT NOT NULL,
+    sms_hi       TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS overrides_active ON {overrides} (hotspot_id, is_exercise, valid_until);
 """
 
@@ -98,7 +112,7 @@ def pool() -> ConnectionPool:
     return _pool
 
 
-TABLES = ("overrides", "feedback", "checklist")
+TABLES = ("overrides", "feedback", "checklist", "alerts_log")
 
 
 def q(sql: str) -> str:

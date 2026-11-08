@@ -31,3 +31,4 @@ when adding screens (dashboard, alerts, Hindi).
 - Colour is never the only signal: every risk colour sits next to a word ("Likely", "Possible").
 - Anything simulated carries the striped **EXERCISE / अभ्यास** band, on the panel and on the map.
 - Phone first: the map takes the top ~46% of the screen, map overlays are hidden or compact, and nothing scrolls sideways.
+- Language: the public Forecast view and the masthead switch between English and Hindi (`web/src/i18n.ts`, font IBM Plex Sans Devanagari). Officer tools stay in English. Reasons come from the server as numbers (`driver_facts`) so each language words them itself. Have a native speaker review the Hindi before launch.

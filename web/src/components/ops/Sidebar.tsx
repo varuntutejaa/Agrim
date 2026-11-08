@@ -1,6 +1,6 @@
 // Right-hand column of the desk: the order sheet / crew SMS, and the logs.
 import { useState } from "react";
-import type { FeedbackRecord, Orders, OverrideRecord } from "../../types";
+import type { AlertRecord, FeedbackRecord, Orders, OverrideRecord, Scorecard } from "../../types";
 import { LEVEL_COLOR } from "../../risk";
 import { Kicker, TextTabs } from "../ui";
 
@@ -108,6 +108,78 @@ export function FeedbackLog({ items, names }: { items: FeedbackRecord[]; names: 
                 {" · "}{f.officer}
               </div>
               {f.notes && <div className="text-ink-3">{f.notes}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+export function ScorecardCard({ card }: { card: Scorecard | null }) {
+  if (!card) return null;
+  const pct = (v: number | null | undefined) => (v == null ? "–" : `${Math.round(v * 100)}%`);
+  return (
+    <section>
+      <Kicker>Scorecard (live operations)</Kicker>
+      {!card.available ? (
+        <p className="mt-2 text-[13px] text-ink-3">Needs the database.</p>
+      ) : (
+        <>
+          <div className="mt-2 grid grid-cols-2 border-t border-ink">
+            {([
+              ["Floods caught", card.counts!.hits, "hits"],
+              ["Floods missed", card.counts!.misses, "misses"],
+              ["False alarms", card.counts!.false_alarms, "false alarms"],
+              ["Correct all-clear", card.counts!.correct_clear, "correct"],
+            ] as const).map(([label, n]) => (
+              <div key={label} className="border-b border-rule py-2 pr-2 odd:border-r odd:pr-3 even:pl-3">
+                <div className="kicker !text-[10px]">{label}</div>
+                <div className="font-mono tabular text-[22px] leading-none">{n}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[12px] text-ink-2">
+            Catches {pct(card.flood_catch_rate)} of reported floods; {pct(card.alarm_accuracy)} of alarms were right.
+          </p>
+          {card.overrides && card.overrides.length > 0 && (
+            <ul className="mt-2 space-y-1 text-[12px] text-ink-2">
+              {card.overrides.slice(0, 6).map((o) => (
+                <li key={o.id}>
+                  Override #{o.id} ({o.model_level ?? "?"} → {o.new_level}):{" "}
+                  {o.outcome == null ? <span className="text-ink-3">no report yet</span> : <>{o.outcome}; officer {o.officer_right ? "right" : "wrong"}, model {o.model_right == null ? "n/a" : o.model_right ? "right" : "wrong"}</>}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-[11.5px] text-ink-3">
+            Built from officers' after-rain reports ({card.reports_total} so far; {card.reports_without_forecast} had no forecast on
+            record). Exercises are excluded.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+export function AlertLog({ items, names }: { items: AlertRecord[]; names: Record<string, string> }) {
+  return (
+    <section>
+      <Kicker>Alert log</Kicker>
+      {items.length === 0 ? (
+        <p className="mt-2 text-[13px] text-ink-3">No alerts sent yet.</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          {items.slice(0, 10).map((a) => (
+            <li key={a.id} className="py-2 text-[12.5px]">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-medium">{names[a.hotspot_id] ?? a.hotspot_id}</span>
+                <span className="font-mono text-[10.5px] text-ink-3">{when(a.created_at)}</span>
+              </div>
+              <div className="text-ink-2">
+                {a.channel} · {a.recipient} · <span className="font-mono">{a.status}</span> · approved by {a.officer}
+                {a.is_exercise && <span className="kicker ml-1.5 !text-[10px]">Exercise</span>}
+              </div>
             </li>
           ))}
         </ul>

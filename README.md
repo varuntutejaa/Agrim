@@ -143,7 +143,7 @@ but actions are switched off.
 4. ✅ Simulator and past-event replay
 5. ✅ MCG dashboard: ranked list, orders, override log, feedback
 6. ✅ XGBoost + SHAP pipeline, ready and waiting for labels (48 news candidates to review)
-7. Alerts, scorecard, Hindi toggle, deploy, 3-minute demo script
+7. ✅ Alerts (console / Twilio sandbox, officer-approved, EN + HI, mock IVR), scorecard, Hindi toggle, 3-minute demo script (docs/DEMO_SCRIPT.md); frontend deploy pending
 
 ## Deploy
 

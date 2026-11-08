@@ -166,8 +166,26 @@ def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
         "scores": scores,
         "points": {k: round(v, 1) for k, v in expected_pts.items()},
         "drivers": drivers(expected_pts, expected_e, rain, terrain),
+        "driver_facts": driver_facts(expected_pts, expected_e, rain, terrain),
         "action": ACTIONS[level],
     }
+
+
+def _top(pts: dict) -> list[str]:
+    return sorted((k for k in pts if pts[k] > 0.5), key=lambda k: -pts[k])[:3]
+
+
+def driver_facts(pts: dict, e: dict, rain: dict, t: dict) -> list[dict]:
+    """The same three reasons as numbers, so the app can word them in any language.
+
+    value: mm, m, share or km2 depending on the key; e: rarity (rain keys only).
+    """
+    value = {
+        "rain_24h": rain["rain_24h"], "peak1h": rain["peak1h"], "upstream_rain": rain["upstream_rain_24h"],
+        "wet_ground": rain["rain_past_72h"], "low_spot": abs(t["relief_1km_m"]), "drain_level": max(t["hand_m"], 0.0),
+        "built_up": t["builtup_share_500m"], "upstream_area": t["max_drained_km2_150m"],
+    }
+    return [{"key": k, "value": round(float(value[k]), 2), "e": round(e[k], 3) if k in e else None} for k in _top(pts)]
 
 
 def drivers(pts: dict, e: dict, rain: dict, t: dict) -> list[str]:
@@ -183,5 +201,4 @@ def drivers(pts: dict, e: dict, rain: dict, t: dict) -> list[str]:
         "built_up": lambda: f"{t['builtup_share_500m']:.0%} of the ground nearby is built over",
         "upstream_area": lambda: f"{t['max_drained_km2_150m']:.1f} km² of land drains towards it",
     }
-    top = sorted((k for k in pts if pts[k] > 0.5), key=lambda k: -pts[k])[:3]
-    return [text[k]() for k in top]
+    return [text[k]() for k in _top(pts)]

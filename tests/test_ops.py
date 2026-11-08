@@ -5,9 +5,6 @@ the Neon database in DATABASE_URL, inside a throwaway schema that is dropped
 afterwards, so the real tables are never touched. They are skipped if
 DATABASE_URL is not set.
 """
-import os
-import uuid
-
 import pytest
 
 from model.orders import build_orders
@@ -31,24 +28,6 @@ def test_orders_storm_lists_red_first_with_deadlines():
 def test_orders_filter_by_zone():
     o = build_orders(run_storm(120, 30, 40), zone="Nowhere", exercise=True)
     assert o["items"] == []
-
-
-@pytest.fixture()
-def ops_db(monkeypatch):
-    from api import db
-    if not db.configured():
-        pytest.skip("DATABASE_URL not set")
-    schema = f"test_{uuid.uuid4().hex[:10]}"
-    monkeypatch.setenv("AGRIM_DB_SCHEMA", schema)
-    db.close()
-    from api import ops
-    ops._forget_active()
-    yield ops
-    ops._forget_active()
-    with db.connect() as conn:
-        conn.execute(f"DROP SCHEMA {schema} CASCADE")
-    db.close()
-    os.environ.pop("AGRIM_DB_SCHEMA", None)
 
 
 def test_override_applies_and_revokes(ops_db):

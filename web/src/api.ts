@@ -1,7 +1,8 @@
 // Thin wrappers around the Agrim API.
 import type {
   CheckItem, CheckTick, DrainageLayers, FeedbackRecord, HotspotCollection, Orders, OverrideRecord, RainCollection,
-  ModelStatus, ReplayEvent, RiskLevel, RiskResult, SimRequest, SimResult,
+  AlertDraft, AlertRecord, CitizenItem, ModelStatus, ReplayEvent, RiskLevel, RiskResult, Scorecard, SimRequest,
+  SimResult,
 } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -94,3 +95,15 @@ export const postCheck = (body: { run_key: string; zone: string; hotspot_id: str
 export const resetExercise = () => send<{ ok: boolean }>("/exercise/reset", {});
 
 export const fetchModelStatus = () => getJson<ModelStatus>("/model/status");
+
+// --- Alerts and scorecard ---
+
+type AlertSource = { source: "live" | "exercise"; window: string; sim?: SimRequest };
+
+export const fetchPublicAlerts = (window: string) => getJson<{ items: CitizenItem[] }>(`/alerts/public?window=${window}`);
+export const fetchAlertDrafts = (req: AlertSource) =>
+  send<{ exercise: boolean; channel: string; alerts: AlertDraft[] }>("/alerts/draft", req);
+export const sendAlerts = (req: AlertSource & { officer: string; hotspot_ids: string[] }) =>
+  send<{ sent: number; results: { channel: string; to: string; status: string; hotspot_id: string }[] }>("/alerts/send", req);
+export const fetchAlertLog = () => getJson<{ available: boolean; alerts: AlertRecord[] }>("/alerts/log");
+export const fetchScorecard = () => getJson<Scorecard>("/scorecard");

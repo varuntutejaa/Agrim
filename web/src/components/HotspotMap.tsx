@@ -8,7 +8,8 @@ import type {
   DrainageLayers, HotspotCollection, HotspotRisk, NetworkNodeProps, RainCollection, RainWindow, RiskWindowKey, View,
 } from "../types";
 import { nearestRain } from "../geo";
-import { LEVEL_COLOR, LEVEL_LONG, confidenceLabel, wetWindowLabel } from "../risk";
+import { LEVEL_COLOR } from "../risk";
+import { type Lang, actionText, locale, reasons, t } from "../i18n";
 import {
   DASH_STEPS, addDrainageLayers, highlightDrainage, setDrainageData, setDrainageMode, setEdges,
 } from "./drainageLayers";
@@ -43,6 +44,7 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   pinMode: boolean;
+  lang?: Lang;
 };
 
 const esc = (s: string) =>
@@ -274,25 +276,30 @@ export default function HotspotMap(props: Props) {
     popupRef.current.on("close", () => {
       if (!closingRef.current) latest.current.onSelect(null);
     });
-  }, [map, hotspots, selectedId, props.riskList, props.windowKey, drainage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, hotspots, selectedId, props.riskList, props.windowKey, drainage, props.lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className="h-full w-full" />;
 }
 
 function popupHtml(id: string, name: string, p: Props): string {
+  const lang = p.lang ?? "en";
+  const s = t(lang);
   const h = p.riskList?.find((x) => x.id === id);
   let risk = "";
   if (h?.scored) {
     const w = h.windows[p.windowKey];
-    const sub = [confidenceLabel(w), wetWindowLabel(w) && `wettest ${wetWindowLabel(w)}`].filter(Boolean).join(" · ");
+    const ww = w.rain.wet_window;
+    const hour = (iso: string) => new Date(iso).toLocaleTimeString(locale(lang), { hour: "numeric", hour12: true });
+    const sub = [w.confidence && s.confidence[w.confidence], ww && `${s.wettestAt} ${hour(ww.start)} – ${hour(ww.end)}`]
+      .filter(Boolean).join(" · ");
     risk = `
       <div class="mt-1 flex items-center gap-1.5 text-[12.5px] font-medium" style="color:${LEVEL_COLOR[w.level]}">
-        <span style="display:inline-block;width:8px;height:8px;background:${LEVEL_COLOR[w.level]}"></span>${LEVEL_LONG[w.level]}
+        <span style="display:inline-block;width:8px;height:8px;background:${LEVEL_COLOR[w.level]}"></span>${s.levelLong[w.level]}
       </div>
       ${sub ? `<div class="font-mono text-[11px] text-ink-3">${esc(sub)}</div>` : ""}
-      ${w.level !== "green" ? `<div class="mt-1.5 text-[12.5px] font-medium">${esc(w.action)}</div>` : ""}
-      <ul class="mt-1.5 space-y-0.5 text-[12px] text-ink-2">${w.drivers.map((d) => `<li>– ${esc(d)}</li>`).join("")}</ul>
-      <div class="mt-1.5 font-mono text-[11px] text-ink-3">${w.rain.rain_24h} mm in 24 h · peak ${w.rain.peak1h} mm/h</div>`;
+      ${w.level !== "green" ? `<div class="mt-1.5 text-[12.5px] font-medium">${esc(actionText(w, lang))}</div>` : ""}
+      <ul class="mt-1.5 space-y-0.5 text-[12px] text-ink-2">${reasons(w, lang).map((d) => `<li>– ${esc(d)}</li>`).join("")}</ul>
+      <div class="mt-1.5 font-mono text-[11px] text-ink-3">${s.popupRain(w.rain.rain_24h, w.rain.peak1h)}</div>`;
   } else {
     const coords = p.hotspots?.features.find((f) => f.properties.id === id)?.geometry.coordinates;
     const r = coords ? nearestRain(p.rain, coords[0], coords[1]) : null;

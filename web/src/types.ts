@@ -135,6 +135,7 @@ export type WindowRisk = {
   scores: { low: number; expected: number; high: number };
   points: Record<string, number>;
   drivers: string[];
+  driver_facts?: { key: string; value: number; e: number | null }[];  // same reasons as numbers (for Hindi)
   action: string;
   rain: {
     rain_24h: number;
@@ -271,4 +272,31 @@ export type ModelStatus = {
   rules_baseline?: Scores;
   importance?: Record<string, number>;
   labels_now?: { reports: number; report_floods: number };
+};
+
+// --- Alerts and scorecard (milestone 7, see model/alerts.py and api/ops.py) ---
+
+export type CitizenItem = {
+  hotspot_id: string; name: string; level: RiskLevel;
+  when_en: string; when_hi: string; tip_en: string; tip_hi: string; tip_sourced: boolean;
+};
+
+export type AlertDraft = { hotspot_id: string; name: string; level: RiskLevel; sms_en: string; sms_hi: string; ivr: string };
+
+export type AlertRecord = {
+  id: number; created_at: string; officer: string; hotspot_id: string; level: RiskLevel; is_exercise: boolean;
+  channel: string; recipient: string; status: string; detail: string | null; sms_en: string; sms_hi: string;
+};
+
+export type Scorecard = {
+  available: boolean;
+  counts?: { hits: number; misses: number; false_alarms: number; correct_clear: number };
+  reports_total?: number;
+  reports_judged?: number;
+  reports_without_forecast?: number;
+  flood_catch_rate?: number | null;
+  alarm_accuracy?: number | null;
+  overrides?: { id: number; hotspot_id: string; officer: string; model_level: RiskLevel | null; new_level: RiskLevel;
+    created_at: string; outcome: string | null; officer_right: boolean | null; model_right: boolean | null }[];
+  note?: string;
 };

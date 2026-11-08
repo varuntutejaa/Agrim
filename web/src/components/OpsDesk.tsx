@@ -3,16 +3,17 @@
 // demo, on the simulator's storm (clearly marked as an exercise).
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ApiError, deskCode, fetchChecklist, fetchExerciseOrders, fetchFeedback, fetchOrders, fetchOverrides, postCheck,
-  postFeedback, postOverride, resetExercise, revokeOverride,
+  ApiError, deskCode, fetchAlertLog, fetchChecklist, fetchExerciseOrders, fetchFeedback, fetchOrders, fetchOverrides,
+  fetchScorecard, postCheck, postFeedback, postOverride, resetExercise, revokeOverride,
 } from "../api";
 import type {
-  CheckItem, CheckTick, FeedbackRecord, HotspotRisk, Orders, OpsSource, OverrideRecord, RiskResult, RiskWindowKey,
-  SimRequest, SimResult,
+  AlertRecord, CheckItem, CheckTick, FeedbackRecord, HotspotRisk, Orders, OpsSource, OverrideRecord, RiskResult,
+  RiskWindowKey, Scorecard, SimRequest, SimResult,
 } from "../types";
 import { plural } from "../risk";
 import ActionTable from "./ops/ActionTable";
-import { FeedbackLog, OrdersCard, OverrideLog } from "./ops/Sidebar";
+import AlertsPanel from "./ops/AlertsPanel";
+import { AlertLog, FeedbackLog, OrdersCard, OverrideLog, ScorecardCard } from "./ops/Sidebar";
 import SopTimeline from "./ops/SopTimeline";
 import { ExerciseBand, Kicker, TextTabs } from "./ui";
 
@@ -47,6 +48,8 @@ export default function OpsDesk(p: Props) {
   const [ticks, setTicks] = useState<CheckTick[]>([]);
   const [overrides, setOverrides] = useState<OverrideRecord[]>([]);
   const [feedback, setFeedback] = useState<FeedbackRecord[]>([]);
+  const [alertLog, setAlertLog] = useState<AlertRecord[]>([]);
+  const [card, setCard] = useState<Scorecard | null>(null);
   const [dbAvailable, setDbAvailable] = useState(true);
   const [message, setMessage] = useState<{ kind: "error" | "ok"; text: string } | null>(null);
   const [needCode, setNeedCode] = useState(false);
@@ -70,6 +73,8 @@ export default function OpsDesk(p: Props) {
   const loadLogs = useCallback(() => {
     fetchOverrides().then((r) => { setDbAvailable(r.available); setOverrides(r.overrides); }).catch(() => {});
     fetchFeedback().then((r) => setFeedback(r.feedback)).catch(() => {});
+    fetchAlertLog().then((r) => setAlertLog(r.alerts)).catch(() => {});
+    fetchScorecard().then(setCard).catch(() => {});
   }, []);
   useEffect(loadLogs, [loadLogs]);
 
@@ -235,9 +240,23 @@ export default function OpsDesk(p: Props) {
             {exercise && !p.simResult && (
               <p className="mt-3 text-[13px] text-ink-3">Running the exercise storm…</p>
             )}
+            <div className="mt-10">
+              <AlertsPanel
+                source={p.source}
+                windowKey={windowKey}
+                simRequest={p.simRequest}
+                refreshKey={result}
+                canAct={canAct}
+                officer={officer}
+                onSent={(text) => { setMessage({ kind: "ok", text }); loadLogs(); }}
+                onError={(text) => { setMessage({ kind: "error", text }); if (/desk code/i.test(text)) setNeedCode(true); }}
+              />
+            </div>
           </section>
           <aside className="space-y-9">
             <OrdersCard orders={orders} />
+            <ScorecardCard card={card} />
+            <AlertLog items={alertLog} names={names} />
             <OverrideLog items={overrides} names={names} />
             <FeedbackLog items={feedback} names={names} />
           </aside>

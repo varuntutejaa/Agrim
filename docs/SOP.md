@@ -24,6 +24,19 @@ and lasts 6–72 h. The change shows everywhere, including the public map,
 with the model's original call alongside. Every override is logged and can be
 cancelled. Exercise overrides never affect the live forecast.
 
+**Citizen alerts.** For each Red hotspot the desk drafts a short SMS in
+Hindi and English ("Waterlogging likely at …, 6–10 pm today. …") and a mock
+voice-call (IVR) script. An officer reviews, chooses and approves; only then is
+anything sent. The server re-creates the text itself and sends only through its
+configured channel: `console` by default (server log), or the Twilio sandbox to
+the test numbers set on the server. Every send is logged with the approving
+officer; numbers are masked. Messages say "Agrim pilot" and never claim to be
+from MCG. Exercise alerts are marked EXERCISE / अभ्यास.
+
+**Scorecard.** Built from officers' after-rain reports: floods caught, floods
+missed, false alarms (Red/Amber that stayed clear), correct all-clears, and
+whether each override was right. Exercises are excluded.
+
 **Feedback.** Reports are stored with the level Agrim showed for that
 hotspot and day. They're the ground truth for the scorecard (milestone 7)
 and for training the model (milestone 6).

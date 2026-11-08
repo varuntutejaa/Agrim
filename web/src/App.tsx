@@ -18,6 +18,7 @@ import OpsDesk from "./components/OpsDesk";
 import DataPage from "./components/DataPage";
 import SimulatorPanel, { type SimMode } from "./components/SimulatorPanel";
 import { ExerciseBand } from "./components/ui";
+import { type Lang, savedLang, saveLang } from "./i18n";
 import type {
   DrainageLayers, HotspotCollection, OpsSource, RainCollection, RainWindow, ReplayEvent, RiskResult, RiskWindowKey,
   SimRequest, SimResult, StormParams, View,
@@ -29,6 +30,16 @@ const SIM_DEBOUNCE_MS = 120;
 
 export default function App() {
   const [view, setView] = useState<View>("forecast");
+  // Hindi applies to the public Forecast view and the masthead; officer tools stay in English.
+  const [langChoice, setLangChoice] = useState<Lang>(savedLang);
+  const lang: Lang = view === "forecast" ? langChoice : "en";
+  const onLang = (l: Lang) => {
+    setLangChoice(l);
+    saveLang(l);
+  };
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,7 +170,7 @@ export default function App() {
   if (view === "data") {
     return (
       <div className="flex h-full flex-col">
-        <Masthead view={view} onView={setView} updated={updated} />
+        <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
         <div className="min-h-0 flex-1 overflow-y-auto bg-paper"><DataPage /></div>
       </div>
     );
@@ -168,7 +179,7 @@ export default function App() {
   if (view === "ops") {
     return (
       <div className="flex h-full flex-col">
-        <Masthead view={view} onView={setView} updated={updated} />
+        <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
         <div className="min-h-0 flex-1 overflow-y-auto bg-paper">
           <OpsDesk
             source={opsSource}
@@ -188,7 +199,7 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <Masthead view={view} onView={setView} updated={updated} />
+      <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
 
       {error && (
         <div className="flex items-center gap-3 border-b border-risk-red bg-paper-2 px-5 py-2 text-[13px] text-risk-red md:px-7">
@@ -219,6 +230,7 @@ export default function App() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             pinMode={pinMode}
+            lang={lang}
           />
           {view === "simulator" && (
             <>
@@ -228,7 +240,7 @@ export default function App() {
               <MapStamp result={simResult} storm={storm} />
             </>
           )}
-          <MapKey view={view} />
+          <MapKey view={view} lang={lang} />
         </div>
 
         <aside className="min-h-0 flex-1 overflow-y-auto border-t border-ink bg-paper md:order-1 md:w-[440px] md:flex-none md:border-r md:border-t-0">
@@ -244,6 +256,7 @@ export default function App() {
               onRainWindow={setRainWindow}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              lang={lang}
             />
           )}
           {view === "simulator" && (

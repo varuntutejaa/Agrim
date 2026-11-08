@@ -21,6 +21,7 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 |------|------|--------------------|
 | Hotspot names (seed list of 21) | `data/hotspots_seed.csv` | Seed list in the project brief. **TODO:** add the news article or MCG notice that names each hotspot, in the `notes` column. |
 | MCG's full list of 159 hotspots | `data/hotspots.csv` (later) | **TODO:** MCG document / RTI reply, with link and date |
+| Route tip for Narsinghpur alerts | `data/hotspot_tips.csv` | The project brief's example alert ("Use NH-48 main carriageway"); other hotspots get a generic tip until the team adds sourced ones |
 | MCG zones for 10 hotspots | `data/hotspots.csv` (`zone`) | [The Tribune, 31 Jul 2026](https://www.tribuneindia.com/news/gurugram/gurugram-municipal-corporation-puts-155-flood-points-under-24-hour-watch/): localities on MCG's 155-point watch list named by zone (VI, III, VII) |
 | MCG data not yet released | `docs/DATA_REQUIREMENTS.md` | What we'd request, with evidence each item exists (Tribune 2025–2026, Lok Sabha reply via Tribune, Republic World) |
 | Gurugram flood event dates (district level) | `data/external/ifi_gurugram_events.csv` | India Flood Inventory-Impacts v3, Saharia et al., IIT Delhi, [Zenodo 11275211](https://zenodo.org/records/11275211), CC-BY-4.0. Subset for Gurugram via `python -m pipeline.fetch_ifi`. Used only to find dates for hotspot-level news searches |
