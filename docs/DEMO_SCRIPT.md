@@ -10,7 +10,7 @@ docs/SOURCES.md. Times are cumulative.
 - [ ] Open the app on the laptop **and** on a phone (Forecast view).
 - [ ] MCG desk: enter an officer name, switch to **Exercise**, click **Reset drill**.
 - [ ] Simulator: Design a storm, **Once a decade** preset, **Whole city**.
-- [ ] Have the screenshots in `docs/` ready in case the venue Wi-Fi drops.
+- [ ] Have `docs/screenshots/` open in case the venue Wi-Fi drops (forecast, simulator, replay, local storm, drainage, MCG desk, citizen alerts, data, Hindi on a phone).
 
 ## 0:00–0:20 · The problem
 
@@ -67,4 +67,4 @@ docs/SOURCES.md. Times are cumulative.
 |---|---|
 | API asleep / slow | Keep talking over the Forecast view; it loads from the cached result once awake |
 | Map tiles don't load | Show the panel side (headline, counts, list); the story still holds |
-| Wi-Fi down | Screenshots in `docs/` |
+| Wi-Fi down | `docs/screenshots/` |

@@ -8,6 +8,12 @@ before the rain arrives.
 SustainX 2026, Round 2 prototype.
 
 **Live:** https://agrim-two.vercel.app (app) · https://agrim-api.onrender.com/docs (API).
+
+| Forecast | Simulator | MCG desk |
+|---|---|---|
+| ![Forecast](docs/screenshots/s1_forecast.jpg) | ![Simulator](docs/screenshots/s2_simulator.jpg) | ![MCG desk](docs/screenshots/s6_mcg_desk.jpg) |
+
+More in [docs/screenshots/](docs/screenshots/) (also the offline fallback for the demo).
 The API runs on Render's free plan and sleeps when idle; the first request after
 a pause takes 30–60 s.
 
