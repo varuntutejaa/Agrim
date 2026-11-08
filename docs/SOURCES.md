@@ -21,7 +21,8 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 |------|------|--------------------|
 | Hotspot names (seed list of 21) | `data/hotspots_seed.csv` | Seed list in the project brief. **TODO:** add the news article or MCG notice that names each hotspot, in the `notes` column. |
 | MCG's full list of 159 hotspots | `data/hotspots.csv` (later) | **TODO:** MCG document / RTI reply, with link and date |
-| Candidate flood reports (not yet labels) | `data/incidents_candidates.csv` | Found in news coverage (The Tribune, ThePrint/PTI, The Week/PTI, Republic World), each row with its URL and what the article says. Become labels only after a team member reviews them (`python -m pipeline.review_candidates`) |
+| Gurugram flood event dates (district level) | `data/external/ifi_gurugram_events.csv` | India Flood Inventory-Impacts v3, Saharia et al., IIT Delhi, [Zenodo 11275211](https://zenodo.org/records/11275211), CC-BY-4.0. Subset for Gurugram via `python -m pipeline.fetch_ifi`. Used only to find dates for hotspot-level news searches |
+| Candidate flood reports (not yet labels) | `data/incidents_candidates.csv` | Found in news coverage (The Tribune, ThePrint/PTI, The Week/PTI, Careers360/PTI, Republic World), each row with its URL and what the article says. Become labels only after a team member reviews them (`python -m pipeline.review_candidates`) |
 | Flood incidents (training labels) | `data/incidents.csv` | Each row carries its own `source_url` (news report etc.). Never invented. Add rows with `python -m pipeline.add_incident` |
 
 ## In use (milestone 2)

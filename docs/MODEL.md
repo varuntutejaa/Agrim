@@ -161,9 +161,19 @@ Run `python -m model.train` after adding labels.
 
 ### Collecting labels
 
-`data/incidents_candidates.csv` holds **36 candidate flood reports from news
-coverage** (7 storm days, 13 hotspots), each with its source link and what
-the article says. They are **not** training data until a team member checks
+`data/incidents_candidates.csv` holds **48 candidate flood reports from news
+coverage** (9 storm days, 16 hotspots), each with its source link and what
+the article says. Two of the days (19 Aug 2020, 9 Jul 2023) came from the
+public India Flood Inventory (`python -m pipeline.fetch_ifi`). It records
+floods per district, not per hotspot, so its dates were used to find
+hotspot-level news reports.
+
+**No public dataset has dated, hotspot-level waterlogging for Gurugram.**
+(Checked 8 Nov 2026: national inventories are district-level; MCG's lists of
+154–159 waterlogging points are reported only as counts; citizen apps such
+as IIT Delhi's Aab Prahari don't publish data.) The best remaining source is
+MCG/GMDA itself: the graded list of 159 hotspots and the location lists
+compiled after storms. Ask for them directly, or file an RTI request. They are **not** training data until a team member checks
 each one and accepts it with `python -m pipeline.review_candidates`.
 
 News almost only reports floods. The model also needs **dry cases** ("rain
@@ -172,12 +182,12 @@ form on the MCG desk after each storm.
 
 ### Early check of the rules against the candidates (unreviewed, 8 Nov 2026)
 
-On the days of the 31 candidates that have a map pin, the rules gave
-5 Red, 7 Amber and 19 Green: **12 of 31 reported floods flagged.** All the
-misses are on days when the model's rain was far below what the city
-reported. For example, 11 Aug 2024: model 11–16 mm, while the city reported
-53 mm by 8:30 am and knee-deep water. 9 Jul 2025: model 7–11 mm, with 2.5 ft
-of water at Subhash Chowk. This confirms the main limit: global-model rain
+On the 39 candidate hotspot-days that have a map pin, the rules gave 5 Red,
+7 Amber and 27 Green: **12 of 39 reported floods flagged.** All the misses
+are on days when the model's rain was far below what the city reported.
+For example: 9 Jul 2023, model 12–21 mm, reports of 150 mm. 11 Aug 2024,
+model 11–16 mm, the city reported 53 mm by 8:30 am. 9 Jul 2025, model
+7–11 mm, 2.5 ft of water at Subhash Chowk. This confirms the main limit: global-model rain
 misses short cloudbursts. Fixes worth trying, in order: (1) lower the rain
 thresholds using reviewed labels; (2) add gauge rain (IMD AWS / district
 gauges) for past events; (3) a nowcast feed for the last few hours before

@@ -104,7 +104,7 @@ python -m pipeline.add_incident --list          # see what's there
 Reports that a hotspot stayed dry during heavy rain (`flooded = no`) are just
 as useful as flood reports.
 
-**Review the 36 news candidates** in `data/incidents_candidates.csv`: open
+**Review the 48 news candidates** in `data/incidents_candidates.csv`: open
 each link, check the date and place, then accept or reject:
 
 ```bash
@@ -137,7 +137,7 @@ but actions are switched off.
 3. ✅ Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
 4. ✅ Simulator and past-event replay
 5. ✅ MCG dashboard: ranked list, orders, override log, feedback
-6. ✅ XGBoost + SHAP pipeline, ready and waiting for labels (36 news candidates to review)
+6. ✅ XGBoost + SHAP pipeline, ready and waiting for labels (48 news candidates to review)
 7. Alerts, scorecard, Hindi toggle, deploy, 3-minute demo script
 
 ## Deploy
