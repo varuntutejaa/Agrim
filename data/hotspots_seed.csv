@@ -1,0 +1,22 @@
+id,name,location_kind,queries,overpass_name,notes
+H001,Narsinghpur (NH-48 service lane),road,Narsinghpur Gurugram|Narsingpur Gurugram,Narsingh|Narsing,Service lane of NH-48 near Narsinghpur; pin the exact waterlogging stretch
+H002,Hero Honda Chowk,junction,Hero Honda Chowk Gurugram,Hero Honda Chowk,
+H003,Subhash Chowk,junction,Subhash Chowk Gurugram,Subhash Chowk,
+H004,Rajiv Chowk,junction,Rajiv Chowk Gurugram,Rajiv Chowk,
+H005,Sohna Road,road,Sohna Road Gurugram,,Long road; pin the exact waterlogging spot
+H006,Sector 56 Road,road,Sector 56 Gurugram,,Point is the sector centre; pin the exact spot on the road
+H007,Golf Course Extension Road,road,Golf Course Extension Road Gurugram,,Long road; pin the exact waterlogging spot
+H008,Udyog Vihar,area,Udyog Vihar Gurugram,Udyog Vihar,Large industrial area; pin the exact spot
+H009,Old Gurugram-Delhi road,road,Old Delhi Gurgaon Road Gurugram|Old Delhi Road Gurugram,,Long road; pin the exact waterlogging spot
+H010,Dwarka Expressway service lane near Sector 104,road,Sector 104 Gurugram,,Point is the Sector 104 centre; pin the service-lane spot
+H011,Mahavir Chowk,junction,Mahavir Chowk Gurugram,Mahavir Chowk,
+H012,Sector 15,area,Sector 15 Gurugram|Sector 15 Part 1 Gurugram,,
+H013,Sector 39,area,Sector 39 Gurugram,,
+H014,Islampur,area,Islampur Gurugram,Islampur,
+H015,Civil Lines,area,Civil Lines Gurugram,,
+H016,Patel Nagar,area,Patel Nagar Gurugram,Patel Nagar,
+H017,Sector 5,area,Sector 5 Gurugram,,
+H018,Rajendra Park,area,Rajendra Park Gurugram,Rajendra Park,
+H019,Surat Nagar,area,Surat Nagar Gurugram,Surat Nagar,
+H020,Wazirabad,area,Wazirabad Gurugram,Wazirabad,
+H021,Sushant Lok,area,Sushant Lok Phase 1 Gurugram|Sushant Lok Gurugram,Sushant Lok,

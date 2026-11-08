@@ -1,0 +1,189 @@
+// The map: hotspots on top of the rainfall grid.
+// MapLibre is imperative, so we create the map once and push data into it
+// whenever React props change.
+import { useEffect, useRef, useState } from "react";
+import maplibregl, { type GeoJSONSource, type ExpressionSpecification } from "maplibre-gl";
+import type { HotspotCollection, RainCollection, RainWindow } from "../types";
+import { nearestRain } from "../geo";
+
+// Free vector basemap, no API key (https://openfreemap.org).
+const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+const GURUGRAM_CENTER: [number, number] = [77.04, 28.45];
+
+// Blue scale for rain in mm. Red/Amber/Green are reserved for flood risk.
+const rainColor = (window: RainWindow): ExpressionSpecification => [
+  "interpolate", ["linear"], ["get", window],
+  0, "#e0f2fe", 5, "#7dd3fc", 20, "#0284c7", 50, "#1e3a8a",
+];
+
+type Props = {
+  hotspots: HotspotCollection | null;
+  rain: RainCollection | null;
+  rainWindow: RainWindow;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  pinMode: boolean; // ?pin=1: click anywhere to read coordinates (for pinning hotspots by hand)
+};
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onSelect, pinMode }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  // Closing a popup ourselves (to open another) must not count as the user closing it.
+  const closingRef = useRef(false);
+  const closePopup = () => {
+    closingRef.current = true;
+    popupRef.current?.remove();
+    closingRef.current = false;
+  };
+
+  // Event handlers are registered once, so they read the latest props through refs.
+  const latest = useRef({ onSelect, pinMode, rain });
+  latest.current = { onSelect, pinMode, rain };
+
+  // 1) Create the map and its layers once.
+  useEffect(() => {
+    const map = new maplibregl.Map({
+      container: containerRef.current!,
+      style: BASEMAP_STYLE,
+      center: GURUGRAM_CENTER,
+      zoom: 11.3,
+      attributionControl: { compact: true },
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    mapRef.current = map;
+
+    map.on("load", () => {
+      const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+      map.addSource("rain", { type: "geojson", data: empty });
+      map.addSource("hotspots", { type: "geojson", data: empty });
+
+      map.addLayer({
+        id: "rain-grid",
+        type: "circle",
+        source: "rain",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 6, 13, 20, 15, 45],
+          "circle-color": rainColor("next_24h"),
+          "circle-opacity": 0.45,
+          "circle-blur": 0.4,
+        },
+      });
+      map.addLayer({
+        id: "hotspot-selected",
+        type: "circle",
+        source: "hotspots",
+        filter: ["==", ["get", "id"], ""],
+        paint: { "circle-radius": 14, "circle-color": "#1e3a8a", "circle-opacity": 0.2 },
+      });
+      map.addLayer({
+        id: "hotspots",
+        type: "circle",
+        source: "hotspots",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 14, 9],
+          // Filled = a person has checked the pin; hollow = geocoder's guess, not yet checked.
+          "circle-color": ["case", ["get", "verified"], "#1e3a8a", "#ffffff"],
+          "circle-stroke-color": "#1e3a8a",
+          "circle-stroke-width": 2.5,
+        },
+      });
+      map.addLayer({
+        id: "hotspot-labels",
+        type: "symbol",
+        source: "hotspots",
+        minzoom: 12,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": 12,
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-max-width": 10,
+        },
+        paint: { "text-color": "#1e293b", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
+      });
+
+      map.on("click", "hotspots", (e) => {
+        const id = e.features?.[0]?.properties?.id as string | undefined;
+        if (id) latest.current.onSelect(id);
+      });
+      map.on("mouseenter", "hotspots", () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", "hotspots", () => (map.getCanvas().style.cursor = ""));
+
+      // Pin helper: click empty map to read coordinates.
+      map.on("click", (e) => {
+        if (!latest.current.pinMode) return;
+        if (map.queryRenderedFeatures(e.point, { layers: ["hotspots"] }).length) return;
+        const text = `${e.lngLat.lat.toFixed(6)}, ${e.lngLat.lng.toFixed(6)}`;
+        closePopup();
+        popupRef.current = new maplibregl.Popup({ maxWidth: "260px" })
+          .setLngLat(e.lngLat)
+          .setHTML(`<div class="text-xs"><b>lat, lon</b><br/><code>${text}</code><br/>
+            Paste into data/hotspots.csv and set geocode_source = manual.</div>`)
+          .addTo(map);
+      });
+
+      setLoaded(true);
+    });
+
+    return () => map.remove();
+  }, []);
+
+  // 2) Push data into the map when it changes.
+  useEffect(() => {
+    if (loaded && hotspots) (mapRef.current!.getSource("hotspots") as GeoJSONSource).setData(hotspots);
+  }, [loaded, hotspots]);
+
+  useEffect(() => {
+    if (loaded && rain) (mapRef.current!.getSource("rain") as GeoJSONSource).setData(rain);
+  }, [loaded, rain]);
+
+  useEffect(() => {
+    if (loaded) mapRef.current!.setPaintProperty("rain-grid", "circle-color", rainColor(rainWindow));
+  }, [loaded, rainWindow]);
+
+  // 3) Selected hotspot: highlight, fly there, open a popup.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!loaded || !map || !hotspots) return;
+    map.setFilter("hotspot-selected", ["==", ["get", "id"], selectedId ?? ""]);
+    closePopup();
+    const f = hotspots.features.find((h) => h.properties.id === selectedId);
+    if (!f) return;
+
+    const [lon, lat] = f.geometry.coordinates;
+    const p = f.properties;
+    const r = nearestRain(latest.current.rain, lon, lat);
+    const rainLine = r
+      ? `Rain, mean of models: next 24 h <b>${r.next_24h} mm</b> · past 72 h ${r.past_72h} mm`
+      : "No forecast loaded yet.";
+    const pinNote = p.verified
+      ? "Location checked by the team."
+      : `Location not yet checked. Geocoder matched: ${escapeHtml(p.geocode_label || "?")}`;
+
+    map.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 13), duration: 800 });
+    popupRef.current = new maplibregl.Popup({ maxWidth: "280px", offset: 12 })
+      .setLngLat([lon, lat])
+      .setHTML(
+        `<div class="text-sm leading-snug">
+          <div class="font-semibold">${escapeHtml(p.name)}</div>
+          <div class="text-xs text-slate-500 mb-1">${escapeHtml(p.id)} · ${escapeHtml(p.location_kind)}</div>
+          <div class="text-xs mb-1">${rainLine}</div>
+          <div class="text-xs text-slate-500">${pinNote}</div>
+          ${p.notes ? `<div class="text-xs text-slate-500 mt-1">${escapeHtml(p.notes)}</div>` : ""}
+        </div>`,
+      )
+      .addTo(map);
+    popupRef.current.on("close", () => {
+      if (!closingRef.current) latest.current.onSelect(null);
+    });
+  }, [loaded, hotspots, selectedId]);
+
+  return <div ref={containerRef} className="h-full w-full" />;
+}

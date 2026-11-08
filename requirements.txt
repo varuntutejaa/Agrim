@@ -1,0 +1,13 @@
+# Python 3.11. Install with:  pip install -r requirements.txt
+# Milestone 1 (pipeline + API)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pandas>=2.2
+numpy>=1.26
+requests>=2.32
+python-dotenv>=1.0
+
+# Added in later milestones (kept here so the plan is visible):
+# M2 network:  geopandas, rasterio, pysheds, networkx, shapely
+# M3 schedule: apscheduler
+# M6 model:    scikit-learn, xgboost, shap

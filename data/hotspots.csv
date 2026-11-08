@@ -1,0 +1,22 @@
+id,name,zone,mcg_severity_grade,lat,lon,verified,location_kind,geocode_status,geocode_source,geocode_label,notes
+H001,Narsinghpur (NH-48 service lane),,,,,,road,not_found,,,Service lane of NH-48 near Narsinghpur; pin the exact waterlogging stretch
+H002,Hero Honda Chowk,,,28.436014,77.010327,,junction,found,overpass,Hero Honda Chowk [OSM node 6088400755 crossing],
+H003,Subhash Chowk,,,28.427716,77.037107,,junction,found,nominatim,"Subhash Chowk, Shubhash Chowk Underpass, Sector 48, Gurgaon, Gurugram, Haryana, 122012, India [highway/bus_stop]",
+H004,Rajiv Chowk,,,28.447470,77.032837,,junction,found,nominatim,"Rajiv Chowk Underpass, Hans Enclave, Sector 11A, Gurgaon, Gurugram, Haryana, 110058, India [highway/primary]",
+H005,Sohna Road,,,28.391102,77.049003,,road,found,nominatim,"Sohna Road, Badshahpur, Gurgaon, Gurugram, Haryana, 122101, India [highway/trunk]",Long road; pin the exact waterlogging spot
+H006,Sector 56 Road,,,28.425323,77.098516,,road,found,nominatim,"Sector 56, Gurgaon, Gurugram, Haryana, 122011, India [boundary/administrative]",Point is the sector centre; pin the exact spot on the road
+H007,Golf Course Extension Road,,,28.407655,77.061598,,road,found,nominatim,"Golf Course Extension Road, The Close South, Sushant Lok III, Sector 50, Gurgaon, Gurugram, Haryana, 122018, India [highway/secondary]",Long road; pin the exact waterlogging spot
+H008,Udyog Vihar,,,28.491735,77.081972,,area,found,nominatim,"Udyog Vihar, Delhi-Gurugram Expressway, Sector 18, Gurgaon, Gurugram, Haryana, 122002, India [highway/bus_stop]",Large industrial area; pin the exact spot
+H009,Old Gurugram-Delhi road,,,28.491523,77.057749,,road,found,nominatim,"Old Delhi Gurgaon Road, Noble Enclave, Sector 22, Gurgaon, Gurugram, Haryana, 122007, India [highway/secondary]",Long road; pin the exact waterlogging spot
+H010,Dwarka Expressway service lane near Sector 104,,,28.479532,76.993720,,road,found,nominatim,"Sector 104, Gurgaon, Gurugram, Haryana, 122006, India [boundary/administrative]",Point is the Sector 104 centre; pin the service-lane spot
+H011,Mahavir Chowk,,,,,,junction,not_found,,,
+H012,Sector 15,,,28.461449,77.046010,,area,found,nominatim,"Sector 15-II, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
+H013,Sector 39,,,28.442367,77.050472,,area,found,nominatim,"Sector 39, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
+H014,Islampur,,,28.433446,77.037012,,area,found,nominatim,"Islampur, Sector 38, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
+H015,Civil Lines,,,28.461685,77.033902,,area,found,nominatim,"Civil Lines, Shivaji Nagar, Sector 11A, Gurgaon, Gurugram, Haryana, India [landuse/residential]",
+H016,Patel Nagar,,,28.465564,77.039294,,area,found,nominatim,"Patel Nagar, Mehrauli-Gurgaon Road, Sector 16, Gurgaon, Gurugram, Haryana, 122001, India [highway/bus_stop]",
+H017,Sector 5,,,28.480392,77.019095,,area,found,nominatim,"Sector 5, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
+H018,Rajendra Park,,,28.507165,77.023255,,area,found,nominatim,"Rajendra Park Road, Sector 110, Gurgaon, Gurugram, Haryana, 122017, India [highway/tertiary]",
+H019,Surat Nagar,,,28.483546,77.002372,,area,found,nominatim,"Surat Nagar Phase 1, Sector 104, Gurgaon, Gurugram, Haryana, India [place/neighbourhood]",
+H020,Wazirabad,,,28.433762,77.087757,,area,found,nominatim,"Wazirabad, Sector 52, Gurgaon, Gurugram, Haryana, 122011, India [place/locality]",
+H021,Sushant Lok,,,28.454569,77.082625,,area,found,nominatim,"C Block, Sushant Lok Phase 1, C Block Sushant Lok 1, Sector 43, Gurgaon, Gurugram, Haryana, India [boundary/administrative]",
