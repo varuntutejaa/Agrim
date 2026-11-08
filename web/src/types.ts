@@ -107,4 +107,56 @@ export type DrainageLayers = {
   drains: GeoJSON.FeatureCollection;
 };
 
-export type View = "rain" | "drainage";
+export type View = "risk" | "drainage";
+
+// --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
+
+export type RiskLevel = "red" | "amber" | "green";
+export type RiskWindowKey = "next_24h" | "day_2";
+
+export type WindowRisk = {
+  level: RiskLevel;
+  outlook: "likely" | "possible" | "unlikely";
+  confidence: "high" | "medium" | "low" | null;
+  high_impact: boolean;
+  score: number;
+  scores: { low: number; expected: number; high: number };
+  points: Record<string, number>;
+  drivers: string[];
+  action: string;
+  rain: {
+    rain_24h: number;
+    peak1h: number;
+    upstream_rain_24h: number;
+    rain_past_72h: number;
+    rain_24h_by_model: Record<string, number>;
+    wet_window: { start: string; end: string } | null;
+  };
+};
+
+export type HotspotRisk =
+  | {
+      id: string; name: string; zone: string; verified: boolean; scored: true;
+      critical_rank: number;
+      windows: Record<RiskWindowKey, WindowRisk>;
+      history: { reports: number; flooded: number; flood_rate: number | null };
+    }
+  | { id: string; name: string; zone: string; verified: boolean; scored: false; reason: string };
+
+export type RiskResult = {
+  meta: {
+    run_id: string;
+    generated_at: string;
+    forecast_fetched_at: string;
+    forecast_models: string[];
+    scored_with_model: string;
+    windows: Record<RiskWindowKey, { start: string; end: string }>;
+    method: string;
+    calibrated: boolean;
+    flood_reports: number;
+    note: string;
+    counts: Record<RiskWindowKey, Record<RiskLevel, number>>;
+    is_synthetic: boolean;
+  };
+  hotspots: HotspotRisk[];
+};

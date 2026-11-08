@@ -18,6 +18,7 @@ data/rain/
 data/dem/
 data/landcover/
 data/osm/
+data/forecast/
 *.tif
 
 # OS / editors

@@ -12,19 +12,34 @@ Endpoints so far:
   GET /network/catchments   upstream catchment polygon per hotspot
   GET /network/streams      DEM-derived flow lines (map context)
   GET /network/drains       OpenStreetMap drains and streams (map context)
+  GET /forecast/latest      Red/Amber/Green risk per hotspot, confidence, drivers, action
+  POST /forecast/run        re-score now (optionally fetching a fresh forecast)
 
-Later milestones add /forecast/latest, /forecast/run, /simulate, /override,
-/feedback, /orders/{zone}, /scorecard.
+Later milestones add /simulate, /override, /feedback, /orders/{zone}, /scorecard.
 """
 import os
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from api import data
+from api import data, scheduler
+from pipeline.config import TIMEZONE
 
-app = FastAPI(title="Agrim API", version="0.1.0",
+
+@asynccontextmanager
+async def lifespan(_app):
+    sched = scheduler.start()   # no-op unless SCHEDULER=on
+    yield
+    if sched:
+        sched.shutdown(wait=False)
+
+
+app = FastAPI(title="Agrim API", version="0.3.0", lifespan=lifespan,
               description="Flood early-warning for Gurugram's waterlogging hotspots.")
 
 # The React app runs on a different origin (Vite dev server / Vercel).
@@ -76,3 +91,40 @@ def network_streams():
 @app.get("/network/drains")
 def network_drains():
     return _network_or_404("drains")
+
+
+# --- Risk forecast ----------------------------------------------------------------
+
+FETCH_COOLDOWN = timedelta(minutes=10)   # don't let anyone hammer the free weather API
+_last_fetch: dict = {"at": None}
+
+
+@app.get("/forecast/latest")
+def forecast_latest():
+    result = scheduler.latest()
+    if result is None:
+        # First request on a fresh server: score whatever forecast is on disk.
+        result = scheduler.run_now(fetch=not data.FORECAST_CSV.exists(), reason="first request")
+    if result is None:
+        raise HTTPException(503, "No forecast yet; try again in a minute.")
+    return result
+
+
+class RunRequest(BaseModel):
+    fetch: bool = False   # also download a fresh forecast from Open-Meteo
+
+
+@app.post("/forecast/run")
+def forecast_run(body: RunRequest, x_agrim_token: str | None = Header(default=None)):
+    token = os.getenv("RUN_TOKEN", "")
+    if token and x_agrim_token != token:
+        raise HTTPException(401, "Missing or wrong x-agrim-token header")
+    now = datetime.now(ZoneInfo(TIMEZONE))
+    if body.fetch:
+        if _last_fetch["at"] and now - _last_fetch["at"] < FETCH_COOLDOWN:
+            raise HTTPException(429, "A fresh forecast was fetched less than 10 minutes ago.")
+        _last_fetch["at"] = now
+    result = scheduler.run_now(fetch=body.fetch, reason="manual")
+    if result is None:
+        raise HTTPException(409, "A forecast run is already in progress.")
+    return result["meta"]

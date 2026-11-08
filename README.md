@@ -16,12 +16,14 @@ SustainX 2026, Round 2 prototype.
 
 ```
 pipeline/   data fetching, (M2) drainage network, features
-model/      (M3) rule-based score, (M6) XGBoost + SHAP
+model/      rule-based score + rain climatology, (M6) XGBoost + SHAP
+tests/      checks for the scoring rules (python -m pytest -q)
 api/        FastAPI backend
 web/        React + Vite + TypeScript + MapLibre + Tailwind
 data/       hotspots_seed.csv, hotspots.csv, incidents.csv (committed)
             network/ (drainage network outputs the API serves, committed)
-            cache/, rain/, dem/, landcover/, osm/ (regenerated, gitignored)
+            model/rain_climatology.csv (each hotspot's rain record, committed)
+            cache/, rain/, dem/, landcover/, osm/, forecast/ (regenerated, gitignored)
             synthetic/ (illustrative data only)
 docs/       SOURCES.md, NETWORK.md, MODEL.md, SOP.md, DEMO_SCRIPT.md
 reference/  code kept from our earlier JalNetra project, for later milestones
@@ -64,10 +66,15 @@ python -m pipeline.fetch_landcover
 python -m pipeline.fetch_osm
 python -m pipeline.build_network       # re-run whenever hotspots.csv changes
 
-# 5. API on http://localhost:8000 (docs at /docs)
+# 5. Risk model: each hotspot's rain record, then score the forecast (docs/MODEL.md)
+python -m model.climatology            # after step 3; re-run once a year
+python -m model.run_forecast --fetch   # fresh forecast -> data/forecast/latest_risk.json
+
+# 6. API on http://localhost:8000 (docs at /docs)
+#    SCHEDULER=on in .env re-runs the forecast twice a day (hourly in storm mode)
 uvicorn api.main:app --reload --port 8000
 
-# 6. Web app on http://localhost:5173 (Rain / Drainage views)
+# 7. Web app on http://localhost:5173 (Flood risk / Drainage views)
 cd web && npm run dev
 ```
 
@@ -103,7 +110,7 @@ as useful as flood reports.
 
 1. ✅ Hotspots geocoded, rainfall fetch, map showing hotspots
 2. ✅ DEM drainage network graph + critical nodes view
-3. Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
+3. ✅ Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
 4. Simulator and past-event replay
 5. MCG dashboard: ranked list, orders, override log, feedback
 6. XGBoost + SHAP once `incidents.csv` has data; honest evaluation

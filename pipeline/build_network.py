@@ -22,6 +22,9 @@ Steps
 7. Terrain features per hotspot for the risk model (milestone 3):
    elevation, HAND (height above nearest drainage, idea from JalNetra's
    corridor.py), local relief, built-up share, catchment size.
+8. Which rain-forecast grid points to use for each hotspot: the nearest one
+   ("on the spot") and those inside its upstream area (own catchment plus
+   the catchments of upstream hotspots).
 
 Outputs
   data/dem/{dem_burned,fdir,acc,hand}.tif   rasters (gitignored)
@@ -47,6 +50,7 @@ from shapely.ops import unary_union
 from pyproj import Transformer
 
 from pipeline import raster_grid as g
+from pipeline.fetch_rain_forecast import build_grid
 from pipeline.config import (
     BUILTUP_TIF, DEM_BBOX, DEM_DIR, DEM_TIF, HOTSPOTS_CSV, NETWORK_DIR, TIMEZONE, WATERWAYS_GEOJSON,
 )
@@ -194,6 +198,25 @@ def round_geom(geom, nd=5):
     gj = json.loads(json.dumps(mapping(geom)))
     gj["coordinates"] = rnd(gj["coordinates"])
     return gj
+
+
+def rain_points_per_hotspot(nodes: dict) -> dict:
+    """For each hotspot: (nearest rain grid point, grid points inside its upstream area).
+
+    Upstream area = own catchment + catchments of all upstream hotspots. If no
+    grid point falls inside (small catchments), the nearest one is used.
+    """
+    grid_pts = build_grid()
+    cells = [(p["point_id"], *g.lonlat_to_rowcol(p["lon"], p["lat"])) for p in grid_pts]
+    out = {}
+    for hid, n in nodes.items():
+        area = n["catch"].copy()
+        for up in n["upstream"]:
+            area |= nodes[up]["catch"]
+        inside = [pid for pid, r, c in cells if 0 <= r < g.HEIGHT and 0 <= c < g.WIDTH and area[r, c]]
+        nearest = min(cells, key=lambda t: (t[1] - n["row"]) ** 2 + (t[2] - n["col"]) ** 2)[0]
+        out[hid] = (nearest, inside or [nearest])
+    return out
 
 
 def exit_side(row: int, col: int) -> str:
@@ -404,14 +427,19 @@ def write_outputs(nodes, edge_features, exit_sides, acc_km2, grid, fdir_r, drain
               for f in fc["features"]]
     (NETWORK_DIR / "drains.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": drains}))
 
+    # 8. Rain grid points per hotspot.
+    rain_points = rain_points_per_hotspot(nodes)
+
     # Static terrain features for the risk model.
     with (NETWORK_DIR / "hotspot_terrain.csv").open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["id", "name", "critical_rank", "n_downstream", "n_upstream", *feature_cols, "upstream_ids"])
+        w.writerow(["id", "name", "critical_rank", "n_downstream", "n_upstream", *feature_cols,
+                    "upstream_ids", "spot_grid_point", "upstream_grid_points"])
         for feat in node_features:
             p = feat["properties"]
+            spot, upstream = rain_points[p["id"]]
             w.writerow([p["id"], p["name"], p["critical_rank"], p["n_downstream"], p["n_upstream"],
-                        *[p[c] for c in feature_cols], " ".join(p["upstream"])])
+                        *[p[c] for c in feature_cols], " ".join(p["upstream"]), spot, " ".join(upstream)])
 
     # Summary.
     print(f"\nNetwork: {meta['n_hotspots']} hotspots, {meta['n_edges']} direct links. "

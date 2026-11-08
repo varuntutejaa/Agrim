@@ -31,6 +31,10 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 | 6 | Drains, streams, canals | OpenStreetMap via [Overpass API](https://overpass-api.de/) (`waterway=drain/canal/river/stream/ditch`) | © OpenStreetMap contributors, ODbL | `pipeline/fetch_osm.py` | Incomplete and mostly unnamed in Gurugram |
 | 7 | Built-up share | [ESA WorldCover](https://esa-worldcover.org/) 10 m v200 (2021), read from ESA's public AWS bucket (tile N27E075) | © ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021), CC BY 4.0 | `pipeline/fetch_landcover.py` | Class 50 = built-up |
 
+Derived from source 2 by `model/climatology.py`: each hotspot's ECMWF
+monsoon rain record 2018–2026 as percentiles (`data/model/rain_climatology.csv`),
+used to judge how unusual a forecast is. See [MODEL.md](MODEL.md).
+
 Derived from 5–7 by `pipeline/build_network.py`: flow directions, catchments,
 hotspot links, critical-node ranking and terrain features (`data/network/`).
 Method and limits: [NETWORK.md](NETWORK.md).

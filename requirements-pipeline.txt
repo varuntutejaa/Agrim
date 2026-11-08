@@ -8,3 +8,4 @@ pyproj>=3.6
 scipy>=1.11
 networkx>=3.2
 pysheds==0.5
+pytest>=8

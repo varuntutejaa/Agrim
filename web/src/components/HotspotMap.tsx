@@ -1,10 +1,13 @@
-// The map: hotspots on top of the rainfall grid (rain view) or the drainage
-// network (drainage view).
+// The map: hotspots coloured by flood risk, over an optional rain grid (risk
+// view) or the drainage network (drainage view).
 // MapLibre is imperative, so we create the map once and push data into it
 // whenever React props change.
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { type GeoJSONSource, type ExpressionSpecification } from "maplibre-gl";
-import type { DrainageLayers, HotspotCollection, NetworkNodeProps, RainCollection, RainWindow, View } from "../types";
+import type {
+  DrainageLayers, HotspotCollection, NetworkNodeProps, RainCollection, RainWindow, RiskResult, RiskWindowKey, View,
+} from "../types";
+import { LEVEL_COLOR, LEVEL_LABEL, confidenceLabel, wetWindowLabel } from "../risk";
 import { nearestRain } from "../geo";
 import { addDrainageLayers, highlightDrainage, setDrainageData, setDrainageVisible } from "./drainageLayers";
 
@@ -19,8 +22,11 @@ const rainColor = (window: RainWindow): ExpressionSpecification => [
 ];
 
 type Props = {
-  hotspots: HotspotCollection | null;
+  hotspots: HotspotCollection | null; // with a "level" property per feature (red/amber/green/none)
+  risk: RiskResult | null;
+  riskWindow: RiskWindowKey;
   rain: RainCollection | null;
+  showRain: boolean;
   rainWindow: RainWindow;
   view: View;
   drainage: DrainageLayers | null;
@@ -32,7 +38,8 @@ type Props = {
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage, selectedId, onSelect, pinMode }: Props) {
+export default function HotspotMap(props: Props) {
+  const { hotspots, risk, riskWindow, rain, showRain, rainWindow, view, drainage, selectedId, onSelect, pinMode } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -47,8 +54,8 @@ export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage,
   };
 
   // Event handlers are registered once, so they read the latest props through refs.
-  const latest = useRef({ onSelect, pinMode, rain, drainage });
-  latest.current = { onSelect, pinMode, rain, drainage };
+  const latest = useRef({ onSelect, pinMode, rain, drainage, risk, riskWindow });
+  latest.current = { onSelect, pinMode, rain, drainage, risk, riskWindow };
 
   // 1) Create the map and its layers once.
   useEffect(() => {
@@ -90,11 +97,14 @@ export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage,
         type: "circle",
         source: "hotspots",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 14, 9],
-          // Filled = a person has checked the pin; hollow = geocoder's guess, not yet checked.
-          "circle-color": ["case", ["get", "verified"], "#1e3a8a", "#ffffff"],
-          "circle-stroke-color": "#1e3a8a",
-          "circle-stroke-width": 2.5,
+          // Red spots drawn a little larger so they stand out on a phone.
+          "circle-radius": ["interpolate", ["linear"], ["zoom"],
+            10, ["match", ["get", "level"], "red", 7, 5],
+            14, ["match", ["get", "level"], "red", 12, 9]],
+          "circle-color": ["match", ["get", "level"],
+            "red", LEVEL_COLOR.red, "amber", LEVEL_COLOR.amber, "green", LEVEL_COLOR.green, LEVEL_COLOR.none],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
         },
       });
       map.addLayer({
@@ -162,9 +172,9 @@ export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage,
   useEffect(() => {
     if (!loaded) return;
     const map = mapRef.current!;
-    map.setLayoutProperty("rain-grid", "visibility", view === "rain" ? "visible" : "none");
+    map.setLayoutProperty("rain-grid", "visibility", view === "risk" && showRain ? "visible" : "none");
     setDrainageVisible(map, view === "drainage");
-  }, [loaded, view]);
+  }, [loaded, view, showRain]);
 
   // 3) Selected hotspot: highlight, fly there, open a popup.
   useEffect(() => {
@@ -193,6 +203,7 @@ export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage,
         `<div class="text-sm leading-snug">
           <div class="font-semibold">${escapeHtml(p.name)}</div>
           <div class="text-xs text-slate-500 mb-1">${escapeHtml(p.id)} · ${escapeHtml(p.location_kind)}</div>
+          ${riskLines(latest.current.risk, latest.current.riskWindow, p.id)}
           <div class="text-xs mb-1">${rainLine}</div>
           ${networkLines(latest.current.drainage, p.id)}
           <div class="text-xs text-slate-500">${pinNote}</div>
@@ -203,7 +214,7 @@ export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage,
     popupRef.current.on("close", () => {
       if (!closingRef.current) latest.current.onSelect(null);
     });
-  }, [loaded, hotspots, selectedId, drainage]);
+  }, [loaded, hotspots, selectedId, drainage, risk, riskWindow]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }
@@ -219,4 +230,17 @@ function networkLines(drainage: DrainageLayers | null, id: string): string {
   return `<div class="text-xs mb-1 border-t border-slate-200 pt-1">
     Drains ${n.max_drained_km2_150m} km² upstream · ${n.relief_1km_m < 0 ? `${Math.abs(n.relief_1km_m)} m below` : `${n.relief_1km_m} m above`} its surroundings
     · ${Math.round(n.builtup_share_500m * 100)}% built-up nearby<br/>${down}${up ? `<br/>${up}` : ""}</div>`;
+}
+
+// Risk summary for the popup.
+function riskLines(risk: RiskResult | null, win: RiskWindowKey, id: string): string {
+  const h = risk?.hotspots.find((x) => x.id === id);
+  if (!h || !h.scored) return "";
+  const w = h.windows[win];
+  const sub = [confidenceLabel(w), wetWindowLabel(w) && `wettest ${wetWindowLabel(w)}`].filter(Boolean).join(" · ");
+  return `<div class="text-xs mb-1">
+    <b style="color:${LEVEL_COLOR[w.level]}">${LEVEL_LABEL[w.level]}</b>${sub ? ` · ${escapeHtml(sub)}` : ""}
+    ${w.level !== "green" ? `<div class="font-medium">${escapeHtml(w.action)}</div>` : ""}
+    <ul class="list-disc pl-4 text-slate-600">${w.drivers.map((d) => `<li>${escapeHtml(d)}</li>`).join("")}</ul>
+  </div>`;
 }

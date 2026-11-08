@@ -8,5 +8,5 @@ numpy>=1.26,<2.4
 requests>=2.32
 python-dotenv>=1.0
 
-# M3 schedule: apscheduler
+apscheduler>=3.10,<4
 # M6 model:    scikit-learn, xgboost, shap

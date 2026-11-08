@@ -1,5 +1,5 @@
 // Thin wrappers around the Agrim API.
-import type { DrainageLayers, HotspotCollection, RainCollection } from "./types";
+import type { DrainageLayers, HotspotCollection, RainCollection, RiskResult } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -11,6 +11,7 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchHotspots = () => getJson<HotspotCollection>("/hotspots");
 export const fetchRain = () => getJson<RainCollection>("/rain/latest");
+export const fetchRisk = () => getJson<RiskResult>("/forecast/latest");
 
 // The drainage layers are ~0.6 MB, so they are fetched only when the drainage view is opened.
 export async function fetchDrainage(): Promise<DrainageLayers> {

@@ -1,14 +1,17 @@
-// Main page: hotspots on a map, with a rain view and a drainage-network view.
+// Main page: hotspots on a map, with a risk view (Red/Amber/Green) and a
+// drainage-network view.
 // Mobile: map on top, panel below. Desktop: panel on the left, map on the right.
-import { useEffect, useRef, useState } from "react";
-import { fetchDrainage, fetchHotspots, fetchRain } from "./api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchDrainage, fetchHotspots, fetchRain, fetchRisk } from "./api";
 import DrainagePanel from "./components/DrainagePanel";
 import HotspotMap from "./components/HotspotMap";
-import HotspotPanel from "./components/HotspotPanel";
-import type { DrainageLayers, HotspotCollection, RainCollection, RainWindow, View } from "./types";
+import RiskPanel from "./components/RiskPanel";
+import type {
+  DrainageLayers, HotspotCollection, RainCollection, RainWindow, RiskResult, RiskWindowKey, View,
+} from "./types";
 
 const VIEWS: { key: View; label: string }[] = [
-  { key: "rain", label: "Rain" },
+  { key: "risk", label: "Flood risk" },
   { key: "drainage", label: "Drainage" },
 ];
 
@@ -21,14 +24,32 @@ export default function App() {
   const [rainWindow, setRainWindow] = useState<RainWindow>("next_24h");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>("rain");
+  const [view, setView] = useState<View>("risk");
+  const [risk, setRisk] = useState<RiskResult | null>(null);
+  const [riskWindow, setRiskWindow] = useState<RiskWindowKey>("next_24h");
+  const [showRain, setShowRain] = useState(false);
   const [drainage, setDrainage] = useState<DrainageLayers | null>(null);
   const [drainageLoading, setDrainageLoading] = useState(false);
 
   useEffect(() => {
     fetchHotspots().then(setHotspots).catch((e) => setError(String(e)));
     fetchRain().then(setRain).catch((e) => setError(String(e)));
+    fetchRisk().then(setRisk).catch((e) => setError(String(e)));
   }, []);
+
+  // Copy each hotspot's risk level (for the chosen window) onto the map features.
+  const mapHotspots = useMemo<HotspotCollection | null>(() => {
+    if (!hotspots) return null;
+    const byId = new Map(risk?.hotspots.map((h) => [h.id, h]) ?? []);
+    return {
+      ...hotspots,
+      features: hotspots.features.map((f) => {
+        const r = byId.get(f.properties.id);
+        const level = r?.scored ? r.windows[riskWindow].level : "none";
+        return { ...f, properties: { ...f.properties, level } };
+      }),
+    };
+  }, [hotspots, risk, riskWindow]);
 
   // Drainage layers are only downloaded the first time that view is opened
   // (once: a failure shows the error banner instead of retrying in a loop).
@@ -80,8 +101,11 @@ export default function App() {
       <main className="flex min-h-0 flex-1 flex-col md:flex-row-reverse">
         <div className="h-[55vh] shrink-0 md:h-auto md:flex-1">
           <HotspotMap
-            hotspots={hotspots}
+            hotspots={mapHotspots}
+            risk={risk}
+            riskWindow={riskWindow}
             rain={rain}
+            showRain={showRain}
             rainWindow={rainWindow}
             view={view}
             drainage={drainage}
@@ -91,10 +115,14 @@ export default function App() {
           />
         </div>
         <aside className="min-h-0 flex-1 overflow-y-auto border-slate-200 bg-slate-50 md:w-96 md:flex-none md:border-r">
-          {view === "rain" ? (
-            <HotspotPanel
-              hotspots={hotspots}
+          {view === "risk" ? (
+            <RiskPanel
+              risk={risk}
+              riskWindow={riskWindow}
+              onRiskWindow={setRiskWindow}
               rain={rain}
+              showRain={showRain}
+              onShowRain={setShowRain}
               rainWindow={rainWindow}
               onRainWindow={setRainWindow}
               selectedId={selectedId}
