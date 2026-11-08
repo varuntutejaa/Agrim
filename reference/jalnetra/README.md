@@ -11,8 +11,10 @@ wired in as `pipeline/fetch_dem.py`, `pipeline/raster_grid.py`,
 `pipeline/build_network.py` and `pipeline/fetch_landcover.py`. `monitor.ts`
 is wired in as `model/climatology.py` + `model/rules.py` (judge each spot
 against its own record) and `model/run_forecast.py` + `api/scheduler.py`
-(precomputed results, scheduled runs). The rest are waiting for their
-milestones.
+(precomputed results, scheduled runs). `demoScenarios.ts` is wired in as
+`model/replay.py` + `model/simulate.py` (fixed, versioned replay list, and the
+EXERCISE / अभ्यास label on every simulated result). The rest are waiting
+for their milestones.
 
 **No JalNetra data is reused.** Its rivers, villages, GloFAS series and
 model weights are for a different region, and copying them would break the
@@ -24,7 +26,7 @@ no-fabricated-data rule.
 | ✅ `corridor.py` | **HAND** (height above nearest drainage): elevation minus the elevation of the nearest channel cell, plus distance to channel | Feature "elevation relative to surroundings" for each hotspot, using OSM drains + DEM flow lines as the channels | 2–3 |
 | ✅ `lc.py` | **ESA WorldCover** (and JRC surface-water occurrence) via Microsoft Planetary Computer STAC, anonymous access | Built-up share around each hotspot. Reads ESA's own AWS bucket instead of Planetary Computer (one less dependency) | 2–3 |
 | ✅ `monitor.ts` | Classifies each point against **its own history** (p50 / p90 / max → Normal / Rising / Warning / Danger). Writes a **snapshot file** the website reads, so visitors never wait on or rate-limit the weather API | Rule-based thresholds per hotspot from its own rainfall history; serve precomputed `/forecast/latest` so the public map loads in under 5 s | 3 |
-| `demoScenarios.ts` | Fixed, versioned replay scenarios with a simulated clock, and an "EXERCISE / अभ्यास" banner in Hindi and English | Past-event replay in the simulator (31 Jul 2025, 1 Sep 2025), clearly marked as replay | 4 |
+| ✅ `demoScenarios.ts` | Fixed, versioned replay scenarios with a simulated clock, and an "EXERCISE / अभ्यास" banner in Hindi and English | Past-event replay in the simulator (31 Jul 2025, 1 Sep 2025), clearly marked as replay | 4 |
 | `escalation.mjs`, `ESCALATION.md` | Human-approved, two-stage alerting. Safety rules: phone numbers only from server env (never from a request), masked in logs, single-use decisions that expire, nothing sent without approval. Also Hindi + English message templates | MCG officer approval/override before alerts; Hindi alert text; notifier safety rules | 5, 7 |
 | `telephony.ts` | Pluggable SMS/voice dispatch: Twilio SMS, Twilio voice with Hindi TwiML (`Polly.Aditi`), status `sent / failed / not_configured / unknown` (never retry an "unknown") | The pluggable notifier (console by default, Twilio sandbox optional) | 7 |
 | `ndrfReport.ts` | One-click PDF advisory (jsPDF). Every number is passed in, missing values show as n/a, and planning assumptions are listed and labelled in the document | Optional printable "zone orders" PDF for MCG (pumps and crews per zone), with assumptions stated | 5 (optional) |

@@ -434,12 +434,13 @@ def write_outputs(nodes, edge_features, exit_sides, acc_km2, grid, fdir_r, drain
     with (NETWORK_DIR / "hotspot_terrain.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["id", "name", "critical_rank", "n_downstream", "n_upstream", *feature_cols,
-                    "upstream_ids", "spot_grid_point", "upstream_grid_points"])
+                    "upstream_ids", "downstream_ids", "spot_grid_point", "upstream_grid_points"])
         for feat in node_features:
             p = feat["properties"]
             spot, upstream = rain_points[p["id"]]
             w.writerow([p["id"], p["name"], p["critical_rank"], p["n_downstream"], p["n_upstream"],
-                        *[p[c] for c in feature_cols], " ".join(p["upstream"]), spot, " ".join(upstream)])
+                        *[p[c] for c in feature_cols], " ".join(p["upstream"]), " ".join(p["downstream_direct"]),
+                        spot, " ".join(upstream)])
 
     # Summary.
     print(f"\nNetwork: {meta['n_hotspots']} hotspots, {meta['n_edges']} direct links. "

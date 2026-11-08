@@ -107,7 +107,7 @@ export type DrainageLayers = {
   drains: GeoJSON.FeatureCollection;
 };
 
-export type View = "risk" | "drainage";
+export type View = "forecast" | "simulator" | "drainage";
 
 // --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
 
@@ -138,6 +138,7 @@ export type HotspotRisk =
   | {
       id: string; name: string; zone: string; verified: boolean; scored: true;
       critical_rank: number;
+      downstream: string[];
       windows: Record<RiskWindowKey, WindowRisk>;
       history: { reports: number; flooded: number; flood_rate: number | null };
     }
@@ -156,6 +157,45 @@ export type RiskResult = {
     flood_reports: number;
     note: string;
     counts: Record<RiskWindowKey, Record<RiskLevel, number>>;
+    is_synthetic: boolean;
+  };
+  hotspots: HotspotRisk[];
+};
+
+// --- Simulator (milestone 4, see model/simulate.py) ---
+
+export type ReplayEvent = {
+  id: string;
+  date: string;
+  title: string;
+  source: "model record" | "team";
+  note: string;
+  city_mean_mm: number;
+  max_mm: number;
+  peak1h_mm: number;
+};
+
+export type StormParams = {
+  rain_24h: number;
+  peak1h: number;
+  past_72h: number;
+  centre: [number, number] | null; // [lon, lat]; null = even rain across the city
+  radius_km: number;
+};
+
+export type SimRequest = ({ mode: "storm" } & StormParams) | { mode: "replay"; date: string };
+
+export type SimResult = {
+  meta: {
+    is_simulation: true;
+    exercise_label: string;
+    note: string;
+    note_hi: string;
+    mode: "storm" | "replay";
+    params: Record<string, unknown>;
+    event?: ReplayEvent | null;
+    rarity?: { rain_24h: string; peak1h: string };
+    counts: Record<"next_24h", Record<RiskLevel, number>>;
     is_synthetic: boolean;
   };
   hotspots: HotspotRisk[];

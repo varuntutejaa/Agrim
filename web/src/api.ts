@@ -1,5 +1,5 @@
 // Thin wrappers around the Agrim API.
-import type { DrainageLayers, HotspotCollection, RainCollection, RiskResult } from "./types";
+import type { DrainageLayers, HotspotCollection, RainCollection, ReplayEvent, RiskResult, SimRequest, SimResult } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -22,4 +22,21 @@ export async function fetchDrainage(): Promise<DrainageLayers> {
     getJson<GeoJSON.FeatureCollection>("/network/drains"),
   ]);
   return { network, catchments, streams, drains };
+}
+
+// --- Simulator ---
+
+export const fetchReplayEvents = () =>
+  getJson<{ version: string; events: ReplayEvent[] }>("/simulate/events");
+export const fetchReplayDates = () => getJson<{ dates: string[] }>("/simulate/dates");
+
+export async function simulate(req: SimRequest, signal?: AbortSignal): Promise<SimResult> {
+  const res = await fetch(`${API_URL}/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+    signal,
+  });
+  if (!res.ok) throw new Error(`simulate failed: ${res.status}`);
+  return res.json() as Promise<SimResult>;
 }

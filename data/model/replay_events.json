@@ -1,0 +1,56 @@
+{
+  "version": "replay-v1",
+  "model": "ecmwf_ifs",
+  "events": [
+    {
+      "id": "record-1",
+      "date": "2021-07-19",
+      "title": "19 Jul 2021",
+      "source": "model record",
+      "note": "#1 wettest day in the ECMWF record, 2018\u20132026 monsoons.",
+      "city_mean_mm": 95.2,
+      "max_mm": 118.4,
+      "peak1h_mm": 16.9
+    },
+    {
+      "id": "record-3",
+      "date": "2024-07-31",
+      "title": "31 Jul 2024",
+      "source": "model record",
+      "note": "#3 wettest day in the ECMWF record, 2018\u20132026 monsoons.",
+      "city_mean_mm": 61.5,
+      "max_mm": 68.6,
+      "peak1h_mm": 29.2
+    },
+    {
+      "id": "record-2",
+      "date": "2024-09-12",
+      "title": "12 Sep 2024",
+      "source": "model record",
+      "note": "#2 wettest day in the ECMWF record, 2018\u20132026 monsoons.",
+      "city_mean_mm": 76.8,
+      "max_mm": 83.2,
+      "peak1h_mm": 17.5
+    },
+    {
+      "id": "team-2025-07-31",
+      "date": "2025-07-31",
+      "title": "31 Jul 2025",
+      "source": "team",
+      "note": "Date named by the team as a waterlogging day. Flood reports still to be added to incidents.csv.",
+      "city_mean_mm": 27.4,
+      "max_mm": 29.5,
+      "peak1h_mm": 5.8
+    },
+    {
+      "id": "team-2025-09-01",
+      "date": "2025-09-01",
+      "title": "1 Sep 2025",
+      "source": "team",
+      "note": "Date named by the team as a waterlogging day. Flood reports still to be added to incidents.csv.",
+      "city_mean_mm": 36.5,
+      "max_mm": 41.8,
+      "peak1h_mm": 10.5
+    }
+  ]
+}

@@ -34,6 +34,12 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 Derived from source 2 by `model/climatology.py`: each hotspot's ECMWF
 monsoon rain record 2018–2026 as percentiles (`data/model/rain_climatology.csv`),
 used to judge how unusual a forecast is. See [MODEL.md](MODEL.md).
+Also derived from source 2 by `model/replay.py`: per-day rain at each hotspot
+for the simulator's replays (`data/model/replay_days.csv`). This is model rain,
+labelled as such in the UI, not rain-gauge readings.
+
+Fonts (self-hosted via npm @fontsource): Newsreader and IBM Plex Sans/Mono,
+both under the SIL Open Font License.
 
 Derived from 5–7 by `pipeline/build_network.py`: flow directions, catchments,
 hotspot links, critical-node ranking and terrain features (`data/network/`).

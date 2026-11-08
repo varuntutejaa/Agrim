@@ -44,6 +44,8 @@ def load_static() -> tuple[dict, dict, dict]:
             t[k] = float(t[k])
         t["n_downstream"] = int(t["n_downstream"])
         t["upstream_grid_points"] = t["upstream_grid_points"].split()
+        t["upstream_ids"] = t["upstream_ids"].split()
+        t["downstream_ids"] = t["downstream_ids"].split()
     clim = {k: {c: (float(v) if c.startswith(("rain", "peak")) else v) for c, v in row.items()}
             for k, row in _csv_rows(CLIMATOLOGY_CSV).items()}
     return terrain, clim, _csv_rows(HOTSPOTS_CSV)
@@ -96,6 +98,46 @@ def rain_inputs(fc: pd.DataFrame, t: dict, start, end) -> dict:
     }
 
 
+LEVEL_ORDER = {"red": 0, "amber": 1, "green": 2}
+
+
+def score_all(rain_for, window_names, terrain, clim, hotspots, history):
+    """Score every hotspot for each window. Shared by the live forecast and the simulator.
+
+    rain_for(hotspot_id, terrain_row, window_name) -> rain dict for rules.assess.
+    Returns (hotspot entries sorted by risk, counts per window and level).
+    """
+    results = []
+    for hid, h in hotspots.items():
+        base = {"id": hid, "name": h["name"], "zone": h["zone"], "verified": h["verified"].lower() == "yes"}
+        if hid not in terrain or hid not in clim:
+            results.append({**base, "scored": False, "reason": "No location yet, so no terrain or rain data"})
+            continue
+        t = terrain[hid]
+        windows = {}
+        for wname in window_names:
+            rain = rain_for(hid, t, wname)
+            windows[wname] = {**rules.assess(rain, t, clim[hid], h), "rain": rain}
+        results.append({
+            **base, "scored": True,
+            "critical_rank": int(t["critical_rank"]),
+            "downstream": t["downstream_ids"],
+            "windows": windows,
+            "history": history.get(hid, {"reports": 0, "flooded": 0, "flood_rate": None}),
+            # Placeholders until MCG / sensor data exists.
+            "drain_silt_status": None,
+            "drain_level_m": None,
+        })
+
+    first = window_names[0]
+    results.sort(key=lambda r: (not r["scored"],
+                                LEVEL_ORDER[r["windows"][first]["level"]] if r["scored"] else 3,
+                                -r["windows"][first]["score"] if r["scored"] else 0))
+    counts = {w: {lvl: sum(1 for r in results if r["scored"] and r["windows"][w]["level"] == lvl)
+                  for lvl in LEVEL_ORDER} for w in window_names}
+    return results, counts
+
+
 def run(fetch: bool = False) -> dict:
     """Score every hotspot for both windows and write latest_risk.json."""
     if fetch:
@@ -112,34 +154,11 @@ def run(fetch: bool = False) -> dict:
     now = datetime.now(ZoneInfo(TIMEZONE))
     t0 = now.replace(tzinfo=None, minute=0, second=0, microsecond=0)
 
-    results = []
-    for hid, h in hotspots.items():
-        base = {"id": hid, "name": h["name"], "zone": h["zone"], "verified": h["verified"].lower() == "yes"}
-        if hid not in terrain or hid not in clim:
-            results.append({**base, "scored": False, "reason": "No location yet, so no terrain or rain data"})
-            continue
-        t = terrain[hid]
-        windows = {}
-        for wname, (h0, h1) in WINDOWS.items():
-            rain = rain_inputs(fc, t, t0 + timedelta(hours=h0), t0 + timedelta(hours=h1))
-            windows[wname] = {**rules.assess(rain, t, clim[hid], h), "rain": rain}
-        results.append({
-            **base, "scored": True,
-            "critical_rank": int(t["critical_rank"]),
-            "windows": windows,
-            "history": history.get(hid, {"reports": 0, "flooded": 0, "flood_rate": None}),
-            # Placeholders until MCG / sensor data exists.
-            "drain_silt_status": None,
-            "drain_level_m": None,
-        })
+    def rain_for(hid, t, wname):
+        h0, h1 = WINDOWS[wname]
+        return rain_inputs(fc, t, t0 + timedelta(hours=h0), t0 + timedelta(hours=h1))
 
-    order = {"red": 0, "amber": 1, "green": 2}
-    results.sort(key=lambda r: (not r["scored"],
-                                order[r["windows"]["next_24h"]["level"]] if r["scored"] else 3,
-                                -r["windows"]["next_24h"]["score"] if r["scored"] else 0))
-
-    counts = {w: {lvl: sum(1 for r in results if r["scored"] and r["windows"][w]["level"] == lvl) for lvl in order}
-              for w in WINDOWS}
+    results, counts = score_all(rain_for, list(WINDOWS), terrain, clim, hotspots, history)
     out = {
         "meta": {
             "run_id": now.strftime("%Y%m%dT%H%M"),

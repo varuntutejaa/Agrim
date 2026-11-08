@@ -15,7 +15,11 @@ Endpoints so far:
   GET /forecast/latest      Red/Amber/Green risk per hotspot, confidence, drivers, action
   POST /forecast/run        re-score now (optionally fetching a fresh forecast)
 
-Later milestones add /simulate, /override, /feedback, /orders/{zone}, /scorecard.
+  POST /simulate            run the rules on chosen rain (storm) or a past day (replay)
+  GET  /simulate/events     curated past days for one-tap replay
+  GET  /simulate/dates      every monsoon day on record with rain
+
+Later milestones add /override, /feedback, /orders/{zone}, /scorecard.
 """
 import os
 from contextlib import asynccontextmanager
@@ -23,7 +27,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -128,3 +132,43 @@ def forecast_run(body: RunRequest, x_agrim_token: str | None = Header(default=No
     if result is None:
         raise HTTPException(409, "A forecast run is already in progress.")
     return result["meta"]
+
+
+# --- Simulator (milestone 4) ---------------------------------------------------------
+
+class SimulateRequest(BaseModel):
+    mode: str = Field("storm", pattern="^(storm|replay)$")
+    # storm mode
+    rain_24h: float = 80
+    peak1h: float = 20
+    past_72h: float = 20
+    centre: list[float] | None = Field(None, min_length=2, max_length=2, description="[lon, lat]; omit for even rain")
+    radius_km: float = 6
+    # replay mode
+    date: str | None = None
+
+
+@app.post("/simulate")
+def simulate(body: SimulateRequest):
+    from model import simulate as sim   # imported lazily: loads the replay table
+    if body.mode == "replay":
+        if not body.date:
+            raise HTTPException(422, "date is required for replay")
+        try:
+            return sim.run_replay(body.date)
+        except ValueError as err:
+            raise HTTPException(404, str(err))
+    centre = tuple(body.centre) if body.centre else None
+    return sim.run_storm(body.rain_24h, body.peak1h, body.past_72h, centre, body.radius_km)
+
+
+@app.get("/simulate/events")
+def simulate_events():
+    from model import simulate as sim
+    return sim.replay_events()
+
+
+@app.get("/simulate/dates")
+def simulate_dates():
+    from model import simulate as sim
+    return {"dates": sim.replay_dates()}

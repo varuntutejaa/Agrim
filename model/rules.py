@@ -84,8 +84,10 @@ def exceedance(value: float, clim: dict, var: str) -> float:
 def how_often(e: float) -> str:
     """Plain wording for a rarity level, e.g. 'about 1 day a monsoon'."""
     days = (10 ** -e) * MONSOON_DAYS
+    if e <= 0:
+        return "an ordinary monsoon day"
     if e >= _E[-1]:
-        return "more than any monsoon hour here since 2018"
+        return "beyond anything on record here since 2018"
     if days >= 1.5:
         return f"about {days:.0f} days a monsoon"
     if days >= 0.75:
@@ -171,9 +173,9 @@ def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
 def drivers(pts: dict, e: dict, rain: dict, t: dict) -> list[str]:
     """The three biggest point contributors, in plain words."""
     text = {
-        "rain_24h": lambda: f"{rain['rain_24h']:.0f} mm of rain forecast in 24 h ({how_often(e['rain_24h'])} here)",
+        "rain_24h": lambda: f"{rain['rain_24h']:.0f} mm of rain in 24 h ({how_often(e['rain_24h'])} here)",
         "peak1h": lambda: f"Heaviest hour {rain['peak1h']:.0f} mm ({how_often(e['peak1h'])} here)",
-        "upstream_rain": lambda: f"{rain['upstream_rain_24h']:.0f} mm forecast over the area that drains here",
+        "upstream_rain": lambda: f"{rain['upstream_rain_24h']:.0f} mm over the area that drains here",
         "wet_ground": lambda: f"Ground already wet: {rain['rain_past_72h']:.0f} mm in the last 3 days",
         "low_spot": lambda: f"Sits {abs(t['relief_1km_m']):.1f} m below its surroundings",
         "drain_level": lambda: ("Level with the nearest drain line" if t["hand_m"] < 0.1

@@ -115,6 +115,28 @@ anecdote.
 hour. Results are precomputed into `data/forecast/latest_risk.json`, so the
 map never waits on the weather service.
 
+## Simulator (milestone 4)
+
+`model/simulate.py`, served by `POST /simulate`, runs **the same rules** on
+rain the presenter chooses. Results are always labelled **EXERCISE / अभ्यास**
+and flagged `is_synthetic: true`.
+
+- **Design a storm:** 24 h rain, heaviest hour and rain in the 3 days
+  before, either across the whole city or as a local storm. A local storm's
+  rain fades with distance from the centre: × exp(−½ (d / radius)²), so it's
+  61% at one radius and 14% at two. Upstream rain is the average of that
+  factor over each hotspot's upstream grid points. The heaviest hour is
+  capped at the 24 h total.
+- **Replay a day:** any monsoon day 2018–2026 with rain, from
+  `data/model/replay_days.csv` (ECMWF, IST calendar day). Upstream rain is
+  the average over the hotspot and its upstream hotspots. Curated days live
+  in `data/model/replay_events.json` (`python -m model.replay`). Each is
+  marked either **model record** (wettest days, derived from the data) or
+  **team** (dates the team picked; add sourced flood reports before
+  presenting one as a confirmed flood).
+- **Quick-storm names** ("once a monsoon", "once a decade") come from
+  the same rarity scale as the score, measured at a typical hotspot.
+
 ## Tier B (milestone 6)
 
 XGBoost on incidents.csv, with SHAP for the top three drivers per
