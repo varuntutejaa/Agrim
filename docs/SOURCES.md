@@ -23,14 +23,24 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 | MCG's full list of 159 hotspots | `data/hotspots.csv` (later) | **TODO:** MCG document / RTI reply, with link and date |
 | Flood incidents (training labels) | `data/incidents.csv` | Each row carries its own `source_url` (news report etc.). Never invented. Add rows with `python -m pipeline.add_incident` |
 
+## In use (milestone 2)
+
+| # | Data | Source | Licence / terms | Fetched by | Notes |
+|---|------|--------|-----------------|-----------|-------|
+| 5 | Ground height, 30 m | [Copernicus DEM GLO-30](https://registry.opendata.aws/copernicus-dem/), read from the public AWS bucket `copernicus-dem-30m` (tiles N28 E076, N28 E077) | © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018, provided under COPERNICUS by the EU and ESA; free licence | `pipeline/fetch_dem.py` | Surface model (includes roofs/trees); see docs/NETWORK.md |
+| 6 | Drains, streams, canals | OpenStreetMap via [Overpass API](https://overpass-api.de/) (`waterway=drain/canal/river/stream/ditch`) | © OpenStreetMap contributors, ODbL | `pipeline/fetch_osm.py` | Incomplete and mostly unnamed in Gurugram |
+| 7 | Built-up share | [ESA WorldCover](https://esa-worldcover.org/) 10 m v200 (2021), read from ESA's public AWS bucket (tile N27E075) | © ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021), CC BY 4.0 | `pipeline/fetch_landcover.py` | Class 50 = built-up |
+
+Derived from 5–7 by `pipeline/build_network.py`: flow directions, catchments,
+hotspot links, critical-node ranking and terrain features (`data/network/`).
+Method and limits: [NETWORK.md](NETWORK.md).
+
 ## Planned
 
 | Milestone | Data | Source |
 |-----------|------|--------|
-| 2 | Elevation, 30 m | [Copernicus DEM GLO-30](https://registry.opendata.aws/copernicus-dem/) from the public AWS bucket `copernicus-dem-30m` (no account needed; © DLR/Airbus, free licence). Fallback: NASA SRTM GL1 via [OpenTopography](https://opentopography.org/) (free API key) |
-| 2 | Drains, canals, roads | OpenStreetMap via Overpass (`waterway=drain/canal`, `highway=*`) |
-| 2/3 | Land cover, 10 m (built-up share) | [ESA WorldCover](https://esa-worldcover.org/) v200 (2021), CC BY 4.0, read via [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/dataset/esa-worldcover) (anonymous access) |
 | 3+ | Ground-truth rainfall (optional cross-check) | IMD gridded rainfall (0.25°, daily) from [IMD Pune](https://www.imdpune.gov.in/); IMD AWS station data if obtainable |
+| any | MCG stormwater drain map | MCG (to request); would be burned into the DEM like the OSM drains |
 
 ## Resolution caveat (read before pitching "rain per hotspot")
 

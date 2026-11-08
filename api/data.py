@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from pipeline.config import HOTSPOTS_CSV, RAIN_DIR, TIMEZONE
+from pipeline.config import HOTSPOTS_CSV, NETWORK_DIR, RAIN_DIR, TIMEZONE
 
 FORECAST_CSV = RAIN_DIR / "forecast" / "latest.csv"
 FORECAST_META = RAIN_DIR / "forecast" / "latest_meta.json"
@@ -25,6 +25,31 @@ def _read_csv_cached(path, **kwargs) -> pd.DataFrame:
     df = pd.read_csv(path, **kwargs)
     _cache[path] = (mtime, df)
     return df
+
+
+def _read_json_cached(path):
+    mtime = path.stat().st_mtime
+    hit = _cache.get(path)
+    if hit and hit[0] == mtime:
+        return hit[1]
+    data = json.loads(path.read_text())
+    _cache[path] = (mtime, data)
+    return data
+
+
+# Files written by pipeline/build_network.py (small, committed to the repo).
+NETWORK_FILES = {
+    "network": NETWORK_DIR / "network.json",          # {meta, nodes, edges}
+    "catchments": NETWORK_DIR / "catchments.geojson",
+    "streams": NETWORK_DIR / "streams.geojson",
+    "drains": NETWORK_DIR / "drains.geojson",
+}
+
+
+def network_file(name: str):
+    """Contents of one network file, or None if the network hasn't been built yet."""
+    path = NETWORK_FILES[name]
+    return _read_json_cached(path) if path.exists() else None
 
 
 def hotspots_geojson() -> dict:

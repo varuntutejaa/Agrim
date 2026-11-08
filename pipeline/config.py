@@ -55,6 +55,27 @@ FORECAST_MODELS = ["ecmwf_ifs", "gfs_seamless", "icon_seamless"]
 HISTORY_MODELS = ["ecmwf_ifs", "era5"]
 
 
+# --- Milestone 2: terrain and drainage network --------------------------------
+
+# Larger box for terrain work. Water reaching the city comes from the
+# Aravalli ridge to the south and south-east, and leaves north toward the
+# Najafgarh drain, so the DEM must extend well past the city box.
+DEM_BBOX = (28.28, 76.85, 28.62, 77.30)   # (south, west, north, east)
+
+# Work in metres: UTM zone 43N covers 72-78 E. 30 m matches the DEM.
+UTM_CRS = "EPSG:32643"
+DEM_RES_M = 30
+
+DEM_DIR = DATA_DIR / "dem"            # rasters (gitignored, regenerated)
+LANDCOVER_DIR = DATA_DIR / "landcover"
+OSM_DIR = DATA_DIR / "osm"            # raw OSM downloads (gitignored)
+NETWORK_DIR = DATA_DIR / "network"    # small derived files the API serves (committed)
+
+DEM_TIF = DEM_DIR / "dem_utm30.tif"
+BUILTUP_TIF = LANDCOVER_DIR / "builtup_frac_utm30.tif"
+WATERWAYS_GEOJSON = OSM_DIR / "waterways.geojson"
+
+
 def in_bbox(lat: float, lon: float, bbox=BBOX) -> bool:
     """True if the point lies inside the study-area box."""
     south, west, north, east = bbox

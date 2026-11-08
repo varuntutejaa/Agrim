@@ -1,0 +1,20 @@
+id,name,critical_rank,n_downstream,n_upstream,elevation_m,hand_m,relief_1km_m,builtup_share_500m,builtup_share_catchment,catchment_km2,max_drained_km2_150m,catchment_truncated,on_flow_line,snap_dist_m,upstream_ids
+H021,Sushant Lok,1,1,0,244.4,0.0,-0.84,0.941,0.675,1.143,1.24,False,True,30,
+H012,Sector 15,2,1,0,228.7,0.97,0.07,0.858,1.0,0.017,0.08,False,False,0,
+H006,Sector 56 Road,3,1,0,245.7,0.0,1.33,0.554,0.303,0.004,1.65,False,True,0,
+H004,Rajiv Chowk,4,1,0,226.3,1.6,-0.52,0.746,1.0,0.002,0.1,False,False,0,
+H015,Civil Lines,5,1,0,228.0,4.75,1.16,0.829,0.532,0.002,0.08,False,False,0,
+H020,Wazirabad,6,1,0,243.6,9.8,1.41,0.969,1.0,0.002,0.08,False,False,0,
+H013,Sector 39,7,1,0,237.0,7.14,5.26,0.983,1.0,0.001,0.03,False,False,0,
+H014,Islampur,8,1,0,231.0,7.39,3.08,0.971,1.0,0.001,0.07,False,False,0,
+H007,Golf Course Extension Road,9,0,1,231.1,0.0,0.35,0.442,0.201,138.771,145.04,False,True,67,H006
+H003,Subhash Chowk,10,0,1,225.8,0.0,-1.22,0.828,0.619,21.866,21.91,False,True,0,H020
+H002,Hero Honda Chowk,11,0,5,221.7,0.0,-2.38,0.916,0.78,16.979,17.26,False,True,60,H004 H013 H014 H015 H021
+H019,Surat Nagar,12,0,0,213.4,0.0,-2.68,0.877,0.958,1.19,1.34,False,True,0,
+H016,Patel Nagar,13,0,1,224.7,0.69,-1.3,0.848,0.785,0.473,15.91,False,True,108,H012
+H017,Sector 5,14,0,0,218.7,-0.4,-1.79,0.896,0.953,0.403,0.45,False,True,134,
+H010,Dwarka Expressway service lane near Sector 104,15,0,0,213.4,0.51,-1.26,0.611,0.516,0.266,0.72,False,True,0,
+H009,Old Gurugram-Delhi road,16,0,0,226.9,4.75,-0.69,0.766,0.829,0.224,0.26,False,True,67,
+H008,Udyog Vihar,17,0,0,237.6,-0.46,-1.85,0.843,0.862,0.216,0.25,False,True,108,
+H018,Rajendra Park,18,0,0,214.1,1.04,-2.37,0.98,0.957,0.151,0.18,False,True,90,
+H005,Sohna Road,19,0,0,231.7,6.21,0.98,0.936,1.0,0.001,0.04,False,False,0,

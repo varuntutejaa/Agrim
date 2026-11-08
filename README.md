@@ -20,9 +20,10 @@ model/      (M3) rule-based score, (M6) XGBoost + SHAP
 api/        FastAPI backend
 web/        React + Vite + TypeScript + MapLibre + Tailwind
 data/       hotspots_seed.csv, hotspots.csv, incidents.csv (committed)
-            cache/, rain/ (regenerated, gitignored)
+            network/ (drainage network outputs the API serves, committed)
+            cache/, rain/, dem/, landcover/, osm/ (regenerated, gitignored)
             synthetic/ (illustrative data only)
-docs/       SOURCES.md, MODEL.md, SOP.md, DEMO_SCRIPT.md
+docs/       SOURCES.md, NETWORK.md, MODEL.md, SOP.md, DEMO_SCRIPT.md
 reference/  code kept from our earlier JalNetra project, for later milestones
             (not run by Agrim; see reference/jalnetra/README.md)
 ```
@@ -35,14 +36,14 @@ Needs Python 3.11 and Node 20+.
 # Python
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-pipeline.txt   # pipeline + API (the API alone needs only requirements.txt)
 cp .env.example .env            # optional settings; never commit .env
 
 # Web
 cd web && npm install && cp .env.example .env.local && cd ..
 ```
 
-## Run (milestone 1)
+## Run
 
 Run all commands from the repo root with the venv active.
 
@@ -57,10 +58,16 @@ python -m pipeline.fetch_rain_forecast
 python -m pipeline.fetch_rain_history --years 2025
 python -m pipeline.fetch_rain_history
 
-# 4. API on http://localhost:8000 (docs at /docs)
+# 4. Terrain + drainage network -> data/network/ (see docs/NETWORK.md)
+python -m pipeline.fetch_dem
+python -m pipeline.fetch_landcover
+python -m pipeline.fetch_osm
+python -m pipeline.build_network       # re-run whenever hotspots.csv changes
+
+# 5. API on http://localhost:8000 (docs at /docs)
 uvicorn api.main:app --reload --port 8000
 
-# 5. Web app on http://localhost:5173
+# 6. Web app on http://localhost:5173 (Rain / Drainage views)
 cd web && npm run dev
 ```
 
@@ -95,7 +102,7 @@ as useful as flood reports.
 ## Milestones
 
 1. ✅ Hotspots geocoded, rainfall fetch, map showing hotspots
-2. DEM drainage network graph + critical nodes view
+2. ✅ DEM drainage network graph + critical nodes view
 3. Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
 4. Simulator and past-event replay
 5. MCG dashboard: ranked list, orders, override log, feedback

@@ -1,10 +1,12 @@
-// The map: hotspots on top of the rainfall grid.
+// The map: hotspots on top of the rainfall grid (rain view) or the drainage
+// network (drainage view).
 // MapLibre is imperative, so we create the map once and push data into it
 // whenever React props change.
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { type GeoJSONSource, type ExpressionSpecification } from "maplibre-gl";
-import type { HotspotCollection, RainCollection, RainWindow } from "../types";
+import type { DrainageLayers, HotspotCollection, NetworkNodeProps, RainCollection, RainWindow, View } from "../types";
 import { nearestRain } from "../geo";
+import { addDrainageLayers, highlightDrainage, setDrainageData, setDrainageVisible } from "./drainageLayers";
 
 // Free vector basemap, no API key (https://openfreemap.org).
 const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
@@ -20,6 +22,8 @@ type Props = {
   hotspots: HotspotCollection | null;
   rain: RainCollection | null;
   rainWindow: RainWindow;
+  view: View;
+  drainage: DrainageLayers | null;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   pinMode: boolean; // ?pin=1: click anywhere to read coordinates (for pinning hotspots by hand)
@@ -28,7 +32,7 @@ type Props = {
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onSelect, pinMode }: Props) {
+export default function HotspotMap({ hotspots, rain, rainWindow, view, drainage, selectedId, onSelect, pinMode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
@@ -43,8 +47,8 @@ export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onS
   };
 
   // Event handlers are registered once, so they read the latest props through refs.
-  const latest = useRef({ onSelect, pinMode, rain });
-  latest.current = { onSelect, pinMode, rain };
+  const latest = useRef({ onSelect, pinMode, rain, drainage });
+  latest.current = { onSelect, pinMode, rain, drainage };
 
   // 1) Create the map and its layers once.
   useEffect(() => {
@@ -109,6 +113,8 @@ export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onS
         paint: { "text-color": "#1e293b", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
       });
 
+      addDrainageLayers(map, "hotspot-selected");
+
       map.on("click", "hotspots", (e) => {
         const id = e.features?.[0]?.properties?.id as string | undefined;
         if (id) latest.current.onSelect(id);
@@ -148,11 +154,24 @@ export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onS
     if (loaded) mapRef.current!.setPaintProperty("rain-grid", "circle-color", rainColor(rainWindow));
   }, [loaded, rainWindow]);
 
+  useEffect(() => {
+    if (loaded && drainage) setDrainageData(mapRef.current!, drainage);
+  }, [loaded, drainage]);
+
+  // Switch views: rain grid in the rain view, drainage layers in the drainage view.
+  useEffect(() => {
+    if (!loaded) return;
+    const map = mapRef.current!;
+    map.setLayoutProperty("rain-grid", "visibility", view === "rain" ? "visible" : "none");
+    setDrainageVisible(map, view === "drainage");
+  }, [loaded, view]);
+
   // 3) Selected hotspot: highlight, fly there, open a popup.
   useEffect(() => {
     const map = mapRef.current;
     if (!loaded || !map || !hotspots) return;
     map.setFilter("hotspot-selected", ["==", ["get", "id"], selectedId ?? ""]);
+    highlightDrainage(map, selectedId);
     closePopup();
     const f = hotspots.features.find((h) => h.properties.id === selectedId);
     if (!f) return;
@@ -175,6 +194,7 @@ export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onS
           <div class="font-semibold">${escapeHtml(p.name)}</div>
           <div class="text-xs text-slate-500 mb-1">${escapeHtml(p.id)} · ${escapeHtml(p.location_kind)}</div>
           <div class="text-xs mb-1">${rainLine}</div>
+          ${networkLines(latest.current.drainage, p.id)}
           <div class="text-xs text-slate-500">${pinNote}</div>
           ${p.notes ? `<div class="text-xs text-slate-500 mt-1">${escapeHtml(p.notes)}</div>` : ""}
         </div>`,
@@ -183,7 +203,20 @@ export default function HotspotMap({ hotspots, rain, rainWindow, selectedId, onS
     popupRef.current.on("close", () => {
       if (!closingRef.current) latest.current.onSelect(null);
     });
-  }, [loaded, hotspots, selectedId]);
+  }, [loaded, hotspots, selectedId, drainage]);
 
   return <div ref={containerRef} className="h-full w-full" />;
+}
+
+// Drainage facts for the popup (empty until the drainage view has been opened once).
+function networkLines(drainage: DrainageLayers | null, id: string): string {
+  const nodes = drainage?.network.nodes.features;
+  const n = nodes?.find((f) => f.properties.id === id)?.properties as NetworkNodeProps | undefined;
+  if (!nodes || !n) return "";
+  const name = (hid: string) => escapeHtml(nodes.find((f) => f.properties.id === hid)?.properties.name ?? hid);
+  const down = n.downstream.length ? `Water flows on to: ${n.downstream.map(name).join(", ")}` : "No other hotspot downstream.";
+  const up = n.upstream.length ? `Receives water from: ${n.upstream.map(name).join(", ")}` : "";
+  return `<div class="text-xs mb-1 border-t border-slate-200 pt-1">
+    Drains ${n.max_drained_km2_150m} km² upstream · ${n.relief_1km_m < 0 ? `${Math.abs(n.relief_1km_m)} m below` : `${n.relief_1km_m} m above`} its surroundings
+    · ${Math.round(n.builtup_share_500m * 100)}% built-up nearby<br/>${down}${up ? `<br/>${up}` : ""}</div>`;
 }
