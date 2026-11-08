@@ -88,6 +88,15 @@ function Details({ h, windowKey }: { h: Extract<HotspotRisk, { scored: true }>; 
           ))}
         </ul>
       </div>
+      {w.ml && (
+        <div>
+          <div className="kicker">Model estimate</div>
+          <div className="text-ink-2">
+            <span className="font-mono text-ink">{Math.round(w.ml.probability * 100)}%</span> chance of flooding
+            {w.ml.drivers.length > 0 && <> · {w.ml.drivers.map((d) => d.text).join("; ")}</>}
+          </div>
+        </div>
+      )}
       <div className="font-mono text-[11.5px] text-ink-3">{facts.join("  ·  ")}</div>
       {!h.verified && <div className="text-[12px] text-ink-3">Map pin not yet checked by the team.</div>}
     </div>

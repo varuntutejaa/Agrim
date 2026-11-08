@@ -1,7 +1,7 @@
 // Thin wrappers around the Agrim API.
 import type {
   CheckItem, CheckTick, DrainageLayers, FeedbackRecord, HotspotCollection, Orders, OverrideRecord, RainCollection,
-  ReplayEvent, RiskLevel, RiskResult, SimRequest, SimResult,
+  ModelStatus, ReplayEvent, RiskLevel, RiskResult, SimRequest, SimResult,
 } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -92,3 +92,5 @@ export const postFeedback = (body: {
 export const postCheck = (body: { run_key: string; zone: string; hotspot_id: string; item: CheckItem; done: boolean; officer: string }) =>
   send<CheckTick>("/checklist", body);
 export const resetExercise = () => send<{ ok: boolean }>("/exercise/reset", {});
+
+export const fetchModelStatus = () => getJson<ModelStatus>("/model/status");

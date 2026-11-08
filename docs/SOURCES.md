@@ -21,6 +21,7 @@ Status: **in use** = fetched by code today; **planned** = milestone noted.
 |------|------|--------------------|
 | Hotspot names (seed list of 21) | `data/hotspots_seed.csv` | Seed list in the project brief. **TODO:** add the news article or MCG notice that names each hotspot, in the `notes` column. |
 | MCG's full list of 159 hotspots | `data/hotspots.csv` (later) | **TODO:** MCG document / RTI reply, with link and date |
+| Candidate flood reports (not yet labels) | `data/incidents_candidates.csv` | Found in news coverage (The Tribune, ThePrint/PTI, The Week/PTI, Republic World), each row with its URL and what the article says. Become labels only after a team member reviews them (`python -m pipeline.review_candidates`) |
 | Flood incidents (training labels) | `data/incidents.csv` | Each row carries its own `source_url` (news report etc.). Never invented. Add rows with `python -m pipeline.add_incident` |
 
 ## In use (milestone 2)

@@ -17,7 +17,7 @@ from functools import lru_cache
 
 from model import rules
 from model.replay import REPLAY_DAYS_CSV, REPLAY_EVENTS_JSON
-from model.run_forecast import flood_history, load_static, score_all
+from model.run_forecast import flood_history, load_static, ml_summary, score_all
 from pipeline.config import NETWORK_DIR
 from pipeline.fetch_rain_forecast import build_grid
 
@@ -76,6 +76,7 @@ def _result(results, counts, meta) -> dict:
             "method": "rules-v1",
             "calibrated": False,
             "counts": counts,
+            "ml": ml_summary(),
             "is_synthetic": True,   # simulated rain is not an observation
             **meta,
         },

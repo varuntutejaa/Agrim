@@ -98,6 +98,14 @@ def rain_inputs(fc: pd.DataFrame, t: dict, start, end) -> dict:
     }
 
 
+def ml_summary() -> dict:
+    """Short model status for result metadata."""
+    from model import ml
+    st = ml.status()
+    keys = ("status", "message", "n_usable", "n_floods", "n_dry", "model", "rules_baseline", "run_at")
+    return {k: st[k] for k in keys if k in st}
+
+
 LEVEL_ORDER = {"red": 0, "amber": 1, "green": 2}
 
 
@@ -129,6 +137,8 @@ def score_all(rain_for, window_names, terrain, clim, hotspots, history):
             "drain_level_m": None,
         })
 
+    add_ml(results, window_names, terrain, clim, hotspots)
+
     first = window_names[0]
     results.sort(key=lambda r: (not r["scored"],
                                 LEVEL_ORDER[r["windows"][first]["level"]] if r["scored"] else 3,
@@ -136,6 +146,24 @@ def score_all(rain_for, window_names, terrain, clim, hotspots, history):
     counts = {w: {lvl: sum(1 for r in results if r["scored"] and r["windows"][w]["level"] == lvl)
                   for lvl in LEVEL_ORDER} for w in window_names}
     return results, counts
+
+
+def add_ml(results, window_names, terrain, clim, hotspots):
+    """Attach the Tier B probability and SHAP reasons, if a model is trained."""
+    from model import ml
+    from model.features import feature_row
+    if not ml.available():
+        return
+    rows, targets = [], []
+    for r in results:
+        if not r["scored"]:
+            continue
+        for wname in window_names:
+            w = r["windows"][wname]
+            rows.append(feature_row(w["rain"], terrain[r["id"]], clim[r["id"]], hotspots[r["id"]]))
+            targets.append(w)
+    for w, out in zip(targets, ml.explain(rows)):
+        w["ml"] = out
 
 
 def run(fetch: bool = False) -> dict:
@@ -175,6 +203,7 @@ def run(fetch: bool = False) -> dict:
             "note": (f"Scores come from documented rules, not yet checked against past floods "
                      f"({n_reports} flood reports so far). They are not probabilities."),
             "counts": counts,
+            "ml": ml_summary(),
             "is_synthetic": False,
         },
         "hotspots": results,

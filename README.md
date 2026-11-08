@@ -104,6 +104,17 @@ python -m pipeline.add_incident --list          # see what's there
 Reports that a hotspot stayed dry during heavy rain (`flooded = no`) are just
 as useful as flood reports.
 
+**Review the 36 news candidates** in `data/incidents_candidates.csv`: open
+each link, check the date and place, then accept or reject:
+
+```bash
+python -m pipeline.review_candidates
+python -m model.train          # retrain; the app shows the result
+```
+
+On macOS, run `./scripts/fix_xgboost_macos.sh` once after installing the
+requirements (XGBoost needs an OpenMP library; this borrows scikit-learn's).
+
 **Adding MCG's full list (159 hotspots):** add rows to `data/hotspots.csv`
 (or the seed file) with ids that don't clash, e.g. `MCG-001`. Fill `zone` and
 `mcg_severity_grade` from the MCG document, and cite it in SOURCES.md.
@@ -126,7 +137,7 @@ but actions are switched off.
 3. ✅ Rule-based risk score, `/forecast/latest`, Red/Amber/Green map
 4. ✅ Simulator and past-event replay
 5. ✅ MCG dashboard: ranked list, orders, override log, feedback
-6. XGBoost + SHAP once `incidents.csv` has data; honest evaluation
+6. ✅ XGBoost + SHAP pipeline, ready and waiting for labels (36 news candidates to review)
 7. Alerts, scorecard, Hindi toggle, deploy, 3-minute demo script
 
 ## Deploy

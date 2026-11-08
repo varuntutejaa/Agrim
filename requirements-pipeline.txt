@@ -9,3 +9,5 @@ scipy>=1.11
 networkx>=3.2
 pysheds==0.5
 pytest>=8
+# Milestone 6: training (cross-validation). On macOS also run scripts/fix_xgboost_macos.sh once.
+scikit-learn>=1.4

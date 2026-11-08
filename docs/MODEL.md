@@ -137,8 +137,48 @@ and flagged `is_synthetic: true`.
 - **Quick-storm names** ("once a monsoon", "once a decade") come from
   the same rarity scale as the score, measured at a typical hotspot.
 
-## Tier B (milestone 6)
+## Tier B: XGBoost + SHAP (milestone 6)
 
-XGBoost on incidents.csv, with SHAP for the top three drivers per
-prediction. Precision and recall on held-out events, or a clear "not enough
-labels yet" in the UI.
+Code: `model/labels.py`, `model/features.py`, `model/train.py`, `model/ml.py`.
+Run `python -m model.train` after adding labels.
+
+- **Labels (real only):** `data/incidents.csv` (sourced reports) plus officer
+  reports from the MCG desk. If two reports cover the same hotspot and day,
+  it counts as flooded if either says so.
+- **Features:** rain on the day (ECMWF record), how rare that rain is at the
+  hotspot, terrain, and the rule score, so the model learns corrections to
+  the rules.
+- **Minimum to train:** 30 usable labels, with at least 8 floods and 8 dry
+  cases, from 3 or more storm days. Below that, nothing is trained, any old
+  model file is deleted, and the app says "Not trained".
+- **Check:** cross-validation that holds out whole storm days, comparing
+  precision (alarms that were right) and recall (floods caught) for the
+  model and for the rules on the same events.
+- **Explanations:** SHAP values from XGBoost itself (`pred_contribs`). The
+  top three are shown in plain words. The server doesn't need the `shap` package.
+- **Role:** the rules still set Red/Amber/Green. The model adds a probability
+  (not yet calibrated) and its reasons, until the team decides it should lead.
+
+### Collecting labels
+
+`data/incidents_candidates.csv` holds **36 candidate flood reports from news
+coverage** (7 storm days, 13 hotspots), each with its source link and what
+the article says. They are **not** training data until a team member checks
+each one and accepts it with `python -m pipeline.review_candidates`.
+
+News almost only reports floods. The model also needs **dry cases** ("rain
+fell, this hotspot stayed clear"), which mostly come from officers' "Report"
+form on the MCG desk after each storm.
+
+### Early check of the rules against the candidates (unreviewed, 8 Nov 2026)
+
+On the days of the 31 candidates that have a map pin, the rules gave
+5 Red, 7 Amber and 19 Green: **12 of 31 reported floods flagged.** All the
+misses are on days when the model's rain was far below what the city
+reported. For example, 11 Aug 2024: model 11–16 mm, while the city reported
+53 mm by 8:30 am and knee-deep water. 9 Jul 2025: model 7–11 mm, with 2.5 ft
+of water at Subhash Chowk. This confirms the main limit: global-model rain
+misses short cloudbursts. Fixes worth trying, in order: (1) lower the rain
+thresholds using reviewed labels; (2) add gauge rain (IMD AWS / district
+gauges) for past events; (3) a nowcast feed for the last few hours before
+rain.

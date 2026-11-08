@@ -127,6 +127,7 @@ export type WindowRisk = {
   level: RiskLevel;
   model_level?: RiskLevel;     // set when an MCG officer overrode the level
   override?: OverrideInfo;
+  ml?: MlOutput | null;        // Tier B probability + SHAP reasons, once a model is trained
   outlook: "likely" | "possible" | "unlikely";
   confidence: "high" | "medium" | "low" | null;
   high_impact: boolean;
@@ -245,3 +246,29 @@ export type FeedbackRecord = {
 export type CheckItem = "list_issued" | "gullies_cleared" | "pump_moved" | "pump_tested";
 export type CheckTick = { run_key: string; zone: string; hotspot_id: string; item: CheckItem; done: boolean; officer: string; updated_at: string };
 export type OpsSource = "live" | "exercise";
+
+// --- Machine-learning model (milestone 6, see model/train.py and model/ml.py) ---
+
+export type MlOutput = {
+  probability: number;
+  drivers: { feature: string; push: "up" | "down"; text: string }[];
+};
+
+type Scores = { precision: number | null; recall: number | null; tp: number; fp: number; fn: number; tn: number };
+
+export type ModelStatus = {
+  status: "trained" | "insufficient" | "not_run";
+  message: string;
+  run_at?: string;
+  n_usable?: number;
+  n_floods?: number;
+  n_dry?: number;
+  n_storm_days?: number;
+  n_skipped?: number;
+  skipped_reasons?: string[];
+  needs?: { min_labels: number; min_per_class: number };
+  model?: Scores & { auc: number | null };
+  rules_baseline?: Scores;
+  importance?: Record<string, number>;
+  labels_now?: { reports: number; report_floods: number };
+};

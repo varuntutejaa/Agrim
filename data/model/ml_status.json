@@ -1,0 +1,36 @@
+{
+  "trained_at": "2026-11-08T13:53:57+05:30",
+  "n_labels_total": 0,
+  "n_usable": 0,
+  "n_floods": 0,
+  "n_dry": 0,
+  "n_storm_days": 0,
+  "n_skipped": 0,
+  "skipped_reasons": [],
+  "sources": {
+    "report": 0,
+    "officer": 0
+  },
+  "needs": {
+    "min_labels": 30,
+    "min_per_class": 8
+  },
+  "features": [
+    "rain_24h",
+    "peak1h",
+    "upstream_rain_24h",
+    "rain_past_72h",
+    "e_rain_24h",
+    "e_peak1h",
+    "e_wet_ground",
+    "relief_1km_m",
+    "hand_m",
+    "builtup_share_500m",
+    "max_drained_km2_150m",
+    "n_upstream",
+    "rule_score"
+  ],
+  "is_synthetic": false,
+  "status": "insufficient",
+  "message": "Not trained: needs 30 usable labels with at least 8 floods and 8 dry cases; has 0 (0 floods, 0 dry)."
+}

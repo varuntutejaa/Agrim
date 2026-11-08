@@ -12,4 +12,8 @@ apscheduler>=3.10,<4
 # Milestone 5: MCG desk storage (Neon Postgres)
 psycopg[binary]>=3.2
 psycopg-pool>=3.2
-# M6 model:    scikit-learn, xgboost, shap
+# Milestone 6: loading the trained model (only imported if data/model/xgb_model.json exists).
+# xgboost-cpu is the small CPU-only build for Linux (Render). SHAP values come from
+# XGBoost itself (pred_contribs), so the heavy `shap` package isn't needed.
+xgboost-cpu>=2.1; sys_platform == "linux"
+xgboost>=2.1; sys_platform != "linux"

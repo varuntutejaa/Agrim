@@ -1,6 +1,7 @@
 // Forecast view: what the live forecast means for each hotspot.
 import type { RainCollection, RainWindow, RiskResult, RiskWindowKey } from "../types";
 import Downstream from "./Downstream";
+import ModelStatus from "./ModelStatus";
 import RiskLedger from "./RiskLedger";
 import RiskSummary from "./RiskSummary";
 import { Kicker, Rule, TextTabs } from "./ui";
@@ -88,6 +89,8 @@ export default function ForecastPanel(p: Props) {
           neighbouring points often match.
         </p>
       </section>
+
+      <ModelStatus />
 
       <Rule />
       <footer className="space-y-2 text-[12px] leading-relaxed text-ink-3">

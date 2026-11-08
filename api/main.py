@@ -30,6 +30,9 @@ Endpoints so far:
   GET  /checklist           SOP ticks for a run;  POST /checklist to tick/untick
   POST /exercise/reset      clear exercise ticks and overrides
 
+  Model (milestone 6):
+  GET  /model/status        Tier B (XGBoost) training status and honest check results
+
 Milestone 7 adds /scorecard.
 """
 import os
@@ -313,3 +316,16 @@ def exercise_reset(x_agrim_desk: str | None = Header(default=None)):
     _desk_guard(x_agrim_desk)
     ops.reset_exercise()
     return {"ok": True}
+
+
+# --- Machine-learning model (milestone 6) -------------------------------------------------
+
+@app.get("/model/status")
+def model_status():
+    from model import ml
+    from model.labels import from_incidents
+    st = ml.status()
+    # Live label counts, so the app can show progress before the next training run.
+    reports = from_incidents()
+    st["labels_now"] = {"reports": len(reports), "report_floods": sum(r["flooded"] for r in reports)}
+    return st
