@@ -1,0 +1,40 @@
+# Fetches the rain forecast twice a day from GitHub's servers and saves it to
+# the database, so the live site stays fresh even when Open-Meteo throttles
+# Render's shared address (see api/snapshot.py).
+#
+# Needs one repository secret: DATABASE_URL (the Neon connection string).
+# Settings -> Secrets and variables -> Actions -> New repository secret.
+# Without it the job skips.
+name: Forecast
+
+on:
+  schedule:
+    - cron: "35 23 * * *"   # 05:05 IST
+    - cron: "35 11 * * *"   # 17:05 IST
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Skip without the DATABASE_URL secret
+        if: env.DATABASE_URL == ''
+        run: echo "DATABASE_URL secret not set; nothing to do."
+      - uses: actions/checkout@v4
+        if: env.DATABASE_URL != ''
+      - uses: actions/setup-python@v5
+        if: env.DATABASE_URL != ''
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - if: env.DATABASE_URL != ''
+        run: pip install -r requirements.txt
+      - name: Fetch, score and save
+        if: env.DATABASE_URL != ''
+        run: |
+          python -m model.run_forecast --fetch
+          python -m api.snapshot push
+          python -m api.snapshot status

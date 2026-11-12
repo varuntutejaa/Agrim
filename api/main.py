@@ -131,10 +131,8 @@ _last_fetch: dict = {"at": None}
 
 @app.get("/forecast/latest")
 def forecast_latest():
-    result = scheduler.latest()
-    if result is None:
-        # First request on a fresh server: score whatever forecast is on disk.
-        result = scheduler.run_now(fetch=not data.FORECAST_CSV.exists(), reason="first request")
+    # Local files, else the copy saved in the database, else a fresh run.
+    result = scheduler.ensure_forecast()
     if result is None:
         raise HTTPException(503, "No forecast yet; try again in a minute.")
     return ops.apply_overrides(result, is_exercise=False)

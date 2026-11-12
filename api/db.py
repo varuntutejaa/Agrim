@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS {alerts_log} (
     sms_hi       TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS overrides_active ON {overrides} (hotspot_id, is_exercise, valid_until);
+CREATE TABLE IF NOT EXISTS {snapshots} (
+    key          TEXT PRIMARY KEY,           -- 'latest_forecast' (see api/snapshot.py)
+    generated_at TIMESTAMPTZ NOT NULL,       -- when that forecast run was made
+    body         BYTEA NOT NULL,             -- gzip of the forecast files
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 _pool: ConnectionPool | None = None
@@ -112,7 +118,7 @@ def pool() -> ConnectionPool:
     return _pool
 
 
-TABLES = ("overrides", "feedback", "checklist", "alerts_log")
+TABLES = ("overrides", "feedback", "checklist", "alerts_log", "snapshots")
 
 
 def q(sql: str) -> str:

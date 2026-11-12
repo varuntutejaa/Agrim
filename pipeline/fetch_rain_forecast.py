@@ -42,10 +42,27 @@ def build_grid(bbox=BBOX, step=GRID_STEP_DEG) -> list:
     ]
 
 
+def needed_grid() -> list:
+    """Grid points the hotspots use (nearest point + upstream area), or the full grid
+    if the network hasn't been built. Fewer points = fewer requests to Open-Meteo."""
+    from pipeline.config import NETWORK_DIR
+    terrain = NETWORK_DIR / "hotspot_terrain.csv"
+    full = build_grid()
+    if not terrain.exists():
+        return full
+    import csv
+    used = set()
+    with terrain.open(newline="") as f:
+        for r in csv.DictReader(f):
+            used.add(r["spot_grid_point"])
+            used.update(r["upstream_grid_points"].split())
+    return [p for p in full if p["point_id"] in used] or full
+
+
 def main():
     now = datetime.now(ZoneInfo(TIMEZONE))
     run_id = now.strftime("%Y%m%dT%H%M")
-    grid = build_grid()
+    grid = needed_grid()
     print(f"Fetching {len(FORECAST_MODELS)} models x {len(grid)} grid points from Open-Meteo ...")
 
     df = fetch_hourly_precip(
