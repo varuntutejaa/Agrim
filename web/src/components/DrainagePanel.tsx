@@ -1,5 +1,5 @@
 // Drainage view: how water moves between hotspots, and which ones are
-// "critical intervention points" (most hotspots downstream).
+// "critical intervention points" (outfalls ranked by how many hotspots drain through them).
 import type { CriticalNodes, DrainageLayers, SensorKind } from "../types";
 import { plural } from "../risk";
 import CriticalPanel from "./CriticalPanel";
@@ -101,7 +101,7 @@ function LinksView({ drainage, loading, selectedId, onSelect }: {
                   </span>
                 </span>
                 <span className="font-mono tabular text-right text-[13px] text-ink-2">
-                  {p.max_drained_km2_150m < 1 ? p.max_drained_km2_150m.toFixed(2) : p.max_drained_km2_150m.toFixed(1)}
+                  {p.max_drained_km2_150m.toFixed(p.max_drained_km2_150m < 1 ? 2 : p.max_drained_km2_150m < 100 ? 1 : 0)}
                   <span className="text-ink-3"> km²</span>
                 </span>
               </button>

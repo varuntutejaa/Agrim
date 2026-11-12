@@ -344,12 +344,14 @@ def main():
                                "length_km": round(len(path) * 0.03, 2)},
             })
 
-    # 6. Critical intervention nodes.
+    # 6. Critical intervention nodes: a hotspot's outfall serves the hotspot and every
+    # hotspot upstream of it, so rank by that count (ties: area drained). Same order
+    # as pipeline/critical_nodes.py.
     for hid, n in nodes.items():
         n["downstream"] = sorted(nx.descendants(G, hid))
         n["upstream"] = sorted(nx.ancestors(G, hid))
         n["downstream_direct"] = sorted(G.successors(hid))
-    ranked = sorted(nodes, key=lambda k: (-len(nodes[k]["downstream"]), -nodes[k]["catchment_km2"]))
+    ranked = sorted(nodes, key=lambda k: (-len(nodes[k]["upstream"]), -nodes[k]["max_drained_km2_150m"]))
     for i, hid in enumerate(ranked, 1):
         nodes[hid]["critical_rank"] = i
 
@@ -445,11 +447,11 @@ def write_outputs(nodes, edge_features, exit_sides, acc_km2, grid, fdir_r, drain
     # Summary.
     print(f"\nNetwork: {meta['n_hotspots']} hotspots, {meta['n_edges']} direct links. "
           f"Last hotspot on each path drains to: {meta['terminal_exit_sides']}")
-    print("Critical intervention nodes (most hotspots downstream):")
+    print("Critical intervention nodes (most hotspots served by the outfall):")
     for feat in node_features[:8]:
         p = feat["properties"]
-        down = ", ".join(names[d] for d in p["downstream"]) or "-"
-        print(f"  #{p['critical_rank']} {p['name'][:34]:<34} {p['n_downstream']} downstream: {down[:80]}")
+        up = ", ".join(names[u] for u in p["upstream"]) or "-"
+        print(f"  #{p['critical_rank']} {p['name'][:34]:<34} serves {p['n_upstream'] + 1}; upstream: {up[:80]}")
     sizes = {k: (NETWORK_DIR / k).stat().st_size // 1024 for k in
              ("network.json", "catchments.geojson", "streams.geojson", "drains.geojson")}
     print(f"File sizes (KB): {sizes}")
