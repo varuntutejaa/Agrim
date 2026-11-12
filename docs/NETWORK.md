@@ -34,8 +34,17 @@ so the Aravalli ridge (south/south-east) and the route to the Najafgarh drain
    Only direct links are kept (if A → B → C, the A → C link is dropped).
    Exact-cell matching found almost no links, because on a 30 m grid a drain
    often passes 50–100 m beside a junction.
-6. **Critical intervention points.** Ranked by the number of hotspots
-   downstream; ties are broken by drained area.
+6. **Critical intervention points** (`pipeline/critical_nodes.py` →
+   `data/network/critical_nodes.geojson`, `GET /network/critical`). Each
+   hotspot has one outfall: the point where its water leaves it. An outfall
+   **serves** that hotspot plus every hotspot upstream of it in the links
+   above, because their water passes through it. Outfalls are ranked by
+   hotspots served (ties: drained area). A greedy pass then picks the
+   outfall that adds the most not-yet-served hotspots each time, until
+   80% are served; that is the **priority set**, and the steps give the
+   coverage curve on the Drainage → Critical points page. Hotspots count
+   equally; a per-rupee ranking needs MCG/GMDA cost estimates
+   (DATA_REQUIREMENTS D4).
 
 ## Features written for the risk model (`data/network/hotspot_terrain.csv`)
 
@@ -62,6 +71,18 @@ so the Aravalli ridge (south/south-east) and the route to the Najafgarh drain
   back to the Aravalli ridge).
 - 8 hotspots have no flow line within 150 m. Their flooding is local runoff
   in a dip, not water arriving down a drain.
+- **Critical points (the 20/80 question):** the Hero Honda Chowk outfall
+  alone serves **6 of 19** mapped hotspots (32%). 4 outfalls (21%) serve 12
+  (63%); **8 outfalls (42%) serve 16 (84%)**; all 19 need 11. The
+  concentration is weaker than 20/80 because only 19 of MCG's 159 hotspots
+  are mapped and the graph is shallow; the full list should show it more
+  clearly.
+- **Proposed sensors** (illustrative, `pipeline/propose_sensors.py` →
+  `data/synthetic/proposed_sensors.geojson`, flagged `is_synthetic`): 25
+  rain gauges spread by k-means over the hotspots and their catchments; 43
+  drain-level sensors at outfalls first, then link midpoints and exit
+  paths; 8 underpass monitors at OSM underpasses near hotspots (one per
+  name, ≥ 500 m apart). These are proposals for MCG, not installed devices.
 
 ## Limits (say these out loud in the pitch)
 

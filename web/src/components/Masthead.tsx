@@ -2,7 +2,7 @@
 import type { View } from "../types";
 import { type Lang, t } from "../i18n";
 
-const VIEW_KEYS: View[] = ["forecast", "simulator", "drainage", "ops", "data"];
+const VIEW_KEYS: View[] = ["forecast", "simulator", "drainage", "ops", "about"];
 
 type Props = {
   view: View;
@@ -10,6 +10,7 @@ type Props = {
   updated?: string;
   lang: Lang;
   onLang: (l: Lang) => void;
+  stale?: boolean;         // forecast older than 12 h
 };
 
 function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
@@ -30,13 +31,14 @@ function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
   );
 }
 
-export default function Masthead({ view, onView, updated, lang, onLang }: Props) {
+export default function Masthead({ view, onView, updated, lang, onLang, stale = false }: Props) {
   const s = t(lang);
   return (
     <header className="border-b border-ink bg-paper">
       <div className="flex items-center gap-4 px-5 pt-3 md:h-14 md:px-7 md:pt-0">
         <div className="flex min-w-0 items-baseline gap-3">
-          <span className="font-display text-[26px] font-semibold leading-none tracking-[-0.02em]">Agrim</span>
+          <button onClick={() => onView("home")} aria-label="Agrim home"
+            className="font-display text-[26px] font-semibold leading-none tracking-[-0.02em] hover:opacity-80">Agrim</button>
           <span className="truncate border-l border-rule pl-3 text-[11.5px] text-ink-2 sm:text-[12.5px]">{s.subtitle}</span>
         </div>
         <nav aria-label="Views" className="ml-auto hidden h-full items-stretch gap-7 md:flex">
@@ -54,7 +56,11 @@ export default function Masthead({ view, onView, updated, lang, onLang }: Props)
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-6 md:ml-8">
-          {updated && <span className="hidden font-mono text-[11.5px] text-ink-3 lg:inline">{s.updated} {updated}</span>}
+          {updated && (
+            <span className={`hidden font-mono text-[11.5px] lg:inline ${stale ? "font-medium text-risk-amber" : "text-ink-3"}`}>
+              {s.updated} {updated}{stale ? " · old" : ""}
+            </span>
+          )}
           <LangSwitch lang={lang} onLang={onLang} />
         </div>
       </div>

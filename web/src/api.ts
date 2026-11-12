@@ -1,7 +1,7 @@
 // Thin wrappers around the Agrim API.
 import type {
   CheckItem, CheckTick, DrainageLayers, FeedbackRecord, HotspotCollection, Orders, OverrideRecord, RainCollection,
-  AlertDraft, AlertRecord, CitizenItem, ModelStatus, ReplayEvent, RiskLevel, RiskResult, Scorecard, SimRequest,
+  AlertDraft, AlertRecord, Backtest, CitizenItem, CriticalNodes, ModelStatus, ProposedSensors, PublicOverride, ReplayEvent, RiskLevel, RiskResult, Scorecard, SimRequest,
   SimResult,
 } from "./types";
 
@@ -107,3 +107,9 @@ export const sendAlerts = (req: AlertSource & { officer: string; hotspot_ids: st
   send<{ sent: number; results: { channel: string; to: string; status: string; hotspot_id: string }[] }>("/alerts/send", req);
 export const fetchAlertLog = () => getJson<{ available: boolean; alerts: AlertRecord[] }>("/alerts/log");
 export const fetchScorecard = () => getJson<Scorecard>("/scorecard");
+
+// --- Review items ---
+export const fetchCritical = () => getJson<CriticalNodes>("/network/critical");
+export const fetchBacktest = () => getJson<Backtest>("/backtest");
+export const fetchPublicOverrides = () => getJson<{ available: boolean; overrides: PublicOverride[] }>("/overrides/public");
+export const fetchProposedSensors = () => getJson<ProposedSensors>("/sensors/proposed");

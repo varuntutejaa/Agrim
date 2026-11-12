@@ -1,6 +1,7 @@
 // Simulator view (for the jury demo): design a storm or replay a past day,
 // and watch the ranking and the map change live. Always marked as an exercise.
-import type { ReplayEvent, SimResult, StormParams } from "../types";
+import { useState } from "react";
+import type { CriticalNodes, ReplayEvent, SimResult, StormParams } from "../types";
 import Downstream from "./Downstream";
 import RiskLedger from "./RiskLedger";
 import RiskSummary from "./RiskSummary";
@@ -22,6 +23,9 @@ type Props = {
   busy: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  critical: CriticalNodes | null;
+  blocked: string[];
+  onToggleBlock: (nodeId: string) => void;
 };
 
 // Presets named by how often the model sees rain like this (see model/rules.how_often).
@@ -69,6 +73,8 @@ export default function SimulatorPanel(p: Props) {
         </div>
 
         {p.mode === "storm" ? <StormControls {...p} /> : <ReplayControls {...p} />}
+
+        <BlockDrain critical={p.critical} blocked={p.blocked} onToggle={p.onToggleBlock} result={result} />
 
         <Rule />
 
@@ -205,8 +211,8 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
 function Scoreboard({ result, busy }: { result: SimResult | null; busy: boolean }) {
   const c = result?.meta.counts.next_24h;
   const cells = [
-    { level: "red" as const, label: "Likely" },
-    { level: "amber" as const, label: "Possible" },
+    { level: "red" as const, label: "High" },
+    { level: "amber" as const, label: "Medium" },
     { level: "green" as const, label: "Low" },
   ];
   return (
@@ -223,5 +229,58 @@ function Scoreboard({ result, busy }: { result: SimResult | null; busy: boolean 
         </div>
       ))}
     </div>
+  );
+}
+
+/** "Block a drain": mark outfalls blocked and watch the hotspots whose water must pass them back up. */
+function BlockDrain({ critical, blocked, onToggle, result }: {
+  critical: CriticalNodes | null;
+  blocked: string[];
+  onToggle: (id: string) => void;
+  result: SimResult | null;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  if (!critical) return null;
+  const list = critical.features.map((f) => f.properties);
+  const shown = showAll ? list : list.filter((p) => p.n_hotspots > 1 || blocked.includes(p.id));
+  const effect = result?.meta.blocked ?? [];
+  return (
+    <section>
+      <div className="flex items-baseline justify-between">
+        <Kicker>Block a drain</Kicker>
+        {blocked.length > 0 && (
+          <button className="text-[12px] text-ink-2 underline-offset-4 hover:underline" onClick={() => blocked.forEach(onToggle)}>Clear all</button>
+        )}
+      </div>
+      <p className="mt-1 text-[12.5px] text-ink-3">
+        Tick an outfall, or tap a blue point on the map. Water that must pass a blocked drain backs up, so the hotspots
+        upstream of it flood first.
+      </p>
+      <ul className="mt-2 divide-y divide-rule border-y border-rule">
+        {shown.map((p) => (
+          <li key={p.id}>
+            <label className="flex cursor-pointer items-baseline gap-2.5 py-2 text-[13px]">
+              <input type="checkbox" className="accent-[#17191e]" checked={blocked.includes(p.id)} onChange={() => onToggle(p.id)} />
+              <span className="flex-1">
+                <span className="font-medium">{p.label}</span>
+                {p.upstream_names.length > 0 && <span className="block text-[11.5px] text-ink-3">drains {p.upstream_names.join(", ")}</span>}
+              </span>
+              <span className="font-mono text-[12px] text-ink-2">{p.n_hotspots}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {!showAll && list.length > shown.length && (
+        <button className="mt-1.5 text-[12px] text-ink-2 underline-offset-4 hover:underline" onClick={() => setShowAll(true)}>
+          Show all {list.length} outfalls
+        </button>
+      )}
+      {effect.length > 0 && (
+        <p className="mt-2 border-l-2 border-risk-red pl-2.5 text-[12.5px] text-ink-2">
+          Blocked: {effect.map((b) => b.label).join(", ")}. {new Set(effect.flatMap((b) => b.hotspots)).size} hotspot(s)
+          back up behind it (marked "drain blocked downstream").
+        </p>
+      )}
+    </section>
   );
 }

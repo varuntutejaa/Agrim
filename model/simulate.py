@@ -84,9 +84,39 @@ def _result(results, counts, meta) -> dict:
     }
 
 
+@lru_cache(maxsize=1)
+def _critical_nodes() -> dict:
+    """Outfall id -> its feature (pipeline/critical_nodes.py)."""
+    fc = json.loads((NETWORK_DIR / "critical_nodes.geojson").read_text())
+    return {f["properties"]["id"]: f["properties"] for f in fc["features"]}
+
+
+def _blocked(node_ids: list[str] | None) -> tuple[frozenset, list[dict]]:
+    """Hotspots whose water must pass a blocked outfall, and a description for the result.
+
+    A blocked drain makes water back up: the hotspots UPSTREAM of the
+    blockage (the ones that drain through it) flood, not those downstream.
+    """
+    if not node_ids:
+        return frozenset(), []
+    nodes = _critical_nodes()
+    unknown = [n for n in node_ids if n not in nodes]
+    if unknown:
+        raise ValueError(f"Unknown drain point(s): {unknown}")
+    affected, info = set(), []
+    for n in node_ids:
+        p = nodes[n]
+        affected |= set(p["hotspots"])
+        info.append({"id": n, "label": p["label"], "hotspots": p["hotspots"]})
+    return frozenset(affected), info
+
+
 def run_storm(rain_24h: float, peak1h: float, past_72h: float,
-              centre: tuple[float, float] | None = None, radius_km: float = 6.0) -> dict:
-    """Rain set by hand. `centre` = (lon, lat) for a local storm, None for even rain."""
+              centre: tuple[float, float] | None = None, radius_km: float = 6.0,
+              blocked: list[str] | None = None) -> dict:
+    """Rain set by hand. `centre` = (lon, lat) for a local storm, None for even rain.
+    `blocked`: outfall ids (critical_nodes) marked blocked."""
+    blocked_ids, blocked_info = _blocked(blocked)
     terrain, clim, hotspots, where, grid = _static()
     rain_24h = _clamp("rain_24h", rain_24h)
     peak1h = min(_clamp("peak1h", peak1h), rain_24h)     # one hour can't exceed the day
@@ -105,7 +135,7 @@ def run_storm(rain_24h: float, peak1h: float, past_72h: float,
                 "upstream_rain_24h": round(rain_24h * sum(up) / len(up), 1),
                 "rain_past_72h": past_72h, "rain_24h_by_model": {}, "wet_window": None}
 
-    results, counts = score_all(rain_for, [WINDOW], terrain, clim, hotspots, flood_history())
+    results, counts = score_all(rain_for, [WINDOW], terrain, clim, hotspots, flood_history(), blocked_ids)
     # How unusual the chosen rain is, against a typical hotspot's record (the median one).
     typical = sorted(clim.values(), key=lambda c: c["rain_24h_q0.99"])[len(clim) // 2]
     rarity = {"rain_24h": rules.how_often(rules.exceedance(rain_24h, typical, "rain_24h")),
@@ -113,13 +143,15 @@ def run_storm(rain_24h: float, peak1h: float, past_72h: float,
     return _result(results, counts, {
         "mode": "storm",
         "rarity": rarity,
+        "blocked": blocked_info,
         "params": {"rain_24h": rain_24h, "peak1h": peak1h, "past_72h": past_72h,
                    "centre": list(centre) if centre else None, "radius_km": radius_km},
     })
 
 
-def run_replay(date: str) -> dict:
+def run_replay(date: str, blocked: list[str] | None = None) -> dict:
     """Replay a past monsoon day from the ECMWF record."""
+    blocked_ids, blocked_info = _blocked(blocked)
     terrain, clim, hotspots, _, _ = _static()
     days = _replay_days()
     if date not in days:
@@ -134,11 +166,12 @@ def run_replay(date: str) -> dict:
                 "upstream_rain_24h": round(sum(ups) / len(ups), 1) if ups else own["rain_24h"],
                 "rain_past_72h": own["past_72h"], "rain_24h_by_model": {}, "wet_window": None}
 
-    results, counts = score_all(rain_for, [WINDOW], terrain, clim, hotspots, flood_history())
+    results, counts = score_all(rain_for, [WINDOW], terrain, clim, hotspots, flood_history(), blocked_ids)
     event = next((e for e in replay_events()["events"] if e["date"] == date), None)
     return _result(results, counts, {
         "mode": "replay",
         "params": {"date": date},
+        "blocked": blocked_info,
         "event": event,
         "source": "ECMWF IFS record via Open-Meteo (model rain, not rain-gauge readings)",
     })

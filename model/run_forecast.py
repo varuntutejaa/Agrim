@@ -83,9 +83,18 @@ def rain_inputs(fc: pd.DataFrame, t: dict, start, end) -> dict:
 
     # Wet window: hours with at least half the peak (and >= 1 mm), for alert wording.
     wet = win[(win >= max(1.0, 0.5 * win.max()))] if len(win) else win
-    by_model = {}
-    for model, g in fc[fc["point_id"] == t["spot_grid_point"]].groupby("model"):
-        by_model[model] = round(float(window_rain(g.set_index("time")["precip_mm"].fillna(0), start, end).sum()), 1)
+    by_model, model_inputs = {}, {}
+    for model, g in fc.groupby("model"):
+        s = g[g["point_id"] == t["spot_grid_point"]].set_index("time")["precip_mm"]
+        if s.isna().all():
+            continue          # this model has no data here; it doesn't get a vote
+        s = s.fillna(0)
+        up = g[g["point_id"].isin(t["upstream_grid_points"])].groupby("time")["precip_mm"].mean().fillna(0)
+        w = window_rain(s, start, end)
+        by_model[model] = round(float(w.sum()), 1)
+        model_inputs[model] = {"rain_24h": float(w.sum()), "peak1h": float(w.max()) if len(w) else 0.0,
+                               "upstream_rain_24h": float(window_rain(up, start, end).sum()),
+                               "rain_past_72h": float(window_rain(s, start - timedelta(hours=72), start).sum())}
 
     return {
         "rain_24h": round(float(win.sum()), 1),
@@ -93,6 +102,7 @@ def rain_inputs(fc: pd.DataFrame, t: dict, start, end) -> dict:
         "upstream_rain_24h": round(float(window_rain(upstream, start, end).sum()), 1),
         "rain_past_72h": round(float(past.sum()), 1),
         "rain_24h_by_model": by_model,
+        "by_model_inputs": model_inputs,      # used for the model-agreement vote, then dropped
         "wet_window": ({"start": wet.index.min().isoformat(), "end": (wet.index.max() + timedelta(hours=1)).isoformat()}
                        if len(wet) else None),
     }
@@ -109,7 +119,7 @@ def ml_summary() -> dict:
 LEVEL_ORDER = {"red": 0, "amber": 1, "green": 2}
 
 
-def score_all(rain_for, window_names, terrain, clim, hotspots, history):
+def score_all(rain_for, window_names, terrain, clim, hotspots, history, blocked_ids=frozenset()):
     """Score every hotspot for each window. Shared by the live forecast and the simulator.
 
     rain_for(hotspot_id, terrain_row, window_name) -> rain dict for rules.assess.
@@ -125,7 +135,9 @@ def score_all(rain_for, window_names, terrain, clim, hotspots, history):
         windows = {}
         for wname in window_names:
             rain = rain_for(hid, t, wname)
-            windows[wname] = {**rules.assess(rain, t, clim[hid], h), "rain": rain}
+            model_rains = rain.pop("by_model_inputs", None)
+            windows[wname] = {**rules.assess(rain, t, clim[hid], h, model_rains=model_rains,
+                                             blocked=hid in blocked_ids), "rain": rain}
         results.append({
             **base, "scored": True,
             "critical_rank": int(t["critical_rank"]),

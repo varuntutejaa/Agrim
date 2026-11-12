@@ -9,15 +9,16 @@ export const LEVEL_COLOR: Record<RiskLevel | "none", string> = {
   none: "#a9a39a", // not scored (no location yet)
 };
 
+// Words, not just colours: colour-blind readers and black-and-white printouts still work.
 export const LEVEL_LABEL: Record<RiskLevel, string> = {
-  red: "Likely",
-  amber: "Possible",
-  green: "Low risk",
+  red: "High",
+  amber: "Medium",
+  green: "Low",
 };
 
 export const LEVEL_LONG: Record<RiskLevel, string> = {
-  red: "Flooding likely",
-  amber: "Flooding possible",
+  red: "High · flooding likely",
+  amber: "Medium · flooding possible",
   green: "Low risk",
 };
 

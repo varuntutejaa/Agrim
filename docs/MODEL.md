@@ -47,15 +47,32 @@ They must be recalibrated once incidents.csv has events.
 | E2 | Near drain level (height above nearest drainage) | 5 | 5 m | 0.5 m |
 | E3 | Built-up share within ~500 m | 5 | 0% | 100% |
 | E4 | Land draining towards it (within 150 m, log scale) | 5 | 0.1 km² | 50 km² |
+| F | Simulator only: a drain this hotspot's water passes through is marked blocked | 20 | not blocked | blocked |
 
 - **Floods** in a scenario when the score is **≥ 50**. Terrain plus wet
   ground can reach at most 35, so nothing floods without forecast rain.
-- The score uses **ECMWF**, the same model as the record. GFS and ICON
-  totals are reported beside it, to show how much the models disagree.
+- The headline score uses **ECMWF**, the same model as the record. GFS and
+  ICON are scored the same way (against the same ECMWF record) and each
+  casts a vote; see below.
 
 ## Confidence and levels
 
-Each window is scored three times, with forecast rain × 0.7 (low), × 1.0
+**Live forecast: three weather models vote.** Each window is scored once
+with ECMWF IFS, once with NOAA GFS and once with DWD ICON rain. A model
+"shows flooding" when its score reaches 50. Every hotspot shows the vote as
+three squares ("2 of 3 weather models show flooding").
+
+| Outlook | Rule | Confidence |
+|---------|------|------------|
+| Likely | all 3 models show flooding | High |
+| Possible | 1 or 2 models show flooding | Medium if 2, Low if 1 |
+| Unlikely | no model shows flooding | – |
+
+If a model returns no data for a point, the vote is out of the models that
+did (e.g. "2 of 2").
+
+**Simulator and replays: rain scenarios.** There is only one rain value
+there, so each window is scored three times, with rain × 0.7 (low), × 1.0
 (expected) and × 1.4 (high). Past rain isn't scaled, because it has already
 fallen.
 
@@ -136,6 +153,32 @@ and flagged `is_synthetic: true`.
   presenting one as a confirmed flood).
 - **Quick-storm names** ("once a monsoon", "once a decade") come from
   the same rarity scale as the score, measured at a typical hotspot.
+- **Block a drain:** tick one or more outfalls from the critical-points list
+  (or tap them on the map). Every hotspot whose water passes through a
+  blocked outfall gets **+20 points** (part F above) and the driver "A drain
+  downstream is blocked (simulated)". Blocking Hero Honda Chowk's outfall
+  affects 6 hotspots; at 40 mm in 24 h that turns 0 Red into 6 Red.
+  `POST /simulate` takes `"blocked": ["<outfall id>", ...]`.
+
+## Backtest: would the rules have caught past floods?
+
+`model/backtest.py`, served by `GET /backtest` and the About → Backtest page.
+It replays each reported flood day through the same rules (ECMWF record
+rain for that IST day) and lists, per hotspot-day, whether it was caught
+(Red or Amber) and, if missed, why:
+
+| Miss reason | Rarity of the model's rain that day |
+|-------------|-------------------------------------|
+| Model saw little rain | below the 90th percentile of the spot's record (e < 1) |
+| Model saw moderate rain | 90th–99th percentile (1 ≤ e < 2) |
+| Model saw extreme rain | above the 99th percentile; the rules should have caught it |
+
+**It only uses reviewed reports** (`data/incidents.csv`). Until a person
+has checked the 48 news candidates, the page says "Not published yet" and
+the API returns `candidates_pending: 48`. A private preview on the
+unreviewed candidates (`python -m model.backtest --candidates`) gives
+**12 of 39 caught**; 27 missed (7 little rain, 20 moderate, 0 extreme).
+8 candidates have no map pin and are skipped.
 
 ## Tier B: XGBoost + SHAP (milestone 6)
 

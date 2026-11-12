@@ -39,6 +39,10 @@ Endpoints so far:
   POST /alerts/send         officer-approved send via the configured channel (console by default)
   GET  /alerts/log          what was sent, when, by whom (numbers masked)
   GET  /scorecard           hits, misses, false alarms, override outcomes (live only)
+  GET  /overrides/public    officer overrides for citizens (no officer names)
+  GET  /backtest            rules re-run on reviewed past floods
+  GET  /network/critical    critical intervention points (outfalls ranked by hotspots served)
+  GET  /sensors/proposed    proposed sensor sites (illustrative)
 """
 import os
 from contextlib import asynccontextmanager
@@ -170,6 +174,8 @@ class SimulateRequest(BaseModel):
     radius_km: float = 6
     # replay mode
     date: str | None = None
+    # either mode: outfalls marked blocked (ids from GET /network/critical)
+    blocked: list[str] = Field(default_factory=list, max_length=30)
 
 
 @app.post("/simulate")
@@ -179,12 +185,15 @@ def simulate(body: SimulateRequest):
         if not body.date:
             raise HTTPException(422, "date is required for replay")
         try:
-            return ops.apply_overrides(sim.run_replay(body.date), is_exercise=True)
+            return ops.apply_overrides(sim.run_replay(body.date, body.blocked), is_exercise=True)
         except ValueError as err:
             raise HTTPException(404, str(err))
     centre = tuple(body.centre) if body.centre else None
-    return ops.apply_overrides(sim.run_storm(body.rain_24h, body.peak1h, body.past_72h, centre, body.radius_km),
-                               is_exercise=True)
+    try:
+        result = sim.run_storm(body.rain_24h, body.peak1h, body.past_72h, centre, body.radius_km, body.blocked)
+    except ValueError as err:
+        raise HTTPException(422, str(err))
+    return ops.apply_overrides(result, is_exercise=True)
 
 
 @app.get("/simulate/events")
@@ -412,3 +421,46 @@ def scorecard():
     if not db.configured():
         return {"available": False}
     return {"available": True, **ops.scorecard()}
+
+
+# --- Public accountability, backtest, critical nodes ------------------------------------
+
+@app.get("/overrides/public")
+def overrides_public():
+    """Every live override, for citizens and RWAs: where, when, what changed, why. No officer names."""
+    if not db.configured():
+        return {"available": False, "overrides": []}
+    names = {f["properties"]["id"]: f["properties"]["name"] for f in data.hotspots_geojson()["features"]}
+    rows = ops.public_overrides()
+    for r in rows:
+        r["hotspot_name"] = names.get(r["hotspot_id"], r["hotspot_id"])
+    return {"available": True, "overrides": rows}
+
+
+@app.get("/backtest")
+def backtest():
+    """Rules re-run on reviewed past floods (unreviewed news candidates are never published)."""
+    from model import backtest as bt
+    import csv as _csv
+    out = bt.run(candidates=False)
+    with open(bt.CANDIDATES_CSV, newline="") as f:
+        out["candidates_pending"] = sum(r["status"] == "pending" for r in _csv.DictReader(f))
+    return out
+
+
+@app.get("/network/critical")
+def network_critical():
+    path = data.NETWORK_DIR / "critical_nodes.geojson"
+    if not path.exists():
+        raise HTTPException(404, "Run: python -m pipeline.critical_nodes")
+    return data._read_json_cached(path)
+
+
+@app.get("/sensors/proposed")
+def sensors_proposed():
+    """Proposed sensor sites. Illustrative: is_synthetic = true, not installed sensors."""
+    from pipeline.config import SYNTHETIC_DIR
+    path = SYNTHETIC_DIR / "proposed_sensors.geojson"
+    if not path.exists():
+        raise HTTPException(404, "Run: python -m pipeline.propose_sensors")
+    return data._read_json_cached(path)

@@ -3,6 +3,7 @@
 import type { HotspotRisk, RiskWindowKey } from "../types";
 import { LEVEL_COLOR } from "../risk";
 import { type Lang, actionText, locale, reasons, t } from "../i18n";
+import ModelDots from "./ModelDots";
 
 type Props = {
   hotspots: HotspotRisk[];
@@ -50,9 +51,12 @@ export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, 
                   {w.rain.rain_24h.toFixed(0)}
                   <span className="text-ink-3"> {s.mm}</span>
                 </span>
-                <span className="flex items-center justify-end gap-1.5 text-[12px] font-medium" style={{ color: LEVEL_COLOR[w.level] }}>
-                  <span className="inline-block h-2 w-2" style={{ background: LEVEL_COLOR[w.level] }} />
-                  {s.level[w.level]}
+                <span className="flex flex-col items-end gap-1">
+                  <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: LEVEL_COLOR[w.level] }}>
+                    <span className="inline-block h-2 w-2" style={{ background: LEVEL_COLOR[w.level] }} />
+                    {s.level[w.level]}
+                  </span>
+                  <ModelDots models={w.models} lang={lang} />
                 </span>
               </button>
               {open && <Details h={h} windowKey={windowKey} lang={lang} />}
@@ -81,6 +85,7 @@ function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: tru
           {s.adjustedText(w.override.officer, w.model_level ? s.level[w.model_level] : "?")}: "{w.override.reason}"
         </div>
       )}
+      {w.models && <ModelDots models={w.models} lang={lang} withText />}
       {active && (
         <div className="border-l-2 pl-2.5" style={{ borderColor: LEVEL_COLOR[w.level] }}>
           <div className="kicker" style={{ color: LEVEL_COLOR[w.level] }}>{s.action}</div>

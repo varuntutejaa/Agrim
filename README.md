@@ -73,7 +73,7 @@ Rain forecasts exist. What's missing is the step from *"80 mm expected"* to *"mo
 <td width="50%" valign="top">
 
 **Forecast**: the public view
-Live rain from three weather models (ECMWF, GFS, ICON), turned into **Red / Amber / Green** for each hotspot for the next 24 h and day 2. Each hotspot shows three plain-language reasons. English and **Hindi**, plus a "roads to avoid" list. Built for phones.
+Live rain from three weather models (ECMWF, GFS, ICON), turned into **High / Medium / Low** (Red / Amber / Green) for each hotspot for the next 24 h and day 2. **Confidence is model agreement**: all three show flooding = likely, one or two = possible, shown as three squares on every hotspot. Three plain-language reasons each, English and **Hindi**, a "roads to avoid" list, and a warning when the forecast is over 12 h old. Built for phones.
 
 </td>
 <td width="50%"><img src="docs/screenshots/s1_forecast.jpg" alt="Forecast view" /></td>
@@ -82,7 +82,7 @@ Live rain from three weather models (ECMWF, GFS, ICON), turned into **Red / Ambe
 <td valign="top">
 
 **Simulator**: for drills and the jury
-Design a storm (whole city, or a local storm placed by tapping the map) or replay any monsoon day since 2018. Flow paths turn red and move, showing **risk travelling downstream**. Always marked **EXERCISE / अभ्यास**.
+Design a storm (whole city, or a local storm placed by tapping the map) or replay any monsoon day since 2018. **Block a drain** and watch the hotspots that drain through it back up: blocking the Hero Honda Chowk outfall turns 6 hotspots Red at 40 mm. Flow paths turn red and move, showing **risk travelling downstream**. Always marked **EXERCISE / अभ्यास**.
 
 </td>
 <td><img src="docs/screenshots/s4_local_storm.jpg" alt="Local storm in the simulator" /></td>
@@ -91,7 +91,7 @@ Design a storm (whole city, or a local storm placed by tapping the map) or repla
 <td valign="top">
 
 **Drainage**: how water moves
-A drainage network computed from 30 m elevation data and mapped drains: catchments, flow paths between hotspots, and a ranking of **critical intervention points**. Water runs north-west toward the Najafgarh drain, the gradient the Centre described in the Lok Sabha.
+A drainage network computed from 30 m elevation data and mapped drains: catchments and flow paths between hotspots. **Critical points** ranks outfalls by hotspots served: Hero Honda Chowk's serves **6 of 19**, and 8 outfalls cover 84%, as a list, a coverage curve and a map layer. An optional layer shows **proposed sensors** (25 rain gauges, 43 drain sensors, 8 underpass monitors; illustrative). Water runs north-west toward the Najafgarh drain, the gradient the Centre described in the Lok Sabha.
 
 </td>
 <td><img src="docs/screenshots/s5_drainage.jpg" alt="Drainage view" /></td>
@@ -108,8 +108,8 @@ The SOP as a timeline (T-24 orders, T-12 gullies and pumps, T-3 pump test, T+24 
 <tr>
 <td valign="top">
 
-**Data**: assumptions, in the open
-What runs on public data today, what MCG's own (unreleased) data would add with evidence that it exists, and every assumption with its basis.
+**About**: assumptions, in the open
+A one-screen landing page leads in. The About area holds the **backtest** on past floods (published once the news reports are reviewed), the **public override log** (place, date, reason; no officer names), data and assumptions (what MCG's unreleased data would add, with evidence it exists), and **sources & credits**.
 
 </td>
 <td><img src="docs/screenshots/s8_data.jpg" alt="Data and assumptions view" /></td>
@@ -280,11 +280,11 @@ flowchart TD
   T["Terrain<br/>low spot · near drain level<br/>built-up · upstream area"] --> Q["Terrain points: up to 25"]
   P --> S["Score 0–100"]
   Q --> S
-  S --> SC["Run 3 scenarios<br/>rain × 0.7 · × 1.0 · × 1.4"]
-  SC --> F{"Floods where<br/>score ≥ 50?"}
-  F -->|"expected and high"| L["Likely"]
-  F -->|"high only"| PO["Possible"]
-  F -->|"none"| U["Unlikely"]
+  BD["Simulator only<br/>blocked drain: +20"] -.-> S
+  S --> F{"Score each weather model<br/>ECMWF · GFS · ICON<br/>how many reach 50?"}
+  F -->|"3 of 3"| L["Likely"]
+  F -->|"1 or 2"| PO["Possible"]
+  F -->|"0"| U["Unlikely"]
   L --> I{"High impact?<br/>score ≥ 65, flows on to<br/>another hotspot, or MCG grade A"}
   I -->|yes| RED["Red"]
   I -->|no| AMB["Amber"]
@@ -304,6 +304,7 @@ flowchart TD
   class GRN green
 ```
 
+- **Confidence is model agreement.** Live forecasts are scored once per weather model, and the vote sets the outlook (above). The simulator has one rain value, so there it scores rain × 0.7 / × 1.0 / × 1.4 instead.
 - **Two tiers.** The rules work with zero flood records. The **XGBoost** model (Tier B) trains only on real labels (sourced reports plus officer reports), refuses to train below 30 usable labels (at least 8 floods and 8 dry cases), and is checked one storm date at a time against the rules. Its SHAP explanations come from XGBoost itself, so the server stays light.
 - **Starting values, stated plainly.** The thresholds aren't fitted to past floods yet, and the app says so. Full details: [docs/MODEL.md](docs/MODEL.md).
 
@@ -319,7 +320,7 @@ pie showData
   "Missed (Green)" : 27
 ```
 
-Every miss was a day the forecast model under-read the rain. For example, on 9 Jul 2023 the model shows 12–21 mm, while reports give 150 mm. That's why **rain-gauge data is the first thing Agrim asks MCG for** ([D3 in the data requirements](docs/DATA_REQUIREMENTS.md)).
+Every miss was a day the forecast model under-read the rain: 7 where it saw little rain, 20 moderate, none extreme. For example, on 9 Jul 2023 the model shows 12–21 mm, while reports give 150 mm. The app's **About → Backtest** page lists each flood and why it was missed, and goes live only after a person has reviewed the reports. That's why **rain-gauge data is the first thing Agrim asks MCG for** ([D3 in the data requirements](docs/DATA_REQUIREMENTS.md)).
 
 </details>
 
@@ -430,10 +431,13 @@ Interactive docs: **[agrim-api.onrender.com/docs](https://agrim-api.onrender.com
 | Map layers | `GET /hotspots` | public | Hotspots as GeoJSON |
 | | `GET /rain/latest` | public | Rain per grid point: past 72 h, next 24/48 h, peak hour |
 | | `GET /network` · `/network/catchments` · `/network/streams` · `/network/drains` | public | Drainage graph, catchments, flow lines, mapped drains |
-| Simulator | `POST /simulate` | public | Same rules on a designed storm or a past day (always an exercise) |
+| | `GET /network/critical` | public | Outfalls ranked by hotspots served, the 80% priority set, the coverage curve |
+| | `GET /sensors/proposed` | public | Proposed sensor sites (illustrative, `is_synthetic`) |
+| Simulator | `POST /simulate` | public | Same rules on a designed storm or a past day (always an exercise); `blocked: [outfall ids]` blocks drains |
 | | `GET /simulate/events` · `/simulate/dates` | public | Curated replays · every monsoon day on record |
 | MCG desk | `GET /orders/{zone}` · `POST /orders/exercise` | public | Order sheet + crew SMS per zone (`all` for every zone) |
 | | `POST /override` · `POST /override/{id}/revoke` · `GET /overrides` | desk · desk · public | Officer overrides (name + reason, expiry), and the log |
+| | `GET /overrides/public` | public | Public override log: place, date, model's call, new call, reason (no officer names, no drills) |
 | | `POST /feedback` · `GET /feedback` | desk · public | After-rain reports |
 | | `GET /checklist` · `POST /checklist` | public · desk | SOP ticks per forecast run |
 | | `POST /exercise/reset` | desk | Clear drill ticks and overrides |
@@ -441,6 +445,7 @@ Interactive docs: **[agrim-api.onrender.com/docs](https://agrim-api.onrender.com
 | | `POST /alerts/draft` | public | Citizen SMS (HI + EN) and a mock IVR script per Red hotspot |
 | | `POST /alerts/send` · `GET /alerts/log` | desk · public | Officer-approved send through the configured channel; the log |
 | Model | `GET /model/status` · `GET /scorecard` | public | Tier B status and checks · hits, misses, false alarms, override outcomes |
+| | `GET /backtest` | public | Rules against reviewed past floods: caught or missed, and why (`candidates_pending` until reviewed) |
 
 <details>
 <summary><b>Examples</b></summary>
@@ -454,6 +459,11 @@ curl -s $API/forecast/latest | jq '.meta.counts.next_24h'
 # A once-a-decade storm centred on Hero Honda Chowk
 curl -s -X POST $API/simulate -H 'content-type: application/json' \
   -d '{"mode":"storm","rain_24h":90,"peak1h":25,"past_72h":40,"centre":[77.01,28.436],"radius_km":4}' \
+  | jq '.meta.counts'
+
+# Same storm, with Hero Honda Chowk's outfall blocked
+curl -s -X POST $API/simulate -H 'content-type: application/json' \
+  -d '{"mode":"storm","rain_24h":40,"peak1h":12,"past_72h":30,"blocked":["N01"]}' \
   | jq '.meta.counts'
 
 # Replay the wettest day in the record
@@ -568,8 +578,10 @@ Each step, the evidence that the data exists, the import templates (`data/templa
 ```mermaid
 flowchart LR
   DEV["Laptop"] -->|"git push"| GH["GitHub<br/>varuntutejaa/Agrim"]
-  GH -->|"every push"| CI["Actions · CI<br/>34 tests + web build"]
+  GH -->|"every push"| CI["Actions · CI<br/>40 tests + web build"]
   GH -->|"cron 05:05 / 17:05 IST"| FJ["Actions · forecast job"]
+  GH -->|"every 10 min, daytime"| KA["Actions · keep-awake ping"]
+  KA --> R
   DEV -->|"render deploys create"| R["Render · agrim-api<br/>FastAPI · Ohio"]
   DEV -->|"vercel deploy --prod"| V["Vercel · agrim<br/>static React build"]
   V -->|"HTTPS + CORS"| R
@@ -584,7 +596,8 @@ flowchart LR
 | API | Render web service `agrim-api` (free, Ohio, next to Neon) | `render deploys create srv-dbo2uqs9v7es73e5hl40` (config in `render.yaml`) |
 | Web | Vercel project `agrim` → [agrim-two.vercel.app](https://agrim-two.vercel.app) | `cd web && vercel deploy --prod --build-env VITE_API_URL=https://agrim-api.onrender.com` |
 | Database | Neon Postgres | Tables created automatically |
-| Forecast refresh | Render scheduler + optional GitHub Actions job | Add a `DATABASE_URL` repository secret to enable the job |
+| Forecast refresh | Render scheduler + GitHub Actions job (05:05 / 17:05 IST) | Needs a `DATABASE_URL` repository secret (Settings → Secrets and variables → Actions) |
+| Keep-awake | GitHub Actions, every 10 min, 06:30–23:30 IST, until 30 Nov 2026 | `.github/workflows/keep-awake.yml`; stops itself after the date |
 
 Performance, measured on the live site with an emulated mid-range phone over 4G: the forecast headline appears in **3.9 s** on a first visit and **1.3 s** when cached (server awake).
 
@@ -594,7 +607,8 @@ Performance, measured on the live site with an emulated mid-range phone over 4G:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| First page load takes 30–60 s | Free Render instance was asleep | Open `/health` a couple of minutes before a demo |
+| First page load takes 30–60 s | Free Render instance was asleep (the keep-awake ping covers daytime until 30 Nov) | Open `/health` a couple of minutes before a demo |
+| Masthead says "· old", amber banner on the forecast | Forecast over 12 h old: the refresh job isn't running | Check the `DATABASE_URL` secret, then run the **Forecast** workflow |
 | "No forecast yet" (503) | Open-Meteo refused the server (429) and no snapshot exists | Locally: `python -m model.run_forecast --fetch && python -m api.snapshot push`, or run the **Forecast** workflow |
 | Forecast is old | Server blocked from Open-Meteo | Same as above; the site keeps showing the last saved forecast with its time |
 | Desk says "actions are off" | `DATABASE_URL` missing on the server | Add it in Render → agrim-api → Environment |
@@ -619,11 +633,11 @@ The full 3-minute script is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 ## Testing
 
 ```bash
-python -m pytest -q tests        # 34 tests
+python -m pytest -q tests        # 40 tests
 cd web && npm run build          # type-check + production build
 ```
 
-- **Coverage:** the rules (no rain never floods, more rain never lowers risk, scenarios and levels), the simulator, the order sheets, alerts (wording, exercise labels, safe sending), MCG imports, the ML pipeline (refuses to train on too little data; trains, checks and explains on test-only labels), and the forecast snapshot.
+- **Coverage:** the rules (no rain never floods, more rain never lowers risk, scenarios and levels), the simulator, the order sheets, alerts (wording, exercise labels, safe sending), MCG imports, the ML pipeline (refuses to train on too little data; trains, checks and explains on test-only labels), the forecast snapshot, model-agreement confidence, critical points, blocking a drain, the backtest's review gate and the proposed sensors.
 - **Database tests** run against Neon in a throwaway schema that is dropped afterwards, and are skipped when `DATABASE_URL` isn't set.
 - **CI:** [GitHub Actions](.github/workflows/ci.yml) runs the Python tests and the web build on every push.
 
@@ -644,17 +658,17 @@ cd web && npm run build          # type-check + production build
 ```text
 Agrim/
 ├── api/                  FastAPI app
-│   ├── main.py           routes (28 endpoints)
+│   ├── main.py           routes (32 endpoints)
 │   ├── data.py           map layers from pipeline files
 │   ├── ops.py            overrides, reports, checklist, alert log, scorecard
 │   ├── db.py             Neon Postgres (schema-qualified SQL)
 │   ├── snapshot.py       forecast saved to and restored from the database
 │   ├── scheduler.py      twice-daily runs, storm mode, fetch cooldown
 │   └── notify.py         alert channels (console / Twilio sandbox)
-├── model/                rules, climatology, simulator, replay, orders, alerts, XGBoost + SHAP
-├── pipeline/             data fetchers, drainage network, geocoding, imports, label tools
+├── model/                rules, climatology, simulator, replay, backtest, orders, alerts, XGBoost + SHAP
+├── pipeline/             data fetchers, drainage network, critical points, proposed sensors, geocoding, imports, label tools
 ├── web/                  React + Vite + TypeScript + MapLibre + Tailwind
-│   └── src/components/   Forecast, Simulator, Drainage, MCG desk (ops/), Data
+│   └── src/components/   Landing, Forecast, Simulator, Drainage + Critical points, MCG desk (ops/), About (about/)
 ├── data/
 │   ├── hotspots.csv      hotspots (MCG schema: id, name, zone, grade, lat, lon)
 │   ├── incidents.csv     sourced flood labels (empty until reviewed)
@@ -663,12 +677,12 @@ Agrim/
 │   ├── model/            rain record, replay days, model status
 │   ├── external/         India Flood Inventory subset (CC-BY-4.0)
 │   ├── templates/        header-only templates for MCG data
-│   └── synthetic/        illustrative data only (flagged, empty)
+│   └── synthetic/        illustrative data only, flagged (proposed sensor sites)
 ├── docs/                 model, network, data requirements, SOP, design, sources, demo
-├── tests/                34 tests
+├── tests/                40 tests
 ├── reference/jalnetra/   reference code from an earlier project (not run)
 ├── scripts/              macOS XGBoost helper
-├── .github/workflows/    CI + twice-daily forecast job
+├── .github/workflows/    CI, twice-daily forecast job, daytime keep-awake ping
 └── render.yaml           API deployment (Render)
 ```
 
@@ -684,6 +698,9 @@ Agrim/
 - [x] XGBoost + SHAP pipeline (ready, waiting for real labels)
 - [x] Alerts (EN + HI, mock IVR), scorecard, Hindi, deployment, CI
 - [x] Forecast snapshot in the database (survives restarts and throttling)
+- [x] Confidence from three-model agreement on every hotspot
+- [x] Critical points (list + map), block-a-drain simulation, proposed sensors (illustrative)
+- [x] Landing page; About area with backtest, public override log, sources & credits
 - [ ] Review the 48 news candidates into `data/incidents.csv`
 - [ ] MCG data: hotspot list (D1), post-storm records (D2), rain gauges (D3)
 - [ ] Recalibrate thresholds on reviewed outcomes; train Tier B

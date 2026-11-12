@@ -8,7 +8,9 @@ const Line = ({ c, dashed = false, w = 2 }: { c: string; dashed?: boolean; w?: n
   <span className="inline-block w-5" style={{ borderTop: `${w}px ${dashed ? "dashed" : "solid"} ${c}` }} />
 );
 
-export default function MapKey({ view, lang = "en" }: { view: View; lang?: Lang }) {
+export default function MapKey({ view, lang = "en", critical = false, sensors = false }: {
+  view: View; lang?: Lang; critical?: boolean; sensors?: boolean;
+}) {
   const k = t(lang).key;
   const rows: [React.ReactNode, string][] =
     view === "drainage"
@@ -17,12 +19,18 @@ export default function MapKey({ view, lang = "en" }: { view: View; lang?: Lang 
           [<Line c="#4b5058" dashed w={1.5} />, "Onward flow"],
           [<Line c="#24527a" w={3} />, "Flow line (from ground height)"],
           [<Line c="#2f6f73" w={1.5} />, "Mapped drain"],
+          ...(critical ? ([[<Dot c="#24527a" />, "Outfall (number = hotspots served)"]] as [React.ReactNode, string][]) : []),
+          ...(sensors ? ([
+            [<span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-water bg-paper" />, "Proposed rain gauge"],
+            [<Dot c="#2f6f73" />, "Proposed drain sensor"],
+            [<span className="inline-block h-2.5 w-2.5 rounded-full border border-ink bg-risk-amber" />, "Proposed underpass monitor"],
+          ] as [React.ReactNode, string][]) : []),
         ]
       : [
           [<Dot c={LEVEL_COLOR.red} />, k.red],
           [<Dot c={LEVEL_COLOR.amber} />, k.amber],
           [<Dot c={LEVEL_COLOR.green} />, k.green],
-          ...(view === "simulator" ? ([[<Line c={LEVEL_COLOR.red} dashed />, k.flow]] as [React.ReactNode, string][]) : []),
+          ...(view === "simulator" ? ([[<Line c={LEVEL_COLOR.red} dashed />, k.flow], [<Dot c="#24527a" />, "Outfall: tap to block"]] as [React.ReactNode, string][]) : []),
         ];
   return (
     // Hidden on phones: the panel's count strip carries the same colours.

@@ -29,7 +29,9 @@ import numpy as np
 
 # --- Documented parameters ------------------------------------------------------
 WEIGHTS = {"rain_24h": 35, "peak1h": 20, "upstream_rain": 10, "wet_ground": 10,
-           "low_spot": 10, "drain_level": 5, "built_up": 5, "upstream_area": 5}
+           "low_spot": 10, "drain_level": 5, "built_up": 5, "upstream_area": 5,
+           # Simulator only: a drain marked blocked downstream of this hotspot.
+           "blocked_outflow": 20}
 FLOOD_SCORE = 50
 RED_SCORE = 65
 SCENARIOS = {"low": 0.7, "expected": 1.0, "high": 1.4}
@@ -123,15 +125,23 @@ def rain_points(r: dict, t: dict, clim: dict, scale: float) -> tuple[dict, dict]
     return pts, e
 
 
-def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
+def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict,
+           model_rains: dict | None = None, blocked: bool = False) -> dict:
     """Risk for one hotspot and one time window.
 
-    rain:    rain_24h, peak1h, upstream_rain_24h, rain_past_72h (mm; forecast or simulated)
-    terrain: one row of hotspot_terrain.csv
-    clim:    one row of rain_climatology.csv
-    hotspot: one row of hotspots.csv (for the MCG severity grade)
+    rain:        rain_24h, peak1h, upstream_rain_24h, rain_past_72h (mm; forecast or simulated)
+    terrain:     one row of hotspot_terrain.csv
+    clim:        one row of rain_climatology.csv
+    hotspot:     one row of hotspots.csv (for the MCG severity grade)
+    model_rains: live forecast only: the same rain inputs from each weather model.
+                 Then confidence comes from how many models show flooding
+                 (all agree = Likely, some = Possible). Without it (simulator,
+                 replay: one rain value) it comes from the x0.7 / x1.4 scenarios.
+    blocked:     simulator only: a drain downstream of this hotspot is marked blocked.
     """
     tpts = terrain_points(terrain)
+    if blocked:
+        tpts["blocked_outflow"] = WEIGHTS["blocked_outflow"]
     scores, expected_pts, expected_e = {}, None, None
     for name, scale in SCENARIOS.items():
         rpts, e = rain_points(rain, terrain, clim, scale)
@@ -140,8 +150,18 @@ def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
             expected_pts, expected_e = {**rpts, **tpts}, e
 
     floods = {k: v >= FLOOD_SCORE for k, v in scores.items()}
-    likely = floods["expected"] and floods["high"]
-    possible = floods["high"] and not floods["expected"]
+    models = None
+    if model_rains:
+        # One vote per weather model: does its rain push the score over the line?
+        votes = {m: round(sum(rain_points(r, terrain, clim, 1.0)[0].values()) + sum(tpts.values()), 1)
+                 for m, r in model_rains.items()}
+        n_flood = sum(v >= FLOOD_SCORE for v in votes.values())
+        models = {"flooding": n_flood, "total": len(votes), "scores": votes}
+        likely = n_flood == len(votes) and n_flood > 0
+        possible = 0 < n_flood < len(votes)
+    else:
+        likely = floods["expected"] and floods["high"]
+        possible = floods["high"] and not floods["expected"]
     grade = (hotspot.get("mcg_severity_grade") or "").strip().lower()
     high_impact = (scores["expected"] >= RED_SCORE or terrain["n_downstream"] > 0 or grade in HIGH_IMPACT_GRADES)
 
@@ -152,7 +172,12 @@ def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
     else:
         level = "green"
     confidence = None
-    if likely:
+    if models:
+        if likely:
+            confidence = "high"
+        elif possible:
+            confidence = "medium" if models["flooding"] >= 2 else "low"
+    elif likely:
         confidence = "high" if floods["low"] else "medium"
     elif possible:
         confidence = "low"
@@ -161,6 +186,8 @@ def assess(rain: dict, terrain: dict, clim: dict, hotspot: dict) -> dict:
         "level": level,
         "outlook": "likely" if likely else "possible" if possible else "unlikely",
         "confidence": confidence,
+        "confidence_basis": "models" if models else "scenarios",
+        "models": models,
         "high_impact": bool(high_impact),
         "score": scores["expected"],
         "scores": scores,
@@ -184,6 +211,7 @@ def driver_facts(pts: dict, e: dict, rain: dict, t: dict) -> list[dict]:
         "rain_24h": rain["rain_24h"], "peak1h": rain["peak1h"], "upstream_rain": rain["upstream_rain_24h"],
         "wet_ground": rain["rain_past_72h"], "low_spot": abs(t["relief_1km_m"]), "drain_level": max(t["hand_m"], 0.0),
         "built_up": t["builtup_share_500m"], "upstream_area": t["max_drained_km2_150m"],
+        "blocked_outflow": 1.0,
     }
     return [{"key": k, "value": round(float(value[k]), 2), "e": round(e[k], 3) if k in e else None} for k in _top(pts)]
 
@@ -200,5 +228,6 @@ def drivers(pts: dict, e: dict, rain: dict, t: dict) -> list[str]:
                                 else f"Only {t['hand_m']:.1f} m above the nearest drain line"),
         "built_up": lambda: f"{t['builtup_share_500m']:.0%} of the ground nearby is built over",
         "upstream_area": lambda: f"{t['max_drained_km2_150m']:.1f} km² of land drains towards it",
+        "blocked_outflow": lambda: "A drain downstream is blocked (simulated)",
     }
     return [text[k]() for k in _top(pts)]

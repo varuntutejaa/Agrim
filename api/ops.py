@@ -120,6 +120,15 @@ def _load_active(is_exercise: bool) -> dict:
     return {r["hotspot_id"]: _jsonable(r) for r in found}
 
 
+def public_overrides(limit: int = 100) -> list[dict]:
+    """Live overrides for the public page: place, dates, change and reason; no officer names."""
+    with db.connect() as conn:
+        found = conn.execute(db.q(
+            """SELECT id, created_at, hotspot_id, model_level, new_level, reason, valid_until, revoked_at
+               FROM {overrides} WHERE NOT is_exercise ORDER BY created_at DESC LIMIT %s"""), (limit,)).fetchall()
+    return [_jsonable(r) for r in found]
+
+
 def override_log(limit: int = 50) -> list[dict]:
     with db.connect() as conn:
         found = conn.execute(db.q("SELECT * FROM {overrides} ORDER BY created_at DESC LIMIT %s"), (limit,)).fetchall()

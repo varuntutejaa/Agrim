@@ -1,36 +1,45 @@
-// Agrim: three views over one map.
-//   Forecast   live Red/Amber/Green risk per hotspot
-//   Simulator  design a storm or replay a past day (always marked as an exercise)
-//   Drainage   how water moves between hotspots
-//   MCG desk   orders, SOP checklist, overrides and feedback for MCG officers
+// Agrim: one map, several views, each with its own address (#/forecast ...).
+//   Home       what Agrim is, and where to go
+//   Forecast   live Red/Amber/Green risk per hotspot (English / Hindi)
+//   Simulator  design a storm, replay a past day, block a drain (always an exercise)
+//   Drainage   how water moves, critical points, proposed sensors
+//   MCG desk   orders, SOP checklist, overrides, alerts, scorecard
+//   About      team, backtest, public overrides, data & assumptions, sources
 // Phone: map on top, panel below. Desktop: panel on the left, map on the right.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  fetchDrainage, fetchHotspots, fetchRain, fetchReplayDates, fetchReplayEvents, fetchRisk, simulate,
+  fetchCritical, fetchDrainage, fetchHotspots, fetchProposedSensors, fetchRain, fetchReplayDates, fetchReplayEvents,
+  fetchRisk, simulate,
 } from "./api";
-import DrainagePanel from "./components/DrainagePanel";
+import AboutSection from "./components/about/AboutSection";
+import DrainagePanel, { type DrainageMode } from "./components/DrainagePanel";
 import ForecastPanel from "./components/ForecastPanel";
 import HotspotMap, { type Storm } from "./components/HotspotMap";
+import LandingPage from "./components/LandingPage";
 import MapKey from "./components/MapKey";
 import MapStamp from "./components/MapStamp";
 import Masthead from "./components/Masthead";
 import OpsDesk from "./components/OpsDesk";
-import DataPage from "./components/DataPage";
 import SimulatorPanel, { type SimMode } from "./components/SimulatorPanel";
 import { ExerciseBand } from "./components/ui";
 import { type Lang, savedLang, saveLang } from "./i18n";
+import { useRoute } from "./route";
 import type {
-  DrainageLayers, HotspotCollection, OpsSource, RainCollection, RainWindow, ReplayEvent, RiskResult, RiskWindowKey,
-  SimRequest, SimResult, StormParams, View,
+  CriticalNodes, DrainageLayers, HotspotCollection, OpsSource, ProposedSensors, RainCollection, RainWindow, ReplayEvent,
+  RiskResult, RiskWindowKey, SimRequest, SimResult, StormParams,
 } from "./types";
 
 // ?pin=1 turns on the "click to read coordinates" helper for the team.
 const pinMode = new URLSearchParams(window.location.search).has("pin");
 const SIM_DEBOUNCE_MS = 120;
+const STALE_HOURS = 12;
+const NO_BLOCKS: string[] = [];   // blocked drains only show in the simulator
 
 export default function App() {
-  const [view, setView] = useState<View>("forecast");
-  // Hindi applies to the public Forecast view and the masthead; officer tools stay in English.
+  const [route, go] = useRoute();
+  const view = route.view;
+
+  // Hindi applies to the public views (home, forecast) and the masthead; officer tools stay in English.
   const [langChoice, setLangChoice] = useState<Lang>(savedLang);
   const lang: Lang = view === "forecast" ? langChoice : "en";
   const onLang = (l: Lang) => {
@@ -52,29 +61,45 @@ export default function App() {
   const [rainWindow, setRainWindow] = useState<RainWindow>("next_24h");
 
   const refreshRisk = useCallback(() => {
-    fetchRisk().then(setRisk).catch((e) => setError(String(e)));
+    fetchRisk()
+      .then(setRisk)
+      .catch((e) => setError(/503/.test(String(e))
+        ? "The forecast is being refreshed. Try again in a minute."
+        : "Couldn't reach the Agrim server. The free server may be waking up (up to a minute)."));
   }, []);
   useEffect(() => {
-    fetchHotspots().then(setHotspots).catch((e) => setError(String(e)));
-    fetchRain().then(setRain).catch((e) => setError(String(e)));
+    fetchHotspots().then(setHotspots).catch(() => setError("Couldn't reach the Agrim server. It may be waking up."));
+    fetchRain().then(setRain).catch(() => {});
     refreshRisk();
   }, [refreshRisk]);
 
-  // Drainage layers: downloaded the first time the drainage or simulator view opens.
+  const ageHours = risk ? (Date.now() - new Date(risk.meta.generated_at).getTime()) / 3.6e6 : null;
+  const stale = ageHours !== null && ageHours > STALE_HOURS;
+
+  // Drainage layers, critical points and sensors: fetched the first time a map view needs them.
   const [drainage, setDrainage] = useState<DrainageLayers | null>(null);
   const [drainageLoading, setDrainageLoading] = useState(false);
+  const [critical, setCritical] = useState<CriticalNodes | null>(null);
+  const [sensors, setSensors] = useState<ProposedSensors | null>(null);
+  const [drainageMode, setDrainageMode] = useState<DrainageMode>("links");
+  const [showSensors, setShowSensors] = useState(false);
   const drainageRequested = useRef(false);
   useEffect(() => {
-    if (view === "forecast" || view === "ops" || drainageRequested.current) return;
+    if ((view !== "drainage" && view !== "simulator") || drainageRequested.current) return;
     drainageRequested.current = true;
     setDrainageLoading(true);
-    fetchDrainage().then(setDrainage).catch((e) => setError(String(e))).finally(() => setDrainageLoading(false));
+    fetchDrainage().then(setDrainage).catch(() => setError("Couldn't load the drainage network.")).finally(() => setDrainageLoading(false));
+    fetchCritical().then(setCritical).catch(() => {});
   }, [view]);
+  useEffect(() => {
+    if (showSensors && !sensors) fetchProposedSensors().then(setSensors).catch(() => {});
+  }, [showSensors, sensors]);
 
   // Simulator
   const [simMode, setSimMode] = useState<SimMode>("storm");
   const [storm, setStorm] = useState<StormParams>({ rain_24h: 90, peak1h: 25, past_72h: 40, centre: null, radius_km: 6 });
   const [replayDate, setReplayDate] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<string[]>([]);
   const [events, setEvents] = useState<ReplayEvent[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [simResult, setSimResult] = useState<SimResult | null>(null);
@@ -83,12 +108,16 @@ export default function App() {
   const simListsRequested = useRef(false);
   const [opsSource, setOpsSource] = useState<OpsSource>("live");
   const simActive = view === "simulator" || (view === "ops" && opsSource === "exercise");
-  const simRequest: SimRequest = simMode === "replay" && replayDate ? { mode: "replay", date: replayDate } : { mode: "storm", ...storm };
+  const simRequest: SimRequest = useMemo(
+    () => ({ ...(simMode === "replay" && replayDate ? { mode: "replay" as const, date: replayDate } : { mode: "storm" as const, ...storm }), blocked }),
+    [simMode, replayDate, storm, blocked],
+  );
+  const toggleBlock = useCallback((id: string) => setBlocked((b) => (b.includes(id) ? b.filter((x) => x !== id) : [...b, id])), []);
 
   useEffect(() => {
     if (view !== "simulator" || simListsRequested.current) return;
     simListsRequested.current = true;
-    fetchReplayEvents().then((r) => setEvents(r.events)).catch((e) => setError(String(e)));
+    fetchReplayEvents().then((r) => setEvents(r.events)).catch(() => {});
     fetchReplayDates().then((r) => setDates(r.dates)).catch(() => {});
   }, [view]);
 
@@ -99,15 +128,14 @@ export default function App() {
     const ctrl = new AbortController();
     const timer = setTimeout(() => {
       setSimBusy(true);
-      const req = simMode === "replay" ? { mode: "replay" as const, date: replayDate! } : { mode: "storm" as const, ...storm };
-      simulate(req, ctrl.signal)
+      simulate(simRequest, ctrl.signal)
         .then((r) => {
           setSimResult(r);
           setSimBusy(false);
         })
         .catch((e) => {
           if (e.name !== "AbortError") {
-            setError(String(e));
+            setError("The simulator couldn't reach the server. It may be waking up.");
             setSimBusy(false);
           }
         });
@@ -116,13 +144,12 @@ export default function App() {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [simActive, simMode, storm, replayDate, simNonce]);
+  }, [simActive, simRequest, simNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSimMode = (m: SimMode) => {
     setSimMode(m);
     if (m === "replay" && !replayDate && events.length) {
-      // Start on the wettest day in the record.
-      setReplayDate((events.find((e) => e.id === "record-1") ?? events[0]).date);
+      setReplayDate((events.find((e) => e.id === "record-1") ?? events[0]).date);   // the wettest day on record
     }
   };
   const onStorm = useCallback((patch: Partial<StormParams>) => setStorm((s) => ({ ...s, ...patch })), []);
@@ -166,32 +193,36 @@ export default function App() {
   const updated = risk
     ? new Date(risk.meta.generated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) + " IST"
     : undefined;
+  const masthead = <Masthead view={view} onView={(v) => go(v)} updated={updated} lang={langChoice} onLang={onLang} stale={stale} />;
+  const errorBar = error && (
+    <div className="flex items-center gap-3 border-b border-risk-amber bg-paper-2 px-5 py-2 text-[13px] text-ink md:px-7">
+      {error}
+      <button className="ml-auto text-ink-3 hover:text-ink" onClick={() => { setError(null); refreshRisk(); }}>Retry</button>
+    </div>
+  );
 
-  if (view === "data") {
+  // Full-page views (no map).
+  if (view === "home" || view === "about" || view === "ops") {
     return (
       <div className="flex h-full flex-col">
-        <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
-        <div className="min-h-0 flex-1 overflow-y-auto bg-paper"><DataPage /></div>
-      </div>
-    );
-  }
-
-  if (view === "ops") {
-    return (
-      <div className="flex h-full flex-col">
-        <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
+        {masthead}
+        {errorBar}
         <div className="min-h-0 flex-1 overflow-y-auto bg-paper">
-          <OpsDesk
-            source={opsSource}
-            onSource={setOpsSource}
-            risk={risk}
-            riskWindow={riskWindow}
-            onRiskWindow={setRiskWindow}
-            simResult={simResult}
-            simRequest={simRequest}
-            onChanged={() => (opsSource === "exercise" ? setSimNonce((n) => n + 1) : refreshRisk())}
-            onOpenSimulator={() => setView("simulator")}
-          />
+          {view === "home" && <LandingPage risk={risk} ageHours={ageHours} go={go} />}
+          {view === "about" && <AboutSection tab={route.tab} onTab={(t) => go("about", t)} />}
+          {view === "ops" && (
+            <OpsDesk
+              source={opsSource}
+              onSource={setOpsSource}
+              risk={risk}
+              riskWindow={riskWindow}
+              onRiskWindow={setRiskWindow}
+              simResult={simResult}
+              simRequest={simRequest}
+              onChanged={() => (opsSource === "exercise" ? setSimNonce((n) => n + 1) : refreshRisk())}
+              onOpenSimulator={() => go("simulator")}
+            />
+          )}
         </div>
       </div>
     );
@@ -199,14 +230,8 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <Masthead view={view} onView={setView} updated={updated} lang={langChoice} onLang={onLang} />
-
-      {error && (
-        <div className="flex items-center gap-3 border-b border-risk-red bg-paper-2 px-5 py-2 text-[13px] text-risk-red md:px-7">
-          Could not reach the Agrim server. Is the API running? <span className="font-mono text-[11px] text-ink-3">{error}</span>
-          <button className="ml-auto text-ink-3 hover:text-ink" onClick={() => setError(null)} aria-label="Dismiss">✕</button>
-        </div>
-      )}
+      {masthead}
+      {errorBar}
       {pinMode && (
         <div className="border-b border-rule bg-paper-2 px-5 py-1.5 text-[12px] text-water md:px-7">
           Pin mode: click the map to read a location's coordinates.
@@ -231,6 +256,12 @@ export default function App() {
             onSelect={setSelectedId}
             pinMode={pinMode}
             lang={lang}
+            critical={critical}
+            criticalVisible={(view === "drainage" && drainageMode === "critical") || view === "simulator"}
+            blockedIds={view === "simulator" ? blocked : NO_BLOCKS}
+            onNodeClick={view === "simulator" ? toggleBlock : undefined}
+            sensors={sensors}
+            showSensors={view === "drainage" && showSensors}
           />
           {view === "simulator" && (
             <>
@@ -240,7 +271,12 @@ export default function App() {
               <MapStamp result={simResult} storm={storm} />
             </>
           )}
-          <MapKey view={view} lang={lang} />
+          {view === "drainage" && showSensors && (
+            <div className="pointer-events-none absolute left-0 right-0 top-0">
+              <ExerciseBand compact label="PROPOSED · ILLUSTRATIVE" note="Sensor sites are proposals, not installed sensors" />
+            </div>
+          )}
+          <MapKey view={view} lang={lang} critical={drainageMode === "critical"} sensors={showSensors} />
         </div>
 
         <aside className="min-h-0 flex-1 overflow-y-auto border-t border-ink bg-paper md:order-1 md:w-[440px] md:flex-none md:border-r md:border-t-0">
@@ -257,6 +293,7 @@ export default function App() {
               selectedId={selectedId}
               onSelect={setSelectedId}
               lang={lang}
+              ageHours={ageHours}
             />
           )}
           {view === "simulator" && (
@@ -273,10 +310,24 @@ export default function App() {
               busy={simBusy}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              critical={critical}
+              blocked={blocked}
+              onToggleBlock={toggleBlock}
             />
           )}
           {view === "drainage" && (
-            <DrainagePanel drainage={drainage} loading={drainageLoading} selectedId={selectedId} onSelect={setSelectedId} />
+            <DrainagePanel
+              drainage={drainage}
+              loading={drainageLoading}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              mode={drainageMode}
+              onMode={setDrainageMode}
+              critical={critical}
+              showSensors={showSensors}
+              onShowSensors={setShowSensors}
+              sensorCounts={sensors?.meta.counts ?? null}
+            />
           )}
         </aside>
       </main>

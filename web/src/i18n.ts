@@ -18,7 +18,7 @@ export const locale = (l: Lang) => (l === "hi" ? "hi-IN" : "en-IN");
 const STR = {
   en: {
     subtitle: "Gurugram waterlogging forecast",
-    tabs: { forecast: "Forecast", simulator: "Simulator", drainage: "Drainage", ops: "MCG desk", data: "Data" },
+    tabs: { home: "Home", forecast: "Forecast", simulator: "Simulator", drainage: "Drainage", ops: "MCG desk", about: "About" },
     updated: "Updated",
     forecast: "Forecast",
     next24: "Next 24 h",
@@ -33,9 +33,9 @@ const STR = {
     fetched: (d: string, t: string) => `Forecast from ECMWF, GFS and ICON, fetched ${d} at ${t} IST.`,
     methodNote: "Each forecast is compared with ECMWF's 2018–2026 monsoon record at that hotspot, then combined with terrain (Copernicus DEM), drains (OpenStreetMap) and built-up land (ESA WorldCover). Method in docs/MODEL.md; sources in docs/SOURCES.md.",
     rulesNote: null as string | null, // English uses the server's note
-    level: { red: "Likely", amber: "Possible", green: "Low risk" } as Record<RiskLevel, string>,
-    levelLong: { red: "Flooding likely", amber: "Flooding possible", green: "Low risk" } as Record<RiskLevel, string>,
-    countLabel: { red: "Likely", amber: "Possible", green: "Low risk" } as Record<RiskLevel, string>,
+    level: { red: "High", amber: "Medium", green: "Low" } as Record<RiskLevel, string>,
+    levelLong: { red: "High · flooding likely", amber: "Medium · flooding possible", green: "Low risk" } as Record<RiskLevel, string>,
+    countLabel: { red: "High · likely", amber: "Medium · possible", green: "Low" } as Record<RiskLevel, string>,
     col: { hotspot: "Hotspot", rain: "Rain 24h", status: "Status" },
     mm: "mm",
     needsPin: "Needs a pin",
@@ -63,12 +63,17 @@ const STR = {
       if (c.red === 0) return `${start}looding possible at ${plural(c.amber)}.`;
       return `${start}looding likely at ${plural(c.red)}${c.amber ? `, possible at ${c.amber} more` : ""}.`;
     },
-    key: { red: "Flooding likely", amber: "Flooding possible", green: "Low risk", flow: "Risk flowing downstream" },
+    key: { red: "High · flooding likely", amber: "Medium · flooding possible", green: "Low risk", flow: "Risk flowing downstream" },
+    models: (n: number, total: number) => `${n} of ${total} weather models show flooding`,
+    coverage: "21 of MCG's 159 hotspots are mapped, from public reports. The full list needs MCG data.",
+    stale: (h: number, when: string) => `Last updated ${h} hours ago (${when}). The forecast refresh is delayed; treat this as old.`,
     popupRain: (mm: number, peak: number) => `${mm} mm in 24 h · peak ${peak} mm/h`,
+    flowsTo: (names: string) => `Water flows on to ${names}.`,
+    receivesFrom: (names: string) => `Receives water from ${names}.`,
   },
   hi: {
     subtitle: "गुरुग्राम जलभराव पूर्वानुमान",
-    tabs: { forecast: "पूर्वानुमान", simulator: "सिम्युलेटर", drainage: "जल निकासी", ops: "MCG डेस्क", data: "डेटा" },
+    tabs: { home: "होम", forecast: "पूर्वानुमान", simulator: "सिम्युलेटर", drainage: "जल निकासी", ops: "MCG डेस्क", about: "परिचय" },
     updated: "अपडेट",
     forecast: "पूर्वानुमान",
     next24: "अगले 24 घंटे",
@@ -83,9 +88,9 @@ const STR = {
     fetched: (d: string, t: string) => `ECMWF, GFS और ICON का पूर्वानुमान, ${d} को ${t} बजे (IST) लिया गया।`,
     methodNote: "हर पूर्वानुमान की तुलना उस हॉटस्पॉट के 2018–2026 के मानसूनी रिकॉर्ड से की जाती है, फिर ज़मीन की ऊँचाई, नालों और पक्की ज़मीन के आँकड़े जोड़े जाते हैं। तरीका: docs/MODEL.md; स्रोत: docs/SOURCES.md।",
     rulesNote: "ये स्कोर लिखित नियमों से बनते हैं; इन्हें अभी पिछली बाढ़ की घटनाओं से जाँचा नहीं गया है। ये प्रायिकता (probability) नहीं हैं।",
-    level: { red: "प्रबल संभावना", amber: "संभावना", green: "कम जोखिम" } as Record<RiskLevel, string>,
-    levelLong: { red: "जलभराव की प्रबल संभावना", amber: "जलभराव की संभावना", green: "कम जोखिम" } as Record<RiskLevel, string>,
-    countLabel: { red: "प्रबल संभावना", amber: "संभावना", green: "कम जोखिम" } as Record<RiskLevel, string>,
+    level: { red: "उच्च", amber: "मध्यम", green: "कम" } as Record<RiskLevel, string>,
+    levelLong: { red: "उच्च · जलभराव की प्रबल संभावना", amber: "मध्यम · जलभराव की संभावना", green: "कम जोखिम" } as Record<RiskLevel, string>,
+    countLabel: { red: "उच्च · प्रबल", amber: "मध्यम · संभव", green: "कम" } as Record<RiskLevel, string>,
     col: { hotspot: "हॉटस्पॉट", rain: "24 घं. बारिश", status: "स्थिति" },
     mm: "मिमी",
     needsPin: "स्थान तय नहीं",
@@ -111,8 +116,13 @@ const STR = {
       if (c.red === 0) return `${c.amber} हॉटस्पॉट पर जलभराव की संभावना।`;
       return `${c.red} हॉटस्पॉट पर जलभराव की प्रबल संभावना${c.amber ? `, ${c.amber} और पर संभावना` : ""}।`;
     },
-    key: { red: "जलभराव की प्रबल संभावना", amber: "जलभराव की संभावना", green: "कम जोखिम", flow: "जोखिम नीचे की ओर" },
+    key: { red: "उच्च · जलभराव की प्रबल संभावना", amber: "मध्यम · जलभराव की संभावना", green: "कम जोखिम", flow: "जोखिम नीचे की ओर" },
+    models: (n: number, total: number) => `${total} में से ${n} मौसम मॉडल जलभराव दिखाते हैं`,
+    coverage: "MCG के 159 में से 21 हॉटस्पॉट सार्वजनिक रिपोर्टों से नक्शे पर हैं। पूरी सूची के लिए MCG का डेटा चाहिए।",
+    stale: (h: number, when: string) => `आखिरी अपडेट ${h} घंटे पहले (${when})। पूर्वानुमान अपडेट होने में देरी है; इसे पुराना मानें।`,
     popupRain: (mm: number, peak: number) => `24 घंटे में ${mm} मिमी · सबसे तेज़ ${peak} मिमी/घंटा`,
+    flowsTo: (names: string) => `यहाँ से पानी ${names} की ओर जाता है।`,
+    receivesFrom: (names: string) => `यहाँ ${names} से पानी आता है।`,
   },
 };
 

@@ -20,6 +20,7 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   lang: Lang;
+  ageHours: number | null;
 };
 
 export default function ForecastPanel(p: Props) {
@@ -53,7 +54,15 @@ export default function ForecastPanel(p: Props) {
         />
       </div>
 
+      {p.ageHours !== null && p.ageHours > 12 && risk && (
+        <div role="status" className="border border-risk-amber bg-paper-2 px-3 py-2 text-[13px] text-ink">
+          <span className="kicker mr-1.5 !text-risk-amber">{lang === "hi" ? "पुराना" : "Old forecast"}</span>
+          {s.stale(Math.round(p.ageHours), `${fmtDay(risk.meta.generated_at)} ${fmtTime(risk.meta.generated_at)} IST`)}
+        </div>
+      )}
+
       <RiskSummary counts={risk?.meta.counts[riskWindow]} sub={sub} lang={lang} />
+      <p className="-mt-3 text-[12px] text-ink-3">{s.coverage}</p>
 
       <RoadsToAvoid windowKey={riskWindow} lang={lang} refreshKey={risk} onSelect={p.onSelect} />
 

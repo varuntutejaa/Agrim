@@ -50,6 +50,16 @@ Derived from 5–7 by `pipeline/build_network.py`: flow directions, catchments,
 hotspot links, critical-node ranking and terrain features (`data/network/`).
 Method and limits: [NETWORK.md](NETWORK.md).
 
+Derived from the network by `pipeline/critical_nodes.py`: outfalls ranked by
+hotspots served and the 80% priority set (`data/network/critical_nodes.geojson`).
+
+## Illustrative (marked in the UI, `is_synthetic = true`)
+
+| Data | File | How it was made |
+|------|------|-----------------|
+| Proposed sensor sites: 25 rain gauges, 43 drain-level sensors, 8 underpass monitors | `data/synthetic/proposed_sensors.geojson` | `pipeline/propose_sensors.py`: rain gauges by k-means over hotspots and catchments; drain sensors at outfalls, then link midpoints and exit paths (from the network above); underpass monitors at OpenStreetMap underpasses (Overpass: `tunnel=yes` roads or "underpass" in the name) nearest to hotspots, one per underpass, ≥ 500 m apart. **Proposals, not installed sensors**; labelled "Proposed · illustrative" on the map |
+| Simulated storms, replays and blocked drains | (computed on request) | `model/simulate.py`; always labelled EXERCISE / अभ्यास |
+
 ## Planned
 
 | Milestone | Data | Source |

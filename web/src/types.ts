@@ -107,7 +107,8 @@ export type DrainageLayers = {
   drains: GeoJSON.FeatureCollection;
 };
 
-export type View = "forecast" | "simulator" | "drainage" | "ops" | "data";
+export type View = "home" | "forecast" | "simulator" | "drainage" | "ops" | "about";
+export type AboutTab = "about" | "backtest" | "overrides" | "data" | "sources";
 
 // --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
 
@@ -128,6 +129,8 @@ export type WindowRisk = {
   model_level?: RiskLevel;     // set when an MCG officer overrode the level
   override?: OverrideInfo;
   ml?: MlOutput | null;        // Tier B probability + SHAP reasons, once a model is trained
+  confidence_basis?: "models" | "scenarios";
+  models?: { flooding: number; total: number; scores: Record<string, number> } | null;
   outlook: "likely" | "possible" | "unlikely";
   confidence: "high" | "medium" | "low" | null;
   high_impact: boolean;
@@ -196,7 +199,7 @@ export type StormParams = {
   radius_km: number;
 };
 
-export type SimRequest = ({ mode: "storm" } & StormParams) | { mode: "replay"; date: string };
+export type SimRequest = (({ mode: "storm" } & StormParams) | { mode: "replay"; date: string }) & { blocked?: string[] };
 
 export type SimResult = {
   meta: {
@@ -208,6 +211,7 @@ export type SimResult = {
     params: Record<string, unknown>;
     event?: ReplayEvent | null;
     rarity?: { rain_24h: string; peak1h: string };
+    blocked?: { id: string; label: string; hotspots: string[] }[];
     counts: Record<"next_24h", Record<RiskLevel, number>>;
     is_synthetic: boolean;
   };
@@ -299,4 +303,41 @@ export type Scorecard = {
   overrides?: { id: number; hotspot_id: string; officer: string; model_level: RiskLevel | null; new_level: RiskLevel;
     created_at: string; outcome: string | null; officer_right: boolean | null; model_right: boolean | null }[];
   note?: string;
+};
+
+// --- Review items: critical points, backtest, public overrides, proposed sensors ---
+
+export type CriticalProps = {
+  id: string; rank: number; hotspot_id: string; label: string; n_hotspots: number; hotspots: string[];
+  upstream_names: string[]; drained_km2: number; priority_order: number | null;
+};
+export type CriticalNodes = GeoJSON.FeatureCollection<GeoJSON.Point, CriticalProps> & {
+  summary: {
+    n_hotspots: number; n_points: number; n_priority: number; priority_share: number; priority_covers: number;
+    cover_target: number; curve: { points: number; hotspots: number }[]; top_label: string; top_serves: number;
+    cost_note: string;
+  };
+};
+
+export type BacktestRow = {
+  date: string; hotspot_id: string; name: string; flooded: boolean; level: RiskLevel; score: number;
+  outcome: "caught" | "missed" | "false alarm" | "correct"; reason: string | null;
+  model_rain_mm: number; model_peak_mm: number; how_unusual: string; source_url: string;
+};
+export type Backtest = {
+  reviewed_only: boolean; n: number; candidates_pending: number;
+  counts: Record<"caught" | "missed" | "false alarm" | "correct", number>;
+  catch_rate: number | null; miss_reasons: Record<string, number>; skipped: Record<string, number>;
+  days: { date: string; caught: number; missed: number; model_rain_min: number; model_rain_max: number }[];
+  rows: BacktestRow[]; note: string;
+};
+
+export type PublicOverride = {
+  id: number; created_at: string; hotspot_id: string; hotspot_name: string; model_level: RiskLevel | null;
+  new_level: RiskLevel; reason: string; valid_until: string; revoked_at: string | null;
+};
+
+export type SensorKind = "rain_gauge" | "drain_sensor" | "underpass_monitor";
+export type ProposedSensors = GeoJSON.FeatureCollection<GeoJSON.Point, { kind: SensorKind; label: string; why: string }> & {
+  meta: { counts: Record<SensorKind, number>; label: string };
 };

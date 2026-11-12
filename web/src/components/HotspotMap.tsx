@@ -45,7 +45,16 @@ type Props = {
   onSelect: (id: string | null) => void;
   pinMode: boolean;
   lang?: Lang;
+  critical?: GeoJSON.FeatureCollection | null;   // outfalls ranked by hotspots served
+  criticalVisible?: boolean;
+  blockedIds?: string[];                          // simulator: outfalls marked blocked
+  onNodeClick?: (nodeId: string) => void;         // simulator: toggle a blockage
+  sensors?: GeoJSON.FeatureCollection | null;     // proposed sensor sites (illustrative)
+  showSensors?: boolean;
 };
+
+const SENSOR_COLOR: ExpressionSpecification = ["match", ["get", "kind"],
+  "rain_gauge", "#24527a", "drain_sensor", "#2f6f73", "underpass_monitor", "#c27a0e", "#82868d"];
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -131,7 +140,7 @@ export default function HotspotMap(props: Props) {
 
     map.on("load", () => {
       restyleBasemap(map);
-      for (const id of ["rain", "hotspots", "storm"]) map.addSource(id, { type: "geojson", data: EMPTY });
+      for (const id of ["rain", "hotspots", "storm", "critical", "sensors"]) map.addSource(id, { type: "geojson", data: EMPTY });
 
       map.addLayer({ id: "rain-grid", type: "circle", source: "rain", layout: { visibility: "none" },
         paint: {
@@ -167,7 +176,12 @@ export default function HotspotMap(props: Props) {
       const label = (id: string, filter: maplibregl.FilterSpecification, minzoom: number) =>
         map.addLayer({ id, type: "symbol", source: "hotspots", minzoom, filter,
           layout: {
-            "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11.5,
+            // Words as well as colour, so the map works for colour-blind readers and in print.
+            "text-field": ["case",
+              ["==", ["get", "level"], "red"], ["concat", ["get", "name"], "\nHIGH"],
+              ["==", ["get", "level"], "amber"], ["concat", ["get", "name"], "\nMEDIUM"],
+              ["get", "name"]],
+            "text-font": ["Noto Sans Regular"], "text-size": 11.5,
             "text-offset": [0, 1.15], "text-anchor": "top", "text-max-width": 9,
           },
           paint: { "text-color": "#17191e", "text-halo-color": "#f5f2eb", "text-halo-width": 1.6 } });
@@ -175,6 +189,47 @@ export default function HotspotMap(props: Props) {
       label("labels-other", ["!", ["in", ["get", "level"], ["literal", ["red", "amber"]]]], 12.5);
 
       addDrainageLayers(map, "hotspot-halo");
+
+      // Proposed sensors (illustrative) and critical outfalls sit just under the hotspots.
+      map.addLayer({ id: "sensors", type: "circle", source: "sensors", layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["match", ["get", "kind"], "rain_gauge", 6, "underpass_monitor", 6, 4],
+          "circle-color": ["match", ["get", "kind"], "rain_gauge", "#f5f2eb", SENSOR_COLOR],
+          "circle-stroke-color": ["match", ["get", "kind"], "underpass_monitor", "#17191e", SENSOR_COLOR],
+          "circle-stroke-width": ["match", ["get", "kind"], "rain_gauge", 2.5, 1.2],
+        } }, "hotspot-halo");
+      map.addLayer({ id: "critical-circle", type: "circle", source: "critical", layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "n_hotspots"], 1, 7, 6, 17],
+          "circle-color": "#24527a", "circle-opacity": 0.9,
+          "circle-stroke-color": "#f5f2eb", "circle-stroke-width": 2,
+        } }, "hotspot-halo");
+      // The count is a small badge to the upper right, drawn on top so the hotspot dot can't hide it.
+      map.addLayer({ id: "critical-label", type: "symbol", source: "critical", layout: {
+          visibility: "none", "text-field": "", "text-font": ["Noto Sans Regular"],
+          "text-size": 11, "text-offset": [1.15, -1.15], "text-allow-overlap": true, "text-ignore-placement": true,
+        }, paint: { "text-color": "#f5f2eb", "text-halo-color": "#24527a", "text-halo-width": 4 } });
+
+      map.on("click", "critical-circle", (e) => {
+        const p = e.features?.[0]?.properties;
+        if (!p) return;
+        if (latest.current.onNodeClick) latest.current.onNodeClick(p.id as string);
+        else latest.current.onSelect(p.hotspot_id as string);
+      });
+      map.on("click", "sensors", (e) => {
+        const p = e.features?.[0]?.properties;
+        if (!p) return;
+        closePopup();
+        popupRef.current = new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(e.lngLat)
+          .setHTML(`<div class="kicker" style="color:#c27a0e">Proposed · illustrative</div>
+            <div class="text-[13px] font-medium">${esc(String(p.label))}</div>
+            <div class="mt-0.5 text-[12px] text-ink-2">${esc(String(p.why))}</div>`)
+          .addTo(map);
+      });
+      for (const id of ["critical-circle", "sensors"]) {
+        map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
+        map.on("mouseleave", id, () => (map.getCanvas().style.cursor = latest.current.onMapClick ? "crosshair" : ""));
+      }
 
       map.on("click", "hotspots", (e) => {
         const id = e.features?.[0]?.properties?.id as string | undefined;
@@ -184,7 +239,8 @@ export default function HotspotMap(props: Props) {
       map.on("mouseleave", "hotspots", () => (map.getCanvas().style.cursor = latest.current.onMapClick ? "crosshair" : ""));
 
       map.on("click", (e) => {
-        if (map.queryRenderedFeatures(e.point, { layers: ["hotspots"] }).length) return;
+        const hit = ["hotspots", "critical-circle", "sensors"].filter((l) => map.getLayer(l) && map.getLayoutProperty(l, "visibility") !== "none");
+        if (map.queryRenderedFeatures(e.point, { layers: hit }).length) return;
         const { onMapClick, pinMode: pin } = latest.current;
         if (onMapClick) {
           onMapClick([e.lngLat.lng, e.lngLat.lat]);
@@ -251,6 +307,30 @@ export default function HotspotMap(props: Props) {
     if (map) (map.getSource("storm") as GeoJSONSource).setData(stormData(storm));
   }, [map, storm]);
 
+  useEffect(() => {
+    if (map && props.critical) (map.getSource("critical") as GeoJSONSource).setData(props.critical);
+  }, [map, props.critical]);
+  useEffect(() => {
+    if (map && props.sensors) (map.getSource("sensors") as GeoJSONSource).setData(props.sensors);
+  }, [map, props.sensors]);
+  useEffect(() => {
+    if (!map) return;
+    const vis = props.criticalVisible ? "visible" : "none";
+    map.setLayoutProperty("critical-circle", "visibility", vis);
+    map.setLayoutProperty("critical-label", "visibility", vis);
+    map.setLayoutProperty("sensors", "visibility", props.showSensors ? "visible" : "none");
+    // Blocked outfalls: ink with a red ring, and a cross instead of the count.
+    const ids = props.blockedIds ?? [];
+    const isBlocked: ExpressionSpecification = ["in", ["get", "id"], ["literal", ids]];
+    map.setPaintProperty("critical-circle", "circle-color", ["case", isBlocked, "#17191e", "#24527a"]);
+    map.setPaintProperty("critical-circle", "circle-stroke-color", ["case", isBlocked, LEVEL_COLOR.red, "#f5f2eb"]);
+    map.setPaintProperty("critical-circle", "circle-stroke-width", ["case", isBlocked, 3.5, 2]);
+    // Badges only where they say something: outfalls serving 2+ hotspots, and blocked ones.
+    map.setLayoutProperty("critical-label", "text-field", ["case", isBlocked, "×",
+      [">=", ["get", "n_hotspots"], 2], ["to-string", ["get", "n_hotspots"]], ""]);
+    map.setPaintProperty("critical-label", "text-halo-color", ["case", isBlocked, LEVEL_COLOR.red, "#24527a"]);
+  }, [map, props.criticalVisible, props.showSensors, props.blockedIds]);
+
   // 3) Which layers show in which view.
   useEffect(() => {
     if (!map) return;
@@ -297,6 +377,7 @@ function popupHtml(id: string, name: string, p: Props): string {
         <span style="display:inline-block;width:8px;height:8px;background:${LEVEL_COLOR[w.level]}"></span>${s.levelLong[w.level]}
       </div>
       ${sub ? `<div class="font-mono text-[11px] text-ink-3">${esc(sub)}</div>` : ""}
+      ${w.models ? `<div class="mt-0.5 text-[11.5px] text-ink-2">${esc(s.models(w.models.flooding, w.models.total))}</div>` : ""}
       ${w.level !== "green" ? `<div class="mt-1.5 text-[12.5px] font-medium">${esc(actionText(w, lang))}</div>` : ""}
       <ul class="mt-1.5 space-y-0.5 text-[12px] text-ink-2">${reasons(w, lang).map((d) => `<li>– ${esc(d)}</li>`).join("")}</ul>
       <div class="mt-1.5 font-mono text-[11px] text-ink-3">${s.popupRain(w.rain.rain_24h, w.rain.peak1h)}</div>`;
@@ -306,18 +387,18 @@ function popupHtml(id: string, name: string, p: Props): string {
     if (r) risk = `<div class="mt-1 font-mono text-[11px] text-ink-3">${r.next_24h} mm forecast in 24 h</div>`;
   }
   return `<div class="font-display text-[18px] font-medium leading-tight">${esc(name)}</div>
-    ${risk}${networkLines(p.drainage, id)}`;
+    ${risk}${networkLines(p.drainage, id, lang)}`;
 }
 
 // Drainage facts for the popup (empty until drainage data has loaded).
-function networkLines(drainage: DrainageLayers | null, id: string): string {
+function networkLines(drainage: DrainageLayers | null, id: string, lang: Lang = "en"): string {
   const nodes = drainage?.network.nodes.features;
   const n = nodes?.find((f) => f.properties.id === id)?.properties as NetworkNodeProps | undefined;
   if (!nodes || !n) return "";
   const name = (hid: string) => esc(nodes.find((f) => f.properties.id === hid)?.properties.name ?? hid);
   const parts = [
-    n.downstream.length ? `Water flows on to ${n.downstream.map(name).join(", ")}.` : "",
-    n.upstream.length ? `Receives water from ${n.upstream.map(name).join(", ")}.` : "",
+    n.downstream.length ? t(lang).flowsTo(n.downstream.map(name).join(", ")) : "",
+    n.upstream.length ? t(lang).receivesFrom(n.upstream.map(name).join(", ")) : "",
   ].filter(Boolean);
   return parts.length
     ? `<div class="mt-2 border-t border-rule pt-1.5 text-[12px] text-ink-2">${parts.join(" ")}</div>`

@@ -1,24 +1,61 @@
 // Drainage view: how water moves between hotspots, and which ones are
 // "critical intervention points" (most hotspots downstream).
-import type { DrainageLayers } from "../types";
+import type { CriticalNodes, DrainageLayers, SensorKind } from "../types";
 import { plural } from "../risk";
-import { Kicker, Rule } from "./ui";
+import CriticalPanel from "./CriticalPanel";
+import { Kicker, Rule, TextTabs } from "./ui";
+
+export type DrainageMode = "links" | "critical";
 
 type Props = {
   drainage: DrainageLayers | null;
   loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  mode: DrainageMode;
+  onMode: (m: DrainageMode) => void;
+  critical: CriticalNodes | null;
+  showSensors: boolean;
+  onShowSensors: (v: boolean) => void;
+  sensorCounts: Record<SensorKind, number> | null;
 };
 
-export default function DrainagePanel({ drainage, loading, selectedId, onSelect }: Props) {
-  if (!drainage) {
-    return (
-      <div className="px-5 pt-5 md:px-7">
+export default function DrainagePanel(p: Props) {
+  return (
+    <div className="space-y-7 px-5 pb-10 pt-5 md:px-7">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <Kicker>Drainage</Kicker>
-        <p className="mt-3 text-[14px] text-ink-3">{loading ? "Loading the drainage network…" : "Drainage network not available."}</p>
+        <TextTabs label="Drainage view" value={p.mode} onChange={p.onMode}
+          options={[{ key: "links" as const, label: "Hotspot links" }, { key: "critical" as const, label: "Critical points" }]} />
       </div>
-    );
+      {p.mode === "critical"
+        ? <CriticalPanel critical={p.critical} selectedHotspot={p.selectedId} onSelect={p.onSelect} />
+        : <LinksView drainage={p.drainage} loading={p.loading} selectedId={p.selectedId} onSelect={p.onSelect} />}
+
+      <section className="border-t border-ink pt-3">
+        <label className="flex items-center gap-2 text-[13.5px] font-medium">
+          <input type="checkbox" className="accent-[#17191e]" checked={p.showSensors} onChange={(e) => p.onShowSensors(e.target.checked)} />
+          Show proposed sensors
+        </label>
+        {p.showSensors && (
+          <div className="mt-2 text-[12.5px] text-ink-2">
+            <span className="mr-2 bg-risk-amber px-1.5 py-0.5 font-mono text-[10.5px] font-medium tracking-wider text-ink">PROPOSED · ILLUSTRATIVE</span>
+            {p.sensorCounts
+              ? `${p.sensorCounts.rain_gauge} rain gauges, ${p.sensorCounts.drain_sensor} drain-level sensors, ${p.sensorCounts.underpass_monitor} underpass monitors.`
+              : "Loading…"} Not installed: where new sensors would do the most good. Gauges cover each hotspot's catchment;
+            drain sensors sit at outfalls and along flow paths; monitors go in the mapped underpasses nearest hotspots.
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function LinksView({ drainage, loading, selectedId, onSelect }: {
+  drainage: DrainageLayers | null; loading: boolean; selectedId: string | null; onSelect: (id: string) => void;
+}) {
+  if (!drainage) {
+    return <p className="text-[14px] text-ink-3">{loading ? "Loading the drainage network…" : "Drainage network not available."}</p>;
   }
   const { meta, nodes } = drainage.network;
   const names = Object.fromEntries(nodes.features.map((f) => [f.properties.id, f.properties.name]));
@@ -28,8 +65,7 @@ export default function DrainagePanel({ drainage, loading, selectedId, onSelect 
   const hub = [...nodes.features].sort((a, b) => b.properties.n_upstream - a.properties.n_upstream)[0]?.properties;
 
   return (
-    <div className="space-y-7 px-5 pb-10 pt-5 md:px-7">
-      <Kicker>Drainage</Kicker>
+    <div className="space-y-7">
       <div>
         <h2 className="font-display text-[27px] font-medium leading-[1.15] tracking-[-0.01em] md:text-[30px]">
           {exitsNorth === ends ? "All water leaves the city northward, toward the Najafgarh drain." : `${exitsNorth} of ${ends} flow paths leave the city northward.`}
@@ -41,9 +77,9 @@ export default function DrainagePanel({ drainage, loading, selectedId, onSelect 
       </div>
 
       <section>
-        <Kicker className="mb-2">Critical intervention points</Kicker>
+        <Kicker className="mb-2">Hotspots and where their water goes</Kicker>
         <p className="mb-3 text-[12.5px] text-ink-3">
-          Ranked by how many hotspots lie downstream: clearing drains here also helps those.
+          Which hotspot flows into which. For where to intervene first, see Critical points.
         </p>
         <div className="grid grid-cols-[28px_1fr_64px] border-b border-ink pb-1.5">
           <span className="kicker">#</span>
