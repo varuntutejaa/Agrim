@@ -23,7 +23,7 @@ const TABS: { key: AboutTab; label: React.ReactNode }[] = [
 export default function AboutSection({ tab, onTab }: { tab: AboutTab; onTab: (t: AboutTab) => void }) {
   return (
     <div>
-      <div className="sticky top-0 z-10 border-b-2 border-ink bg-paper">
+      <div className="sticky top-0 z-10 border-b border-rule bg-paper">
         <div className="mx-auto max-w-[1360px] overflow-x-auto px-4 py-3 md:px-10">
           <TextTabs label="About sections" options={TABS} value={tab} onChange={onTab} />
         </div>

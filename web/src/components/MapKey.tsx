@@ -3,7 +3,7 @@ import type { View } from "../types";
 import { LEVEL_BG } from "../risk";
 import { type Lang, t } from "../i18n";
 
-const Sq = ({ c }: { c: string }) => <span className={`inline-block h-2.5 w-2.5 ${c}`} />;
+const Sq = ({ c }: { c: string }) => <span className={`inline-block h-2.5 w-2.5 rounded-full ${c}`} />;
 const Line = ({ c, dashed = false, w = 2 }: { c: string; dashed?: boolean; w?: number }) => (
   <span className={`inline-block w-5 ${c}`} style={{ borderTopWidth: w, borderTopStyle: dashed ? "dashed" : "solid" }} />
 );
@@ -34,7 +34,7 @@ export default function MapKey({ view, lang = "en", critical = false, sensors = 
         ];
   return (
     // Hidden on phones: the panel's count signs carry the same colours.
-    <div className="pointer-events-none absolute bottom-8 left-4 hidden border-2 border-ink bg-paper-3 px-3 py-2.5 md:block">
+    <div className="plate pointer-events-none absolute bottom-8 left-4 hidden px-4 py-3 md:block">
       <ul className="m-0 list-none space-y-1.5 p-0">
         {rows.map(([icon, label]) => (
           <li key={label} className="flex items-center gap-2.5 text-[13px] text-ink">

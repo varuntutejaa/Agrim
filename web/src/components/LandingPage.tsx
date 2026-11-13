@@ -20,20 +20,20 @@ function Board({ risk, ageHours }: { risk: RiskResult | null; ageHours: number |
   const old = ageHours !== null && ageHours > 12;
   return (
     <figure className="plate m-0 w-full" aria-label="Today's forecast board">
-      <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink-rule px-5 py-4">
-        <span className="text-[18px] font-extrabold tracking-[-0.02em]">Today, next 24 h</span>
+      <div className="flex items-baseline justify-between gap-4 border-b border-ink-rule px-5 py-4">
+        <span className="text-[18px] font-display font-medium tracking-[-0.02em]">Today, next 24 h</span>
         <span className="text-[13px] text-paper-dim">Gurugram</span>
       </div>
       {c ? (
         <>
-          <dl className="m-0 grid grid-cols-3 border-b-2 border-ink-rule">
+          <dl className="m-0 grid grid-cols-3 border-b border-ink-rule">
             {(["red", "amber", "green"] as const).map((l) => (
-              <div key={l} className="border-l-2 border-ink-rule px-5 py-3 first:border-l-0">
+              <div key={l} className="border-l border-ink-rule px-5 py-3 first:border-l-0">
                 <dt className="flex items-center gap-2 text-[13px] text-paper-dim">
-                  <span className={`inline-block h-2.5 w-2.5 ${LEVEL_BG[l]}`} aria-hidden />
+                  <span className={`inline-block h-2 w-2 rounded-full ${LEVEL_BG[l]}`} aria-hidden />
                   {l === "red" ? "high" : l === "amber" ? "medium" : "low"}
                 </dt>
-                <dd className="m-0 mt-1 text-[40px] font-extrabold leading-none tracking-[-0.04em] text-paper">{c[l]}</dd>
+                <dd className="m-0 mt-1 text-[40px] font-display font-medium leading-none tracking-[-0.02em] text-ink">{c[l]}</dd>
               </div>
             ))}
           </dl>
@@ -60,7 +60,7 @@ function Board({ risk, ageHours }: { risk: RiskResult | null; ageHours: number |
               })}
             </tbody>
           </table>
-          <figcaption className={`border-t-2 border-ink-rule px-5 py-3 text-[13px] ${old ? "font-extrabold text-accent-2" : "text-paper-dim"}`}>
+          <figcaption className={`border-t border-ink-rule px-5 py-3 text-[13px] ${old ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
             Live forecast, updated {updated} IST{old ? `, ${Math.round(ageHours!)} h old` : ""}. The {rows.length} hotspots most at risk.
           </figcaption>
         </>
@@ -76,8 +76,8 @@ function Board({ risk, ageHours }: { risk: RiskResult | null; ageHours: number |
 /** One plate on the route: where it goes and what is there. */
 function Way({ title, text, onClick }: { title: string; text: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="row-btn -mt-0.5 flex flex-col gap-3 border-2 border-ink bg-paper-3 p-6 first:mt-0 md:mt-0 md:-ml-0.5 md:p-8 md:first:ml-0">
-      <span className="text-[24px] font-extrabold leading-[1.05] tracking-[-0.03em]">{title}</span>
+    <button type="button" onClick={onClick} className="row-btn flex flex-col gap-3 rounded-card border border-rule bg-paper-2 p-6 md:p-8">
+      <span className="text-[24px] font-display font-medium leading-[1.05] tracking-[-0.02em]">{title}</span>
       <span className="text-[15px] leading-relaxed text-ink-2">{text}</span>
     </button>
   );
@@ -89,7 +89,7 @@ export default function LandingPage({ risk, ageHours, go }: Props) {
       {/* Hero: the promise on the left, today's board on the right. */}
       <section className="grid min-h-[calc(100dvh-3.5rem)] grid-cols-[minmax(0,1fr)] items-center gap-10 py-12 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-16">
         <div>
-          <h1 className="max-w-[14ch] text-[clamp(2.25rem,3.4vw+0.75rem,4rem)] leading-[0.98] tracking-[-0.04em]">
+          <h1 className="max-w-[14ch] text-[clamp(2.25rem,3.4vw+0.75rem,4rem)] leading-[0.98] tracking-[-0.02em]">
             Agrim tells Gurugram which hotspots will flood.
           </h1>
           <p className="lead mt-6 max-w-[40ch] text-ink-2">
@@ -104,13 +104,13 @@ export default function LandingPage({ risk, ageHours, go }: Props) {
       </section>
 
       {/* The three ways in, set as a route: plates joined by a 2px rule. */}
-      <section className="grid grid-cols-[minmax(0,1fr)] pt-8 md:grid-cols-3 md:pt-16" aria-label="Ways in">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-8 md:grid-cols-3 md:pt-16" aria-label="Ways in">
         <Way title="See today's forecast" text="Red, Amber or Green for every mapped hotspot, the reasons, and roads to avoid. English and हिन्दी." onClick={() => go("forecast")} />
         <Way title="Run a storm" text="Design a storm, replay a past monsoon day, or block a drain and watch which hotspots back up." onClick={() => go("simulator")} />
         <Way title="MCG desk" text="Orders per zone, the T-24 to T+24 checklist, officer overrides, citizen alerts and the scorecard." onClick={() => go("ops")} />
       </section>
 
-      <nav aria-label="More about Agrim" className="mt-16 grid grid-cols-[minmax(0,1fr)] border-t-2 border-ink md:mt-24 md:grid-cols-2 xl:grid-cols-4">
+      <nav aria-label="More about Agrim" className="mt-16 grid grid-cols-[minmax(0,1fr)] border-t border-rule md:mt-24 md:grid-cols-2 xl:grid-cols-4">
         <button type="button" className={MORE} onClick={() => go("drainage")}>Critical drain points</button>
         <button type="button" className={MORE} onClick={() => go("about", "backtest")}>Backtest on past floods</button>
         <button type="button" className={MORE} onClick={() => go("about", "data")}>Data & assumptions</button>

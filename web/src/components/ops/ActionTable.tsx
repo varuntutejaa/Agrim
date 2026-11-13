@@ -36,7 +36,7 @@ function Check({ label, checked, disabled, onChange }: { label: string; checked:
       onClick={() => onChange(!checked)}
       className="flex min-h-8 items-center gap-2 whitespace-nowrap text-[13px] text-ink-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-55"
     >
-      <span className={`flex h-4 w-4 items-center justify-center border-2 border-ink ${checked ? "bg-ink text-paper" : "bg-paper-3"}`}>
+      <span className={`flex h-4 w-4 items-center justify-center rounded-[4px] border ${checked ? "border-accent bg-accent text-accent-ink" : "border-muted bg-paper-3"}`}>
         {checked && <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" aria-hidden="true"><path d="M1.5 5.2 4 7.6 8.6 2.4" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>}
       </span>
       {label}
@@ -63,7 +63,7 @@ export default function ActionTable(p: Props) {
       <li key={h.id} className={`border-b border-rule ${isOpen ? "bg-paper-2" : ""}`}>
         <div className={`grid grid-cols-1 gap-y-2 py-3 md:items-center md:gap-x-4 ${COLS}`}>
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-extrabold">{h.name}</div>
+            <div className="truncate text-[15px] font-semibold">{h.name}</div>
             <div className="truncate text-[13px] text-muted" title={w.drivers[0]}>
               {zone === "Unassigned" ? "Zone not set" : `Zone ${zone}`}. {w.drivers[0]}
             </div>
@@ -78,7 +78,7 @@ export default function ActionTable(p: Props) {
             {item && w.level !== "green" ? (
               <>
                 <span className="label block">Ready by</span>
-                {new Date(item.t12) <= new Date() ? <span className="font-extrabold text-risk-red">Now</span> : <span className="font-extrabold">{fmt(item.t12)}</span>}
+                {new Date(item.t12) <= new Date() ? <span className="font-semibold text-risk-red">Now</span> : <span className="font-semibold">{fmt(item.t12)}</span>}
               </>
             ) : <span className="text-muted">None</span>}
           </div>
@@ -94,15 +94,15 @@ export default function ActionTable(p: Props) {
               </>
             )}
           </div>
-          <div className="cells md:justify-end">
-            <button type="button" aria-pressed={isOpen && open.panel === "override"} className="cell btn--sm"
+          <div className="flex gap-2 md:justify-end">
+            <button type="button" aria-pressed={isOpen && open.panel === "override"} className="btn btn--sm"
               onClick={() => toggle(h.id, "override")}>Override</button>
-            <button type="button" aria-pressed={isOpen && open.panel === "feedback"} className="cell btn--sm"
+            <button type="button" aria-pressed={isOpen && open.panel === "feedback"} className="btn btn--sm"
               onClick={() => toggle(h.id, "feedback")}>Report</button>
           </div>
         </div>
         {isOpen && (
-          <div className="mb-4 border-2 border-ink bg-paper-3 p-4 md:max-w-[680px]">
+          <div className="mb-4 rounded-card border border-rule bg-paper-3 p-4 md:max-w-[680px]">
             {open.panel === "override" ? (
               <OverrideForm h={h} windowKey={p.windowKey} disabled={!p.canAct}
                 onSave={(l, r, hrs) => p.onOverride(h, l, r, hrs).then(() => setOpen(null))} onRevoke={p.onRevoke} />
@@ -117,7 +117,7 @@ export default function ActionTable(p: Props) {
 
   return (
     <div>
-      <div className={`hidden border-b-2 border-ink pb-2 md:grid md:gap-x-4 ${COLS}`} role="presentation">
+      <div className={`hidden border-b border-rule pb-2 md:grid md:gap-x-4 ${COLS}`} role="presentation">
         <span className="label">Hotspot</span>
         <span className="label">Status</span>
         <span className="label">Deadline</span>

@@ -29,14 +29,14 @@ export default function DrainagePanel(p: Props) {
         ? <CriticalPanel critical={p.critical} selectedHotspot={p.selectedId} onSelect={p.onSelect} />
         : <LinksView drainage={p.drainage} loading={p.loading} selectedId={p.selectedId} onSelect={p.onSelect} />}
 
-      <section className="border-t-2 border-ink pt-4">
-        <label className="flex cursor-pointer items-center gap-3 text-[15px] font-extrabold">
+      <section className="border-t border-rule pt-4">
+        <label className="flex cursor-pointer items-center gap-3 text-[15px] font-semibold">
           <input type="checkbox" className="check" checked={p.showSensors} onChange={(e) => p.onShowSensors(e.target.checked)} />
           Show proposed sensors
         </label>
         {p.showSensors && (
           <div className="mt-3 text-[14px] leading-relaxed text-ink-2">
-            <span className="mr-2 inline-block bg-accent-2 px-1.5 py-0.5 text-[13px] font-extrabold leading-tight text-ink">Proposed, illustrative</span>
+            <span className="tag mr-2">Proposed, illustrative</span>
             {p.sensorCounts
               ? `${p.sensorCounts.rain_gauge} rain gauges, ${p.sensorCounts.drain_sensor} drain-level sensors, ${p.sensorCounts.underpass_monitor} underpass monitors.`
               : "Loading…"} Not installed: where new sensors would do the most good. Gauges cover each hotspot's catchment;
@@ -78,7 +78,7 @@ function LinksView({ drainage, loading, selectedId, onSelect }: {
         <p className="mt-2 text-[13px] text-muted">
           Which hotspot flows into which. For where to intervene first, see Critical points.
         </p>
-        <div className="mt-3 grid grid-cols-[28px_minmax(0,1fr)_72px] gap-x-2 border-b-2 border-ink pb-2" role="presentation">
+        <div className="mt-3 grid grid-cols-[28px_minmax(0,1fr)_72px] gap-x-2 border-b border-rule pb-2" role="presentation">
           <span className="label">#</span>
           <span className="label">Hotspot</span>
           <span className="label text-right">Drains</span>
@@ -89,7 +89,7 @@ function LinksView({ drainage, loading, selectedId, onSelect }: {
               <button type="button" onClick={() => onSelect(p.id)} className="row-btn grid grid-cols-[28px_minmax(0,1fr)_72px] items-baseline gap-x-2 py-3">
                 <span className="text-[13px] text-muted">{String(p.critical_rank).padStart(2, "0")}</span>
                 <span>
-                  <span className="text-[15px] font-extrabold">{p.name}</span>
+                  <span className="text-[15px] font-semibold">{p.name}</span>
                   <span className="mt-1 block space-y-0.5 text-[13px] text-ink-2">
                     {p.n_downstream > 0 && <span className="block">Flows on to {list(p.downstream)}</span>}
                     {p.n_upstream > 0 && <span className="block">Receives water from {list(p.upstream)}</span>}
@@ -97,7 +97,7 @@ function LinksView({ drainage, loading, selectedId, onSelect }: {
                     {p.catchment_truncated && <span className="block font-medium text-ink">Catchment runs past the map edge</span>}
                   </span>
                 </span>
-                <span className="whitespace-nowrap text-right text-[15px] font-extrabold">
+                <span className="whitespace-nowrap text-right text-[15px] font-semibold">
                   {p.max_drained_km2_150m.toFixed(p.max_drained_km2_150m < 1 ? 2 : p.max_drained_km2_150m < 100 ? 1 : 0)}
                   {"\u00a0"}<span className="text-[13px] font-medium text-muted">km²</span>
                 </span>

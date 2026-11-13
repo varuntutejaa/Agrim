@@ -20,13 +20,13 @@ export default function AboutPage() {
             Two rules shaped it: never present anything made up as real, and say plainly what the system can't do yet.
           </p>
         </section>
-        <aside className="self-start border-2 border-ink bg-paper-3 p-6">
+        <aside className="self-start rounded-card border border-rule bg-paper-3 p-6">
           <h2 className="h-sub">Team</h2>
-          <p className="mt-4 text-[22px] font-extrabold leading-tight tracking-[-0.03em]">Varun Tuteja</p>
+          <p className="mt-4 text-[22px] font-display font-medium leading-tight tracking-[-0.02em]">Varun Tuteja</p>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-2">
             Solo builder: product and design, data pipeline and drainage model, risk model, API, web app and deployment.
           </p>
-          <div className="mt-5 space-y-2 border-t-2 border-ink pt-4 text-[14px]">
+          <div className="mt-5 space-y-2 border-t border-rule pt-4 text-[14px]">
             <a className="link block" href="https://github.com/varuntutejaa/Agrim" target="_blank" rel="noreferrer">Code: github.com/varuntutejaa/Agrim</a>
             <a className="link block" href="https://agrim-api.onrender.com/docs" target="_blank" rel="noreferrer">API documentation</a>
           </div>

@@ -74,7 +74,7 @@ export function Slider({
     <label className="block">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[14px] font-medium text-ink">{label}</span>
-        <span className="text-[28px] font-extrabold leading-none tracking-[-0.03em] text-ink">
+        <span className="text-[28px] font-display font-medium leading-none tracking-[-0.02em] text-ink">
           {value}
           {"\u00a0"}<span className="text-[13px] font-medium tracking-normal text-muted">{unit}</span>
         </span>
@@ -102,7 +102,7 @@ export function ExerciseBand({ label, note, compact = false, className = "" }: {
 }) {
   return (
     <div className={`exercise-band flex items-center gap-3 ${compact ? "px-3 py-2" : "px-4 py-3"} ${className}`}>
-      <span className="shrink-0 whitespace-nowrap bg-accent-2 px-2 py-1 text-[13px] font-extrabold leading-none text-ink">
+      <span className="tag shrink-0">
         {sentence(label)}
       </span>
       {note && <span className="text-[13px] text-paper-dim">{note}</span>}
@@ -111,5 +111,5 @@ export function ExerciseBand({ label, note, compact = false, className = "" }: {
 }
 
 export function Rule({ className = "", strong = false }: { className?: string; strong?: boolean }) {
-  return <hr className={`m-0 border-0 ${strong ? "border-t-2 border-ink" : "border-t border-rule"} ${className}`} />;
+  return <hr className={`m-0 border-0 ${strong ? "border-t border-rule" : "border-t border-rule"} ${className}`} />;
 }

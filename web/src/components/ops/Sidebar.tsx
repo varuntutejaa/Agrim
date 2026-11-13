@@ -41,18 +41,18 @@ export function OrdersCard({ orders }: { orders: Orders | null }) {
       {!orders ? (
         <div className="mt-3 h-40 bg-paper-2" aria-label="Loading" />
       ) : tab === "sheet" ? (
-        <div className="mt-3 border-2 border-ink bg-paper-3">
+        <div className="mt-3 rounded-card border border-rule bg-paper-3">
           <pre className="m-0 max-h-[360px] overflow-auto whitespace-pre-wrap p-3 text-[13px] leading-relaxed text-ink">{orders.text}</pre>
-          <div className="flex justify-end border-t-2 border-ink px-3 py-2"><CopyButton text={orders.text} /></div>
+          <div className="flex justify-end border-t border-rule px-3 py-2"><CopyButton text={orders.text} /></div>
         </div>
       ) : orders.sms.length === 0 ? (
         <p className="mt-3 text-[14px] text-muted">No crew messages: nothing is at risk.</p>
       ) : (
-        <ul className="m-0 mt-3 max-h-[400px] list-none overflow-auto border-y-2 border-ink p-0">
+        <ul className="m-0 mt-3 max-h-[400px] list-none overflow-auto border-y border-rule p-0">
           {orders.sms.map((s) => (
             <li key={s.hotspot_id} className="border-b border-rule py-2.5 last:border-b-0">
               <Level level={s.level} />
-              <p className="mt-1.5 text-[13px] leading-relaxed">{s.text}</p>
+              <p className="mt-2 rounded-inner bg-well px-3 py-2.5 text-[13px] leading-relaxed text-well-ink">{s.text}</p>
               <div className="mt-1 flex justify-between text-[13px] text-muted">
                 <span>{s.text.length}/160</span>
                 <CopyButton text={s.text} />
@@ -73,11 +73,11 @@ export function OverrideLog({ items, names }: { items: OverrideRecord[]; names: 
       {items.length === 0 ? (
         <p className="mt-2 text-[14px] text-muted">No overrides yet.</p>
       ) : (
-        <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+        <ul className="m-0 mt-3 list-none border-y border-rule p-0">
           {items.slice(0, 12).map((o) => (
             <li key={o.id} className={`border-b border-rule py-2.5 text-[13px] last:border-b-0 ${o.revoked_at ? "opacity-55" : ""}`}>
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[14px] font-extrabold">{names[o.hotspot_id] ?? o.hotspot_id}</span>
+                <span className="text-[14px] font-semibold">{names[o.hotspot_id] ?? o.hotspot_id}</span>
                 <span className="text-muted">{when(o.created_at)}</span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-ink-2">
@@ -104,11 +104,11 @@ export function FeedbackLog({ items, names }: { items: FeedbackRecord[]; names: 
       {items.length === 0 ? (
         <p className="mt-2 text-[14px] text-muted">No reports yet. Each one is a real data point for checking and training the model.</p>
       ) : (
-        <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+        <ul className="m-0 mt-3 list-none border-y border-rule p-0">
           {items.slice(0, 12).map((f) => (
             <li key={f.id} className="border-b border-rule py-2.5 text-[13px] last:border-b-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[14px] font-extrabold">{names[f.hotspot_id] ?? f.hotspot_id}</span>
+                <span className="text-[14px] font-semibold">{names[f.hotspot_id] ?? f.hotspot_id}</span>
                 <span className="text-muted">{f.event_date}</span>
               </div>
               <div className="mt-1 text-ink-2">
@@ -134,16 +134,16 @@ export function ScorecardCard({ card }: { card: Scorecard | null }) {
         <p className="mt-2 text-[14px] text-muted">Needs the database.</p>
       ) : (
         <>
-          <dl className="m-0 mt-3 grid grid-cols-2 border-l-2 border-t-2 border-ink">
+          <dl className="m-0 mt-3 grid grid-cols-4 divide-x divide-rule border-y border-rule">
             {([
               ["Floods caught", card.counts!.hits],
               ["Floods missed", card.counts!.misses],
               ["False alarms", card.counts!.false_alarms],
               ["Correct all-clear", card.counts!.correct_clear],
             ] as const).map(([label, n]) => (
-              <div key={label} className="border-b-2 border-r-2 border-ink bg-paper-3 px-4 py-3">
+              <div key={label} className="px-2.5 py-3 first:pl-0">
                 <dt className="text-[13px] font-medium text-ink-2">{label}</dt>
-                <dd className="m-0 mt-1 text-[28px] font-extrabold leading-none tracking-[-0.04em]">{n}</dd>
+                <dd className="m-0 mt-1 text-[28px] font-display font-medium leading-none tracking-[-0.02em]">{n}</dd>
               </div>
             ))}
           </dl>
@@ -177,11 +177,11 @@ export function AlertLog({ items, names }: { items: AlertRecord[]; names: Record
       {items.length === 0 ? (
         <p className="mt-2 text-[14px] text-muted">No alerts sent yet.</p>
       ) : (
-        <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+        <ul className="m-0 mt-3 list-none border-y border-rule p-0">
           {items.slice(0, 10).map((a) => (
             <li key={a.id} className="border-b border-rule py-2.5 text-[13px] last:border-b-0">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[14px] font-extrabold">{names[a.hotspot_id] ?? a.hotspot_id}</span>
+                <span className="text-[14px] font-semibold">{names[a.hotspot_id] ?? a.hotspot_id}</span>
                 <span className="text-muted">{when(a.created_at)}</span>
               </div>
               <dl className="m-0 mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 text-ink-2">

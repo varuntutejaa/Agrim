@@ -14,9 +14,9 @@ type Props = {
 };
 
 const FILL: Record<RiskLevel, string> = {
-  red: "bg-risk-red text-accent-ink",
-  amber: "bg-accent-2 text-ink",
-  green: "bg-paper-3 text-ink",
+  red: "text-risk-red",
+  amber: "text-risk-amber",
+  green: "text-ink",
 };
 
 export default function RiskSummary({ counts, lead = "", sub, lang = "en" }: Props) {
@@ -31,23 +31,23 @@ export default function RiskSummary({ counts, lead = "", sub, lang = "en" }: Pro
       <h2 className="h-panel text-ink">{s.headline(counts, lead)}</h2>
       {sub && <p className="mt-3 text-[14px] leading-relaxed text-ink-2">{sub}</p>}
 
-      <dl className="m-0 mt-5 grid grid-cols-3 border-2 border-ink">
+      <dl className="m-0 mt-6 grid grid-cols-3 border-y border-rule">
         {levels.map((level) => {
           const on = counts[level] > 0 && level !== "green";
           return (
-            <div key={level} className={`border-l-2 border-ink px-5 pb-3.5 pt-2.5 first:border-l-0 ${on ? FILL[level] : FILL.green}`}>
+            <div key={level} className={`border-l border-rule px-4 pb-4 pt-3 first:border-l-0 first:pl-0 ${on ? FILL[level] : FILL.green}`}>
               <dt className={`flex min-h-[2.8em] items-start gap-1.5 text-[13px] font-medium leading-snug ${on ? "" : "text-ink-2"}`}>
-                <span className={`mt-[0.35em] inline-block h-2 w-2 shrink-0 ${on && level === "red" ? "bg-accent-ink" : LEVEL_BG[level]}`} aria-hidden />
+                <span className={`mt-[0.4em] inline-block h-2 w-2 shrink-0 rounded-full ${LEVEL_BG[level]}`} aria-hidden />
                 {s.countLabel[level]}
               </dt>
-              <dd className="m-0 mt-2 text-[36px] font-extrabold leading-none tracking-[-0.04em]">{counts[level]}</dd>
+              <dd className="m-0 mt-2 text-[36px] font-display font-medium leading-none tracking-[-0.02em]">{counts[level]}</dd>
             </div>
           );
         })}
       </dl>
 
       {/* Share of hotspots at each level */}
-      <div className="mt-3 flex h-1.5 gap-0.5" aria-hidden>
+      <div className="mt-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
         {levels.map((level) =>
           counts[level] ? <div key={level} className={LEVEL_BG[level]} style={{ flexGrow: counts[level] / total }} /> : null,
         )}

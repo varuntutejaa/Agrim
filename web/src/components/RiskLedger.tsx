@@ -19,7 +19,7 @@ export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, 
   let rank = 0;
   return (
     <div>
-      <div className={`${COLS} border-b-2 border-ink pb-2`} role="presentation">
+      <div className={`${COLS} border-b border-rule pb-2`} role="presentation">
         <span className="label">#</span>
         <span className="label">{s.col.hotspot}</span>
         <span className="label text-right">{s.col.rain}</span>
@@ -49,8 +49,8 @@ export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, 
                 className={`row-btn ${COLS} items-center py-3`}
               >
                 <span className="text-[13px] text-muted">{String(rank).padStart(2, "0")}</span>
-                <span className={`min-w-0 text-[15px] leading-snug ${atRisk ? "font-extrabold text-ink" : "font-medium text-ink-2"}`}>{h.name}</span>
-                <span className="whitespace-nowrap text-right text-[16px] font-extrabold text-ink">
+                <span className={`min-w-0 text-[15px] leading-snug ${atRisk ? "font-semibold text-ink" : "font-medium text-ink-2"}`}>{h.name}</span>
+                <span className="whitespace-nowrap text-right text-[16px] font-semibold text-ink">
                   {w.rain.rain_24h.toFixed(0)}
                   {"\u00a0"}<span className="text-[13px] font-medium text-muted">{s.mm}</span>
                 </span>
@@ -84,15 +84,15 @@ function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: tru
     <div className="space-y-4 px-2 pb-5 pl-[36px] pt-1 text-[14px]">
       {w.override && (
         <p className="text-[14px] text-ink-2">
-          <span className="font-extrabold text-ink">{s.adjusted}. </span>
+          <span className="font-semibold text-ink">{s.adjusted}. </span>
           {s.adjustedText(w.override.officer, w.model_level ? s.level[w.model_level] : "?")}: “{w.override.reason}”
         </p>
       )}
       {w.models && <ModelDots models={w.models} lang={lang} withText />}
       {active && (
-        <div className="border-2 border-ink bg-paper-3 px-3 py-2.5">
+        <div className="rounded-card border border-rule bg-paper-3 px-3 py-2.5">
           <div className="label">{s.action}</div>
-          <div className="mt-1 font-extrabold leading-snug text-ink">{actionText(w, lang)}</div>
+          <div className="mt-1 font-semibold leading-snug text-ink">{actionText(w, lang)}</div>
         </div>
       )}
       <div>
@@ -107,7 +107,7 @@ function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: tru
         <div>
           <div className="label">{s.modelEstimate}</div>
           <p className="mt-1 text-ink-2">
-            <span className="font-extrabold text-ink">{Math.round(w.ml.probability * 100)}%</span> {s.chance}
+            <span className="font-semibold text-ink">{Math.round(w.ml.probability * 100)}%</span> {s.chance}
             {w.ml.drivers.length > 0 && <>. {w.ml.drivers.map((d) => d.text).join("; ")}</>}
           </p>
         </div>

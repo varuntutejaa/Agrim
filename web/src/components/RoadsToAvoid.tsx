@@ -20,16 +20,16 @@ export default function RoadsToAvoid({ windowKey, lang, refreshKey, onSelect }: 
   const s = t(lang);
   return (
     <section className="plate">
-      <h3 className="h-sub border-b-2 border-ink-rule px-4 py-3 text-paper">{s.avoid}</h3>
+      <h3 className="h-sub border-b border-ink-rule px-4 py-3 text-ink">{s.avoid}</h3>
       <ul className="m-0 list-none p-0">
         {items.map((i) => {
           const level = i.level as "red" | "amber";
           return (
             <li key={i.hotspot_id} className="border-b border-ink-rule last:border-b-0">
-              <button type="button" onClick={() => onSelect(i.hotspot_id)} className="w-full px-4 py-3 text-left hover:bg-ink-2">
+              <button type="button" onClick={() => onSelect(i.hotspot_id)} className="w-full px-4 py-3 text-left hover-light">
                 <span className="flex items-center gap-3">
                   <span className={`status status--${level}`}>{s.avoidLevel[level]}</span>
-                  <span className="text-[16px] font-extrabold text-paper">{i.name}</span>
+                  <span className="text-[16px] font-semibold text-ink">{i.name}</span>
                 </span>
                 <span className="mt-1.5 block text-[14px] leading-relaxed text-paper-dim">
                   {lang === "hi" ? i.when_hi : i.when_en}. {lang === "hi" ? i.tip_hi : i.tip_en}
@@ -39,7 +39,7 @@ export default function RoadsToAvoid({ windowKey, lang, refreshKey, onSelect }: 
           );
         })}
       </ul>
-      <p className="border-t-2 border-ink-rule px-4 py-2.5 text-[13px] text-paper-dim">{s.avoidNote}</p>
+      <p className="border-t border-ink-rule px-4 py-2.5 text-[13px] text-paper-dim">{s.avoidNote}</p>
     </section>
   );
 }

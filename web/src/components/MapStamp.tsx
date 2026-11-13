@@ -10,7 +10,7 @@ export default function MapStamp({ result, storm }: { result: SimResult | null; 
       {replayDate ? (
         <>
           <div className="hidden text-[13px] text-paper-dim md:block">Replay, model rain</div>
-          <div className="figure text-[20px] leading-tight tracking-[-0.03em] md:text-[30px]">
+          <div className="figure text-[20px] leading-tight tracking-[-0.02em] md:text-[30px]">
             {replay?.title ?? new Date(replayDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
           </div>
           {replay && (
@@ -23,8 +23,8 @@ export default function MapStamp({ result, storm }: { result: SimResult | null; 
         <>
           <div className="hidden text-[13px] text-paper-dim md:block">Scenario</div>
           <div className="text-[20px] leading-tight md:text-[32px]">
-            <span className="figure tracking-[-0.03em]">{storm.rain_24h}</span>
-            {"\u00a0"}<span className="text-[14px] font-medium text-paper">mm in 24 h</span>
+            <span className="figure tracking-[-0.02em]">{storm.rain_24h}</span>
+            {"\u00a0"}<span className="text-[14px] font-medium text-ink-2">mm in 24 h</span>
           </div>
           <div className="hidden text-[13px] text-paper-dim md:block">
             Peak {storm.peak1h} mm/h, {storm.centre ? `local storm, ${storm.radius_km} km` : "whole city"}

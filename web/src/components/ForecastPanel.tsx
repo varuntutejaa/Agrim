@@ -52,8 +52,8 @@ export default function ForecastPanel(p: Props) {
       </div>
 
       {p.ageHours !== null && p.ageHours > 12 && risk && (
-        <div role="status" className="border-2 border-ink bg-accent-2 px-3 py-2.5 text-[14px] text-ink">
-          <span className="mr-1.5 font-extrabold">{lang === "hi" ? "पुराना पूर्वानुमान." : "Old forecast."}</span>
+        <div role="status" className="notice px-3 py-2.5 text-[14px]">
+          <span className="mr-1.5 font-semibold">{lang === "hi" ? "पुराना पूर्वानुमान." : "Old forecast."}</span>
           {s.stale(Math.round(p.ageHours), `${fmtDay(risk.meta.generated_at)} ${fmtTime(risk.meta.generated_at)} IST`)}
         </div>
       )}

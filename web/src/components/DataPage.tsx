@@ -91,15 +91,15 @@ export default function DataPage() {
       <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-14 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="min-w-0">
           <h2 className="h-sub">Data we'd ask MCG / GMDA for</h2>
-          <div className={`mt-4 hidden border-b-2 border-ink pb-2 md:grid md:gap-x-4 ${COLS}`} role="presentation">
+          <div className={`mt-4 hidden border-b border-rule pb-2 md:grid md:gap-x-4 ${COLS}`} role="presentation">
             <span className="label">#</span><span className="label">Data</span><span className="label">Evidence it exists</span>
             <span className="label">What it adds</span>
           </div>
-          <ol className="m-0 mt-4 list-none border-t-2 border-ink p-0 md:mt-0 md:border-t-0">
+          <ol className="m-0 mt-4 list-none border-t border-rule p-0 md:mt-0 md:border-t-0">
             {ASKS.map((a) => (
               <li key={a.id} className={`grid gap-y-1.5 border-b border-rule py-4 text-[14px] leading-relaxed md:gap-x-4 ${COLS}`}>
-                <span className="text-[15px] font-extrabold">{a.id}</span>
-                <span className="font-extrabold text-ink">{a.data}</span>
+                <span className="text-[15px] font-semibold">{a.id}</span>
+                <span className="font-semibold text-ink">{a.data}</span>
                 <span className="text-ink-2">{a.evidence}</span>
                 <span className="text-ink-2">
                   {a.unlocks}
@@ -108,8 +108,8 @@ export default function DataPage() {
               </li>
             ))}
             <li className={`grid gap-y-1.5 border-b border-rule py-4 text-[14px] leading-relaxed md:gap-x-4 ${COLS}`}>
-              <span className="text-[15px] font-extrabold">P1</span>
-              <span className="font-extrabold text-ink">Drain water-level sensors at the 4 most critical points</span>
+              <span className="text-[15px] font-semibold">P1</span>
+              <span className="font-semibold text-ink">Drain water-level sensors at the 4 most critical points</span>
               <span className="text-muted">Doesn't exist yet: an optional proposal</span>
               <span className="text-ink-2">Live proof that water is rising<span className="mt-1 block text-[13px] text-muted">Today: the field stays empty; nothing depends on it</span></span>
             </li>
@@ -123,7 +123,7 @@ export default function DataPage() {
         <aside className="space-y-12">
           <section>
             <h2 className="h-sub">Runs today on public data</h2>
-            <ul className="m-0 mt-4 list-none border-y-2 border-ink p-0">
+            <ul className="m-0 mt-4 list-none border-y border-rule p-0">
               {PUBLIC_NOW.map(([what, src]) => (
                 <li key={what} className="border-b border-rule py-3 text-[14px] last:border-b-0">
                   <div className="font-medium text-ink">{what}</div>
@@ -139,7 +139,7 @@ export default function DataPage() {
             </p>
             <table className="mt-4 w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b-2 border-ink text-left">
+                <tr className="border-b border-rule text-left">
                   <th scope="col" className="label pb-2">Day</th><th scope="col" className="label pb-2">Model</th>
                   <th scope="col" className="label pb-2">Reported</th><th scope="col" className="label pb-2 text-right">Flagged</th>
                 </tr>
@@ -148,7 +148,7 @@ export default function DataPage() {
                 {MISSED.map(([d, m, r, f]) => (
                   <tr key={d} className="border-b border-rule align-top">
                     <td className="whitespace-nowrap py-2 pr-2 font-medium">{d}</td><td className="whitespace-nowrap pr-2">{m}</td>
-                    <td className="pr-2 text-ink-2">{r}</td><td className="text-right font-extrabold">{f}</td>
+                    <td className="pr-2 text-ink-2">{r}</td><td className="text-right font-semibold">{f}</td>
                   </tr>
                 ))}
               </tbody>
@@ -160,10 +160,10 @@ export default function DataPage() {
 
       <section className="mt-16">
         <h2 className="h-sub">Assumptions</h2>
-        <ol className="m-0 mt-4 grid list-none gap-x-12 gap-y-3 border-t-2 border-ink p-0 pt-4 md:grid-cols-2">
+        <ol className="m-0 mt-4 grid list-none gap-x-12 gap-y-3 border-t border-rule p-0 pt-4 md:grid-cols-2">
           {ASSUMPTIONS.map((a, i) => (
             <li key={a} className="flex gap-4 text-[14px] leading-relaxed text-ink-2">
-              <span className="w-8 shrink-0 font-extrabold text-ink">A{i + 1}</span>
+              <span className="w-8 shrink-0 font-semibold text-ink">A{i + 1}</span>
               {a}
             </li>
           ))}

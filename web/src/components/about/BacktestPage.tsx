@@ -17,7 +17,7 @@ export default function BacktestPage() {
 
   return (
     <div className="mx-auto max-w-[1360px] px-4 pb-20 pt-10 md:px-10 md:pt-14">
-      {err && <p className="text-[15px] font-extrabold text-risk-red">Couldn't load the backtest.</p>}
+      {err && <p className="text-[15px] font-semibold text-risk-red">Couldn't load the backtest.</p>}
       {!bt && !err && <div className="h-40 bg-paper-2" aria-label="Loading" />}
       {bt && bt.n === 0 && (
         <>
@@ -36,21 +36,21 @@ export default function BacktestPage() {
             On {bt.counts.caught + bt.counts.missed} reviewed past floods, the rules would have raised the alarm for {bt.counts.caught}.
             Every miss shows why the next step is rain-gauge data.
           </h1>
-          <dl className="m-0 mt-10 grid grid-cols-2 border-l-2 border-t-2 border-ink md:grid-cols-4">
+          <dl className="m-0 mt-10 grid grid-cols-4 divide-x divide-rule border-y border-rule">
             {([["Caught", bt.counts.caught], ["Missed", bt.counts.missed], ["False alarms", bt.counts["false alarm"]], ["Correct all-clear", bt.counts.correct]] as const).map(([l, n]) => (
-              <div key={l} className="border-b-2 border-r-2 border-ink bg-paper-3 px-4 py-4">
+              <div key={l} className="px-3 py-4 first:pl-0 md:px-5">
                 <dt className="text-[14px] font-medium text-ink-2">{l}</dt>
-                <dd className="m-0 mt-2 text-[44px] font-extrabold leading-none tracking-[-0.04em]">{n}</dd>
+                <dd className="m-0 mt-2 text-[44px] font-display font-medium leading-none tracking-[-0.02em]">{n}</dd>
               </div>
             ))}
           </dl>
 
           <section className="mt-16">
             <h2 className="h-sub">Why the misses happened</h2>
-            <ul className="m-0 mt-4 list-none border-t-2 border-ink p-0">
+            <ul className="m-0 mt-4 list-none border-t border-rule p-0">
               {Object.entries(bt.miss_reasons).filter(([, n]) => n > 0).map(([r, n]) => (
                 <li key={r} className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-b border-rule py-4">
-                  <span className="text-[36px] font-extrabold leading-none tracking-[-0.04em]">{n}</span>
+                  <span className="text-[36px] font-display font-medium leading-none tracking-[-0.02em]">{n}</span>
                   <span className="max-w-[65ch] text-[15px] leading-relaxed text-ink-2"><b className="text-ink">{r[0].toUpperCase() + r.slice(1)}.</b> {REASON_TEXT[r]}</span>
                 </li>
               ))}
@@ -60,7 +60,7 @@ export default function BacktestPage() {
           <section className="mt-16">
             <h2 className="h-sub">By storm day</h2>
             <table className="mt-4 w-full border-collapse text-[14px]">
-              <thead><tr className="border-b-2 border-ink text-left">
+              <thead><tr className="border-b border-rule text-left">
                 <th scope="col" className="label pb-2">Day</th><th scope="col" className="label pb-2">Model rain at the spots</th>
                 <th scope="col" className="label pb-2 text-right">Caught</th><th scope="col" className="label pb-2 text-right">Missed</th>
               </tr></thead>
@@ -69,7 +69,7 @@ export default function BacktestPage() {
                   <tr key={d.date} className="border-b border-rule">
                     <td className="py-2.5 font-medium">{new Date(d.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
                     <td>{d.model_rain_min.toFixed(0)} to {d.model_rain_max.toFixed(0)} mm</td>
-                    <td className="text-right font-extrabold">{d.caught}</td><td className="text-right font-extrabold">{d.missed}</td>
+                    <td className="text-right font-semibold">{d.caught}</td><td className="text-right font-semibold">{d.missed}</td>
                   </tr>
                 ))}
               </tbody>
@@ -77,12 +77,12 @@ export default function BacktestPage() {
           </section>
 
           <details className="mt-16">
-            <summary className="cursor-pointer text-[16px] font-extrabold">Every report ({bt.n})</summary>
-            <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+            <summary className="cursor-pointer text-[16px] font-semibold">Every report ({bt.n})</summary>
+            <ul className="m-0 mt-3 list-none border-y border-rule p-0">
               {bt.rows.map((r) => (
                 <li key={`${r.date}-${r.hotspot_id}`} className="grid gap-1 border-b border-rule py-3 text-[14px] last:border-b-0 md:grid-cols-[120px_minmax(0,1fr)_180px_minmax(0,1fr)] md:items-center">
                   <span className="text-muted">{r.date}</span>
-                  <span className="font-extrabold">{r.name}</span>
+                  <span className="font-semibold">{r.name}</span>
                   <span className="flex items-center gap-2">
                     <span className={`status status--${r.level}`}>{LEVEL_LABEL[r.level]}</span>
                     <span>{r.outcome}</span>

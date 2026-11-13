@@ -15,7 +15,7 @@ export default function ModelDots({ models, lang = "en", withText = false, onInk
     <span className="inline-flex items-center gap-2" title={label} aria-label={label}>
       <span className="inline-flex gap-[3px]" aria-hidden>
         {Array.from({ length: models.total }, (_, i) => (
-          <span key={i} className={`inline-block h-2 w-2 border-[1.5px] ${edge} ${i < models.flooding ? fill : "bg-transparent"}`} />
+          <span key={i} className={`inline-block h-2 w-2 rounded-full border-[1.5px] ${edge} ${i < models.flooding ? fill : "bg-transparent"}`} />
         ))}
       </span>
       {withText && <span className="text-[13px] text-ink-2">{label}</span>}

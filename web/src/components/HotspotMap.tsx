@@ -60,7 +60,7 @@ const SENSOR_COLOR: ExpressionSpecification = ["match", ["get", "kind"],
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-/** Recolour the positron basemap to sit quietly under the data. */
+/** Recolour the positron basemap to a city at night, quiet under the data. */
 function restyleBasemap(map: maplibregl.Map) {
   for (const layer of map.getStyle().layers ?? []) {
     const id = layer.id;
@@ -69,10 +69,16 @@ function restyleBasemap(map: maplibregl.Map) {
       else if (layer.type === "fill") {
         if (/water/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.water);
         else if (/building/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.building);
-        else if (/park|wood|grass|landcover|landuse|forest/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.green);
+        else if (/park|wood|grass|forest/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.green);
+        else map.setPaintProperty(id, "fill-color", MAP.base.land);
       } else if (layer.type === "line") {
         if (/water|river|stream|canal/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.waterLine);
         else if (/boundary|admin/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.boundary);
+        else if (/casing/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.background);
+        else if (/motorway|trunk|major|primary/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.roadMajor);
+        else map.setPaintProperty(id, "line-color", MAP.base.road);
+      } else if (layer.type === "symbol" && /shield/.test(id)) {
+        map.setLayoutProperty(id, "visibility", "none");   // white road shields glare on the night map
       } else if (layer.type === "symbol" && map.getLayoutProperty(id, "text-field") !== undefined) {
         map.setPaintProperty(id, "text-color", MAP.base.label);
         map.setPaintProperty(id, "text-halo-color", MAP.base.background);
@@ -222,8 +228,8 @@ export default function HotspotMap(props: Props) {
         if (!p) return;
         closePopup();
         popupRef.current = new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(e.lngLat)
-          .setHTML(`<div class="inline-block bg-accent-2 px-1.5 py-0.5 text-[12px] font-extrabold text-ink">Proposed, illustrative</div>
-            <div class="mt-2 text-[14px] font-extrabold">${esc(String(p.label))}</div>
+          .setHTML(`<span class="tag">Proposed, illustrative</span>
+            <div class="mt-2 text-[14px] font-semibold">${esc(String(p.label))}</div>
             <div class="mt-1 text-[13px] text-ink-2">${esc(String(p.why))}</div>`)
           .addTo(map);
       });
@@ -250,7 +256,7 @@ export default function HotspotMap(props: Props) {
           closePopup();
           popupRef.current = new maplibregl.Popup({ maxWidth: "260px" })
             .setLngLat(e.lngLat)
-            .setHTML(`<div class="label">lat, lon</div><div class="text-[14px] font-extrabold">${text}</div>
+            .setHTML(`<div class="label">lat, lon</div><div class="text-[14px] font-semibold">${text}</div>
               <div class="mt-1 text-[13px] text-ink-2">Paste into data/hotspots.csv and set geocode_source = manual.</div>`)
             .addTo(map);
         }
@@ -372,7 +378,7 @@ function popupHtml(id: string, name: string, p: Props): string {
       <div class="mt-2"><span class="status status--${w.level}">${esc(s.levelLong[w.level])}</span></div>
       ${sub ? `<div class="mt-2 text-[13px] text-muted">${esc(sub)}</div>` : ""}
       ${w.models ? `<div class="mt-1 text-[13px] text-ink-2">${esc(s.models(w.models.flooding, w.models.total))}</div>` : ""}
-      ${w.level !== "green" ? `<div class="mt-2 text-[14px] font-extrabold leading-snug">${esc(actionText(w, lang))}</div>` : ""}
+      ${w.level !== "green" ? `<div class="mt-2 text-[14px] font-semibold leading-snug">${esc(actionText(w, lang))}</div>` : ""}
       <ul class="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-ink-2">${reasons(w, lang).map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
       <div class="mt-2 text-[13px] text-muted">${esc(s.popupRain(w.rain.rain_24h, w.rain.peak1h))}</div>`;
   } else {
@@ -380,7 +386,7 @@ function popupHtml(id: string, name: string, p: Props): string {
     const r = coords ? nearestRain(p.rain, coords[0], coords[1]) : null;
     if (r) risk = `<div class="mt-1 text-[13px] text-muted">${r.next_24h} mm forecast in 24 h</div>`;
   }
-  return `<div class="pr-5 text-[18px] font-extrabold leading-tight tracking-[-0.02em]">${esc(name)}</div>
+  return `<div class="pr-5 text-[18px] font-semibold leading-tight tracking-[-0.02em]">${esc(name)}</div>
     ${risk}${networkLines(p.drainage, id, lang)}`;
 }
 

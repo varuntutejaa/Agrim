@@ -8,7 +8,7 @@ import type { DrainageLayers } from "../types";
 import { LEVEL_COLOR } from "../risk";
 import { MAP } from "../mapColors";
 
-const INK_2 = MAP.ink2;
+const INK_2 = MAP.muted;   // flow paths that carry no risk: quiet on the night map
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** Which drainage layers each mode shows. */

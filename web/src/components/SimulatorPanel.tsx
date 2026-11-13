@@ -137,7 +137,7 @@ function StormControls({ storm, onStorm, result }: Props) {
           <div className="mt-5 space-y-2">
             <Slider label="Storm radius" unit="km" min={2} max={15} value={storm.radius_km}
               onChange={(v) => onStorm({ radius_km: v })} />
-            <p className="text-[14px] font-extrabold text-accent">Tap the map to move the storm.</p>
+            <p className="text-[14px] font-semibold text-accent">Tap the map to move the storm.</p>
           </div>
         )}
       </fieldset>
@@ -152,7 +152,7 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
   }, {});
   return (
     <div className="space-y-5">
-      <ul className="m-0 list-none border-t-2 border-ink p-0">
+      <ul className="m-0 list-none border-t border-rule p-0">
         {events.map((e) => {
           const active = e.date === replayDate;
           return (
@@ -163,11 +163,11 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
                 aria-pressed={active}
                 className={`row-btn grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-1 py-3 ${active ? "bg-paper-2" : ""}`}
               >
-                <span className="text-[18px] font-extrabold leading-tight tracking-[-0.02em]">
+                <span className="text-[18px] font-display font-medium leading-tight tracking-[-0.02em]">
                   {e.title}
-                  {active && <span className="ml-2 align-middle text-[13px] font-extrabold tracking-normal text-accent">Playing</span>}
+                  {active && <span className="ml-2 align-middle text-[13px] font-semibold tracking-normal text-accent">Playing</span>}
                 </span>
-                <span className="text-right text-[16px] font-extrabold">
+                <span className="text-right text-[16px] font-semibold">
                   {e.city_mean_mm.toFixed(0)}{"\u00a0"}<span className="text-[13px] font-medium text-muted">mm</span>
                 </span>
                 <span className="col-span-2 mt-1 text-[13px] leading-relaxed text-muted">
@@ -202,17 +202,17 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
 function Scoreboard({ result, busy }: { result: SimResult | null; busy: boolean }) {
   const c = result?.meta.counts.next_24h;
   const cells = [
-    { level: "red" as const, label: "High", fill: "bg-risk-red text-accent-ink" },
-    { level: "amber" as const, label: "Medium", fill: "bg-accent-2 text-ink" },
+    { level: "red" as const, label: "High", fill: "text-risk-red" },
+    { level: "amber" as const, label: "Medium", fill: "text-risk-amber" },
     { level: "green" as const, label: "Low", fill: "" },
   ];
   return (
-    <div className="sticky top-0 z-10 grid grid-cols-3 border-b-2 border-ink bg-paper-3">
+    <div className="sticky top-0 z-10 grid grid-cols-3 border-b border-rule bg-paper-2">
       {cells.map(({ level, label, fill }) => {
         const on = !!c && c[level] > 0 && level !== "green";
         return (
-          <div key={level} className={`flex items-baseline gap-2 border-l-2 border-ink px-4 py-2.5 first:border-l-0 md:px-6 ${on ? fill : ""}`}>
-            <span className={`text-[28px] font-extrabold leading-none tracking-[-0.04em] transition-opacity ${busy ? "opacity-50" : ""}`}>
+          <div key={level} className={`flex items-baseline gap-2 border-l border-rule px-4 py-2.5 first:border-l-0 md:px-6 ${on ? fill : ""}`}>
+            <span className={`text-[28px] font-display font-medium leading-none tracking-[-0.02em] transition-opacity ${busy ? "opacity-50" : ""}`}>
               {c ? c[level] : "0"}
             </span>
             <span className={`text-[13px] font-medium ${on ? "" : "text-ink-2"}`}>{label}</span>
@@ -247,16 +247,16 @@ function BlockDrain({ critical, blocked, onToggle, result }: {
         Tick an outfall, or tap a blue point on the map. Water that must pass a blocked drain backs up, so the hotspots
         upstream of it flood first.
       </p>
-      <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+      <ul className="m-0 mt-3 list-none border-y border-rule p-0">
         {shown.map((p) => (
           <li key={p.id} className="border-b border-rule last:border-b-0">
             <label className="flex cursor-pointer items-start gap-3 py-2.5 text-[14px] hover:bg-paper-2">
               <input type="checkbox" className="check mt-0.5 shrink-0" checked={blocked.includes(p.id)} onChange={() => onToggle(p.id)} />
               <span className="min-w-0 flex-1">
-                <span className="font-extrabold">{p.label}</span>
+                <span className="font-semibold">{p.label}</span>
                 {p.upstream_names.length > 0 && <span className="mt-0.5 block text-[13px] text-muted">drains {p.upstream_names.join(", ")}</span>}
               </span>
-              <span className="pr-1 text-[16px] font-extrabold">{p.n_hotspots}</span>
+              <span className="pr-1 text-[16px] font-semibold">{p.n_hotspots}</span>
             </label>
           </li>
         ))}
@@ -267,7 +267,7 @@ function BlockDrain({ critical, blocked, onToggle, result }: {
         </button>
       )}
       {effect.length > 0 && (
-        <p className="mt-3 border-2 border-ink bg-paper-3 px-3 py-2.5 text-[14px] leading-relaxed text-ink">
+        <p className="mt-3 rounded-card border border-rule bg-paper-3 px-3 py-2.5 text-[14px] leading-relaxed text-ink">
           <span className="status status--red mr-2 align-middle">Blocked</span>
           {effect.map((b) => b.label).join(", ")}. {new Set(effect.flatMap((b) => b.hotspots)).size} hotspot(s)
           back up behind it (marked “drain blocked downstream”).

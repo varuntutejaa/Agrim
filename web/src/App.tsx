@@ -195,7 +195,8 @@ export default function App() {
     : undefined;
   const masthead = <Masthead view={view} onView={(v) => go(v)} updated={updated} lang={langChoice} onLang={onLang} stale={stale} />;
   const errorBar = error && (
-    <div role="alert" className="flex items-center gap-3 border-b-2 border-ink bg-accent-2 px-4 py-2 text-[14px] font-medium text-ink md:px-6">
+    <div role="alert" className="flex items-center gap-3 border-b border-accent-2 bg-paper-2 px-4 py-2 text-[14px] font-medium text-ink md:px-6">
+      <span className="h-2 w-2 shrink-0 rounded-full bg-accent-2" aria-hidden />
       {error}
       <button type="button" className="btn btn--sm ml-auto" onClick={() => { setError(null); refreshRisk(); }}>Retry</button>
     </div>
@@ -279,7 +280,7 @@ export default function App() {
           <MapKey view={view} lang={lang} critical={drainageMode === "critical"} sensors={showSensors} />
         </div>
 
-        <aside className="min-h-0 flex-1 overflow-y-auto overflow-x-clip border-t-2 border-ink bg-paper md:order-1 md:w-[30rem] md:flex-none md:border-r-2 md:border-t-0">
+        <aside className="min-h-0 flex-1 overflow-y-auto overflow-x-clip border-t border-rule bg-paper md:order-1 md:w-[30rem] md:flex-none md:border-r md:border-t-0">
           {view === "forecast" && (
             <ForecastPanel
               risk={risk}

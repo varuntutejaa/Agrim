@@ -12,10 +12,10 @@ function Bar({ label, have, need }: { label: string; have: number; need: number 
     <div>
       <div className="flex justify-between gap-3 text-[13px] text-ink-2">
         <span>{label}</span>
-        <span className="font-extrabold text-ink">{have} / {need}</span>
+        <span className="font-semibold text-ink">{have} / {need}</span>
       </div>
-      <div className="mt-1.5 h-1 bg-rule" role="img" aria-label={`${have} of ${need}`}>
-        <div className="h-full bg-ink" style={{ width: `${share * 100}%` }} />
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-rule" role="img" aria-label={`${have} of ${need}`}>
+        <div className="h-full rounded-full bg-accent" style={{ width: `${share * 100}%` }} />
       </div>
     </div>
   );
@@ -59,7 +59,7 @@ export default function ModelStatus() {
       </p>
       <table className="mt-3 w-full border-collapse text-[13px]">
         <thead>
-          <tr className="border-b-2 border-ink text-left">
+          <tr className="border-b border-rule text-left">
             <th scope="col" className="label pb-1.5">On storms it hadn't seen</th>
             <th scope="col" className="label pb-1.5 text-right">Model</th>
             <th scope="col" className="label pb-1.5 text-right">Rules</th>
@@ -68,12 +68,12 @@ export default function ModelStatus() {
         <tbody>
           <tr className="border-b border-rule">
             <td className="py-2 text-ink-2">Floods caught</td>
-            <td className="text-right font-extrabold">{pct(m.recall)}</td>
+            <td className="text-right font-semibold">{pct(m.recall)}</td>
             <td className="text-right text-ink-2">{pct(r.recall)}</td>
           </tr>
           <tr className="border-b border-rule">
             <td className="py-2 text-ink-2">Alarms that were right</td>
-            <td className="text-right font-extrabold">{pct(m.precision)}</td>
+            <td className="text-right font-semibold">{pct(m.precision)}</td>
             <td className="text-right text-ink-2">{pct(r.precision)}</td>
           </tr>
         </tbody>

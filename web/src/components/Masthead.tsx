@@ -17,7 +17,7 @@ type Props = {
 
 function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
   return (
-    <div role="group" aria-label="Language" className="cells">
+    <div role="group" aria-label="Language" className="cells gap-3 border-b-0">
       {(["en", "hi"] as Lang[]).map((l) => (
         <button
           key={l}
@@ -25,7 +25,7 @@ function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
           onClick={() => onLang(l)}
           aria-pressed={lang === l}
           lang={l}
-          className="cell cell--on-ink min-h-8 px-2.5"
+          className="cell cell--on-ink min-h-8"
         >
           {l === "en" ? "EN" : "हिं"}
         </button>
@@ -38,7 +38,7 @@ export default function Masthead({ view, onView, updated, lang, onLang, stale = 
   const s = t(lang);
   const phoneNav = useActiveInView<HTMLElement>(view);
   return (
-    <header className="bg-ink text-paper">
+    <header className="border-b border-rule bg-paper-2 text-ink">
       <div className="flex h-14 items-center gap-5 px-4 md:px-6">
         <button
           type="button"
@@ -46,10 +46,10 @@ export default function Masthead({ view, onView, updated, lang, onLang, stale = 
           aria-label="Agrim home"
           className="flex min-w-0 items-baseline gap-3 text-left"
         >
-          <span className="text-[22px] font-extrabold leading-none tracking-[-0.04em]">Agrim</span>
+          <span className="text-[22px] font-display font-medium leading-none tracking-[-0.02em]">Agrim</span>
           <span className="hidden truncate text-[13px] text-paper-dim lg:inline">{s.subtitle}</span>
         </button>
-        <nav aria-label="Views" className="cells ml-auto hidden md:flex">
+        <nav aria-label="Views" className="cells ml-auto hidden border-b-0 md:flex">
           {VIEW_KEYS.map((key) => (
             <button
               key={key}
@@ -64,7 +64,7 @@ export default function Masthead({ view, onView, updated, lang, onLang, stale = 
         </nav>
         <div className="ml-auto flex items-center gap-4 md:ml-0">
           {updated && (
-            <span className={`hidden text-[13px] xl:inline ${stale ? "font-extrabold text-accent-2" : "text-paper-dim"}`}>
+            <span className={`hidden text-[13px] xl:inline ${stale ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
               {s.updated} {updated}{stale ? `, ${lang === "hi" ? "पुराना" : "old"}` : ""}
             </span>
           )}
@@ -72,14 +72,14 @@ export default function Masthead({ view, onView, updated, lang, onLang, stale = 
         </div>
       </div>
       {/* Phone and tablet: the destinations as a row of cells that scrolls sideways. */}
-      <nav ref={phoneNav} aria-label="Views" className="cells overflow-x-auto px-4 pb-3 md:hidden">
+      <nav ref={phoneNav} aria-label="Views" className="cells overflow-x-auto border-b-0 px-4 md:hidden">
         {VIEW_KEYS.map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => onView(key)}
             aria-current={view === key ? "page" : undefined}
-            className="cell cell--on-ink flex-1"
+            className="cell min-h-11"
           >
             {s.tabs[key]}
           </button>

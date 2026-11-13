@@ -71,19 +71,21 @@ export default function AlertsPanel(p: Props) {
       {drafts === null ? (
         <div className="mt-3 h-24 bg-paper-2" aria-label="Loading" />
       ) : drafts.length === 0 ? (
-        <p className="mt-3 border-y-2 border-ink py-3 text-[15px] text-ink-2">No Red hotspots, so no citizen alerts to send.</p>
+        <p className="mt-3 border-y border-rule py-3 text-[15px] text-ink-2">No Red hotspots, so no citizen alerts to send.</p>
       ) : (
         <>
-          <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
+          <ul className="m-0 mt-3 list-none border-y border-rule p-0">
             {drafts.map((a) => (
               <li key={a.hotspot_id} className="border-b border-rule py-3 last:border-b-0">
                 <label className="flex cursor-pointer items-start gap-3">
                   <input type="checkbox" className="check mt-1 shrink-0" checked={chosen.has(a.hotspot_id)}
                     onChange={() => toggle(a.hotspot_id)} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-extrabold">{a.name}</span>
-                    <span className="mt-1 block text-[13px] leading-relaxed text-ink-2" lang="hi">{a.sms_hi}</span>
-                    <span className="mt-1 block text-[13px] leading-relaxed text-ink-2">{a.sms_en}</span>
+                    <span className="block text-[15px] font-semibold">{a.name}</span>
+                    <span className="mt-2 block rounded-inner bg-well px-3 py-2.5 text-[13px] leading-relaxed text-well-ink">
+                      <span className="block" lang="hi">{a.sms_hi}</span>
+                      <span className="mt-1.5 block">{a.sms_en}</span>
+                    </span>
                   </span>
                 </label>
                 <button type="button" className="link ml-7 mt-2 text-[13px]" aria-expanded={showIvr === a.hotspot_id}
@@ -91,7 +93,7 @@ export default function AlertsPanel(p: Props) {
                   {showIvr === a.hotspot_id ? "Hide" : "Show"} voice-call script (mock IVR)
                 </button>
                 {showIvr === a.hotspot_id && (
-                  <pre className="ml-7 mt-2 overflow-x-auto whitespace-pre-wrap border-2 border-ink bg-paper-3 p-3 text-[13px] text-ink-2">
+                  <pre className="ml-7 mt-2 overflow-x-auto whitespace-pre-wrap rounded-card border border-rule bg-paper-3 p-3 text-[13px] text-ink-2">
                     {a.ivr.replace(/></g, ">\n<")}
                   </pre>
                 )}

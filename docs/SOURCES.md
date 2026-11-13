@@ -43,8 +43,8 @@ Also derived from source 2 by `model/replay.py`: per-day rain at each hotspot
 for the simulator's replays (`data/model/replay_days.csv`). This is model rain,
 labelled as such in the UI, not rain-gauge readings.
 
-Fonts (self-hosted via npm @fontsource): Chivo Mono and IBM Plex Sans
-Devanagari, both under the SIL Open Font License.
+Fonts (self-hosted via npm @fontsource): Wix Madefor Display, Wix Madefor
+Text and IBM Plex Sans Devanagari, all under the SIL Open Font License.
 
 Derived from 5–7 by `pipeline/build_network.py`: flow directions, catchments,
 hotspot links, critical-node ranking and terrain features (`data/network/`).

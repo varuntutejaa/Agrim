@@ -19,14 +19,14 @@ export default function PublicOverridesPage() {
         Residents and RWAs can see every change to the public map: the place, the date, what the model said, what it was
         changed to, and why. Officer names are kept internal. Drills (exercises) aren't listed.
       </p>
-      {!available && <p className="mt-5 font-extrabold text-ink">The log needs the database, which isn't connected here.</p>}
+      {!available && <p className="mt-5 font-semibold text-ink">The log needs the database, which isn't connected here.</p>}
       {rows === null ? (
         <div className="mt-10 h-32 bg-paper-2" aria-label="Loading" />
       ) : rows.length === 0 ? (
-        <p className="mt-10 border-y-2 border-ink py-5 text-[16px] text-ink-2">No overrides so far.</p>
+        <p className="mt-10 border-y border-rule py-5 text-[16px] text-ink-2">No overrides so far.</p>
       ) : (
         <>
-          <div className="mt-10 hidden border-b-2 border-ink pb-2 md:grid md:grid-cols-[190px_minmax(0,1fr)_260px] md:gap-x-6" role="presentation">
+          <div className="mt-10 hidden border-b border-rule pb-2 md:grid md:grid-cols-[190px_minmax(0,1fr)_260px] md:gap-x-6" role="presentation">
             <span className="label">When</span><span className="label">Hotspot and reason</span><span className="label">Change</span>
           </div>
           <ul className="m-0 list-none p-0">

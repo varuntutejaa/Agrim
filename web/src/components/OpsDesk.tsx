@@ -163,7 +163,7 @@ export default function OpsDesk(p: Props) {
         </div>
 
         {/* Officer and status line */}
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y-2 border-ink py-3 text-[14px]">
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-rule py-3 text-[14px]">
           <label className="flex items-center gap-2">
             <span className="font-medium">Officer</span>
             <input value={officer} onChange={(e) => saveOfficer(e.target.value)} placeholder="Your name" maxLength={80}
@@ -182,7 +182,7 @@ export default function OpsDesk(p: Props) {
           )}
           {dbAvailable && officer.trim().length < 2 && <span className="text-muted">Enter your name to tick, override or report.</span>}
           {message && (
-            <span className={`font-extrabold ${message.kind === "error" ? "text-risk-red" : "text-risk-green"}`} role="status">{message.text}</span>
+            <span className={`font-semibold ${message.kind === "error" ? "text-risk-red" : "text-risk-green"}`} role="status">{message.text}</span>
           )}
           {exercise && (
             <div className="ml-auto flex items-center gap-3">
