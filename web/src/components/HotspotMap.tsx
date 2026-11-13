@@ -1,6 +1,6 @@
 // The map. MapLibre is imperative, so the map is created once and React
 // props are pushed into it. Layers, bottom to top: basemap (recoloured to
-// match the paper), rain grid, drainage, storm footprint, flow paths,
+// match the paper's cool grey), rain grid, drainage, storm footprint, flow paths,
 // hotspot halos, hotspots, labels.
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { type ExpressionSpecification, type GeoJSONSource } from "maplibre-gl";
@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import { nearestRain } from "../geo";
 import { LEVEL_COLOR } from "../risk";
+import { MAP } from "../mapColors";
 import { type Lang, actionText, locale, reasons, t } from "../i18n";
 import {
   DASH_STEPS, addDrainageLayers, highlightDrainage, setDrainageData, setDrainageMode, setEdges,
@@ -20,7 +21,7 @@ const GURUGRAM_CENTER: [number, number] = [77.035, 28.455];
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 const rainColor = (w: RainWindow): ExpressionSpecification => [
-  "interpolate", ["linear"], ["get", w], 0, "#dfe7ec", 5, "#a9c0d0", 20, "#5f89a8", 50, "#24527a",
+  "interpolate", ["linear"], ["get", w], 0, MAP.rain[0], 5, MAP.rain[1], 20, MAP.rain[2], 50, MAP.rain[3],
 ];
 const levelColor: ExpressionSpecification = [
   "match", ["get", "level"],
@@ -54,7 +55,7 @@ type Props = {
 };
 
 const SENSOR_COLOR: ExpressionSpecification = ["match", ["get", "kind"],
-  "rain_gauge", "#24527a", "drain_sensor", "#2f6f73", "underpass_monitor", "#c27a0e", "#82868d"];
+  "rain_gauge", MAP.water, "drain_sensor", MAP.drain, "underpass_monitor", MAP.amber, MAP.muted];
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -64,17 +65,17 @@ function restyleBasemap(map: maplibregl.Map) {
   for (const layer of map.getStyle().layers ?? []) {
     const id = layer.id;
     try {
-      if (layer.type === "background") map.setPaintProperty(id, "background-color", "#eeeae0");
+      if (layer.type === "background") map.setPaintProperty(id, "background-color", MAP.base.background);
       else if (layer.type === "fill") {
-        if (/water/.test(id)) map.setPaintProperty(id, "fill-color", "#cdd8de");
-        else if (/building/.test(id)) map.setPaintProperty(id, "fill-color", "#e4dfd3");
-        else if (/park|wood|grass|landcover|landuse|forest/.test(id)) map.setPaintProperty(id, "fill-color", "#e6e1d4");
+        if (/water/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.water);
+        else if (/building/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.building);
+        else if (/park|wood|grass|landcover|landuse|forest/.test(id)) map.setPaintProperty(id, "fill-color", MAP.base.green);
       } else if (layer.type === "line") {
-        if (/water|river|stream|canal/.test(id)) map.setPaintProperty(id, "line-color", "#bccbd4");
-        else if (/boundary|admin/.test(id)) map.setPaintProperty(id, "line-color", "#c8bfae");
+        if (/water|river|stream|canal/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.waterLine);
+        else if (/boundary|admin/.test(id)) map.setPaintProperty(id, "line-color", MAP.base.boundary);
       } else if (layer.type === "symbol" && map.getLayoutProperty(id, "text-field") !== undefined) {
-        map.setPaintProperty(id, "text-color", "#8b877e");
-        map.setPaintProperty(id, "text-halo-color", "#eeeae0");
+        map.setPaintProperty(id, "text-color", MAP.base.label);
+        map.setPaintProperty(id, "text-halo-color", MAP.base.background);
       }
     } catch {
       /* some layers use expressions we leave alone */
@@ -151,26 +152,26 @@ export default function HotspotMap(props: Props) {
         } });
 
       map.addLayer({ id: "storm-outer", type: "fill", source: "storm", filter: ["==", ["get", "ring"], "outer"],
-        paint: { "fill-color": "#24527a", "fill-opacity": 0.06 } });
+        paint: { "fill-color": MAP.water, "fill-opacity": 0.06 } });
       map.addLayer({ id: "storm-core", type: "fill", source: "storm", filter: ["==", ["get", "ring"], "core"],
-        paint: { "fill-color": "#24527a", "fill-opacity": 0.1 } });
+        paint: { "fill-color": MAP.water, "fill-opacity": 0.1 } });
       map.addLayer({ id: "storm-line", type: "line", source: "storm", filter: ["==", ["get", "ring"], "core"],
-        paint: { "line-color": "#24527a", "line-width": 1.2, "line-dasharray": [3, 2] } });
+        paint: { "line-color": MAP.water, "line-width": 1.2, "line-dasharray": [3, 2] } });
       map.addLayer({ id: "storm-centre", type: "circle", source: "storm", filter: ["==", ["get", "ring"], "centre"],
-        paint: { "circle-radius": 5, "circle-color": "#24527a", "circle-stroke-color": "#f5f2eb", "circle-stroke-width": 2 } });
+        paint: { "circle-radius": 5, "circle-color": MAP.water, "circle-stroke-color": MAP.paper3, "circle-stroke-width": 2 } });
 
       // Hotspot layers first, so drainage can be inserted beneath them.
       map.addLayer({ id: "hotspot-halo", type: "circle", source: "hotspots", filter: ["==", ["get", "level"], "red"],
-        paint: { "circle-radius": 12, "circle-color": LEVEL_COLOR.red, "circle-opacity": 0.3 } });
+        paint: { "circle-radius": 16, "circle-color": LEVEL_COLOR.red, "circle-opacity": 0.22 } });
       map.addLayer({ id: "hotspot-selected", type: "circle", source: "hotspots", filter: ["==", ["get", "id"], ""],
-        paint: { "circle-radius": 15, "circle-color": "transparent", "circle-stroke-color": "#17191e", "circle-stroke-width": 1.5 } });
+        paint: { "circle-radius": 15, "circle-color": "transparent", "circle-stroke-color": MAP.ink, "circle-stroke-width": 1.5 } });
       map.addLayer({ id: "hotspots", type: "circle", source: "hotspots",
         paint: {
           "circle-radius": ["interpolate", ["linear"], ["zoom"],
             10, ["match", ["get", "level"], "red", 7, "amber", 6, 4.5],
             14, ["match", ["get", "level"], "red", 11, "amber", 10, 8]],
           "circle-color": levelColor,
-          "circle-stroke-color": "#f5f2eb",
+          "circle-stroke-color": MAP.paper3,
           "circle-stroke-width": 1.8,
         } });
       const label = (id: string, filter: maplibregl.FilterSpecification, minzoom: number) =>
@@ -178,13 +179,13 @@ export default function HotspotMap(props: Props) {
           layout: {
             // Words as well as colour, so the map works for colour-blind readers and in print.
             "text-field": ["case",
-              ["==", ["get", "level"], "red"], ["concat", ["get", "name"], "\nHIGH"],
-              ["==", ["get", "level"], "amber"], ["concat", ["get", "name"], "\nMEDIUM"],
+              ["==", ["get", "level"], "red"], ["concat", ["get", "name"], "\nHigh"],
+              ["==", ["get", "level"], "amber"], ["concat", ["get", "name"], "\nMedium"],
               ["get", "name"]],
             "text-font": ["Noto Sans Regular"], "text-size": 11.5,
             "text-offset": [0, 1.15], "text-anchor": "top", "text-max-width": 9,
           },
-          paint: { "text-color": "#17191e", "text-halo-color": "#f5f2eb", "text-halo-width": 1.6 } });
+          paint: { "text-color": MAP.ink, "text-halo-color": MAP.paper3, "text-halo-width": 1.6 } });
       label("labels-risk", ["in", ["get", "level"], ["literal", ["red", "amber"]]], 10);
       label("labels-other", ["!", ["in", ["get", "level"], ["literal", ["red", "amber"]]]], 12.5);
 
@@ -194,21 +195,21 @@ export default function HotspotMap(props: Props) {
       map.addLayer({ id: "sensors", type: "circle", source: "sensors", layout: { visibility: "none" },
         paint: {
           "circle-radius": ["match", ["get", "kind"], "rain_gauge", 6, "underpass_monitor", 6, 4],
-          "circle-color": ["match", ["get", "kind"], "rain_gauge", "#f5f2eb", SENSOR_COLOR],
-          "circle-stroke-color": ["match", ["get", "kind"], "underpass_monitor", "#17191e", SENSOR_COLOR],
+          "circle-color": ["match", ["get", "kind"], "rain_gauge", MAP.paper3, SENSOR_COLOR],
+          "circle-stroke-color": ["match", ["get", "kind"], "underpass_monitor", MAP.ink, SENSOR_COLOR],
           "circle-stroke-width": ["match", ["get", "kind"], "rain_gauge", 2.5, 1.2],
         } }, "hotspot-halo");
       map.addLayer({ id: "critical-circle", type: "circle", source: "critical", layout: { visibility: "none" },
         paint: {
           "circle-radius": ["interpolate", ["linear"], ["get", "n_hotspots"], 1, 7, 6, 17],
-          "circle-color": "#24527a", "circle-opacity": 0.9,
-          "circle-stroke-color": "#f5f2eb", "circle-stroke-width": 2,
+          "circle-color": MAP.water, "circle-opacity": 0.9,
+          "circle-stroke-color": MAP.paper3, "circle-stroke-width": 2,
         } }, "hotspot-halo");
       // The count is a small badge to the upper right, drawn on top so the hotspot dot can't hide it.
       map.addLayer({ id: "critical-label", type: "symbol", source: "critical", layout: {
           visibility: "none", "text-field": "", "text-font": ["Noto Sans Regular"],
           "text-size": 11, "text-offset": [1.15, -1.15], "text-allow-overlap": true, "text-ignore-placement": true,
-        }, paint: { "text-color": "#f5f2eb", "text-halo-color": "#24527a", "text-halo-width": 4 } });
+        }, paint: { "text-color": MAP.paper3, "text-halo-color": MAP.water, "text-halo-width": 4 } });
 
       map.on("click", "critical-circle", (e) => {
         const p = e.features?.[0]?.properties;
@@ -221,9 +222,9 @@ export default function HotspotMap(props: Props) {
         if (!p) return;
         closePopup();
         popupRef.current = new maplibregl.Popup({ maxWidth: "260px" }).setLngLat(e.lngLat)
-          .setHTML(`<div class="kicker" style="color:#c27a0e">Proposed · illustrative</div>
-            <div class="text-[13px] font-medium">${esc(String(p.label))}</div>
-            <div class="mt-0.5 text-[12px] text-ink-2">${esc(String(p.why))}</div>`)
+          .setHTML(`<div class="inline-block bg-accent-2 px-1.5 py-0.5 text-[12px] font-extrabold text-ink">Proposed, illustrative</div>
+            <div class="mt-2 text-[14px] font-extrabold">${esc(String(p.label))}</div>
+            <div class="mt-1 text-[13px] text-ink-2">${esc(String(p.why))}</div>`)
           .addTo(map);
       });
       for (const id of ["critical-circle", "sensors"]) {
@@ -249,8 +250,8 @@ export default function HotspotMap(props: Props) {
           closePopup();
           popupRef.current = new maplibregl.Popup({ maxWidth: "260px" })
             .setLngLat(e.lngLat)
-            .setHTML(`<div class="kicker">lat, lon</div><div class="font-mono text-[13px]">${text}</div>
-              <div class="mt-1 text-[12px] text-ink-2">Paste into data/hotspots.csv and set geocode_source = manual.</div>`)
+            .setHTML(`<div class="label">lat, lon</div><div class="text-[14px] font-extrabold">${text}</div>
+              <div class="mt-1 text-[13px] text-ink-2">Paste into data/hotspots.csv and set geocode_source = manual.</div>`)
             .addTo(map);
         }
       });
@@ -258,19 +259,14 @@ export default function HotspotMap(props: Props) {
       setLoaded(true);
     });
 
-    // Animation: pulsing halo on Red hotspots, moving dashes on at-risk flow paths.
+    // Animation: moving dashes on at-risk flow paths, so risk is seen travelling
+    // downstream. Off when the reader asks for reduced motion, and while the tab is hidden.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
-    let lastHalo = 0;
     let lastStep = -1;
     const animate = (t: number) => {
       frame = requestAnimationFrame(animate);
-      if (!map.isStyleLoaded() || !map.getLayer("hotspot-halo") || document.hidden) return;
-      if (t - lastHalo > 33) {
-        lastHalo = t;
-        const phase = (t % 1800) / 1800;
-        map.setPaintProperty("hotspot-halo", "circle-radius", 9 + 20 * phase);
-        map.setPaintProperty("hotspot-halo", "circle-opacity", 0.35 * (1 - phase));
-      }
+      if (still.matches || !map.isStyleLoaded() || !map.getLayer("edges-flow") || document.hidden) return;
       const step = Math.floor(t / 70) % DASH_STEPS.length;
       if (step !== lastStep) {
         lastStep = step;
@@ -322,13 +318,13 @@ export default function HotspotMap(props: Props) {
     // Blocked outfalls: ink with a red ring, and a cross instead of the count.
     const ids = props.blockedIds ?? [];
     const isBlocked: ExpressionSpecification = ["in", ["get", "id"], ["literal", ids]];
-    map.setPaintProperty("critical-circle", "circle-color", ["case", isBlocked, "#17191e", "#24527a"]);
-    map.setPaintProperty("critical-circle", "circle-stroke-color", ["case", isBlocked, LEVEL_COLOR.red, "#f5f2eb"]);
+    map.setPaintProperty("critical-circle", "circle-color", ["case", isBlocked, MAP.ink, MAP.water]);
+    map.setPaintProperty("critical-circle", "circle-stroke-color", ["case", isBlocked, LEVEL_COLOR.red, MAP.paper3]);
     map.setPaintProperty("critical-circle", "circle-stroke-width", ["case", isBlocked, 3.5, 2]);
     // Badges only where they say something: outfalls serving 2+ hotspots, and blocked ones.
     map.setLayoutProperty("critical-label", "text-field", ["case", isBlocked, "×",
       [">=", ["get", "n_hotspots"], 2], ["to-string", ["get", "n_hotspots"]], ""]);
-    map.setPaintProperty("critical-label", "text-halo-color", ["case", isBlocked, LEVEL_COLOR.red, "#24527a"]);
+    map.setPaintProperty("critical-label", "text-halo-color", ["case", isBlocked, LEVEL_COLOR.red, MAP.water]);
   }, [map, props.criticalVisible, props.showSensors, props.blockedIds]);
 
   // 3) Which layers show in which view.
@@ -349,7 +345,7 @@ export default function HotspotMap(props: Props) {
     if (!f) return;
     const [lon, lat] = f.geometry.coordinates;
     map.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 12.8), duration: 700 });
-    popupRef.current = new maplibregl.Popup({ maxWidth: "300px", offset: 14 })
+    popupRef.current = new maplibregl.Popup({ maxWidth: "300px", offset: 14, focusAfterOpen: false })
       .setLngLat([lon, lat])
       .setHTML(popupHtml(f.properties.id, f.properties.name, latest.current))
       .addTo(map);
@@ -370,23 +366,21 @@ function popupHtml(id: string, name: string, p: Props): string {
     const w = h.windows[p.windowKey];
     const ww = w.rain.wet_window;
     const hour = (iso: string) => new Date(iso).toLocaleTimeString(locale(lang), { hour: "numeric", hour12: true });
-    const sub = [w.confidence && s.confidence[w.confidence], ww && `${s.wettestAt} ${hour(ww.start)} – ${hour(ww.end)}`]
-      .filter(Boolean).join(" · ");
+    const sub = [w.confidence && s.confidence[w.confidence], ww && `${s.wettestAt} ${hour(ww.start)} ${lang === "hi" ? "से" : "to"} ${hour(ww.end)}`]
+      .filter(Boolean).join(". ");
     risk = `
-      <div class="mt-1 flex items-center gap-1.5 text-[12.5px] font-medium" style="color:${LEVEL_COLOR[w.level]}">
-        <span style="display:inline-block;width:8px;height:8px;background:${LEVEL_COLOR[w.level]}"></span>${s.levelLong[w.level]}
-      </div>
-      ${sub ? `<div class="font-mono text-[11px] text-ink-3">${esc(sub)}</div>` : ""}
-      ${w.models ? `<div class="mt-0.5 text-[11.5px] text-ink-2">${esc(s.models(w.models.flooding, w.models.total))}</div>` : ""}
-      ${w.level !== "green" ? `<div class="mt-1.5 text-[12.5px] font-medium">${esc(actionText(w, lang))}</div>` : ""}
-      <ul class="mt-1.5 space-y-0.5 text-[12px] text-ink-2">${reasons(w, lang).map((d) => `<li>– ${esc(d)}</li>`).join("")}</ul>
-      <div class="mt-1.5 font-mono text-[11px] text-ink-3">${s.popupRain(w.rain.rain_24h, w.rain.peak1h)}</div>`;
+      <div class="mt-2"><span class="status status--${w.level}">${esc(s.levelLong[w.level])}</span></div>
+      ${sub ? `<div class="mt-2 text-[13px] text-muted">${esc(sub)}</div>` : ""}
+      ${w.models ? `<div class="mt-1 text-[13px] text-ink-2">${esc(s.models(w.models.flooding, w.models.total))}</div>` : ""}
+      ${w.level !== "green" ? `<div class="mt-2 text-[14px] font-extrabold leading-snug">${esc(actionText(w, lang))}</div>` : ""}
+      <ul class="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-ink-2">${reasons(w, lang).map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
+      <div class="mt-2 text-[13px] text-muted">${esc(s.popupRain(w.rain.rain_24h, w.rain.peak1h))}</div>`;
   } else {
     const coords = p.hotspots?.features.find((f) => f.properties.id === id)?.geometry.coordinates;
     const r = coords ? nearestRain(p.rain, coords[0], coords[1]) : null;
-    if (r) risk = `<div class="mt-1 font-mono text-[11px] text-ink-3">${r.next_24h} mm forecast in 24 h</div>`;
+    if (r) risk = `<div class="mt-1 text-[13px] text-muted">${r.next_24h} mm forecast in 24 h</div>`;
   }
-  return `<div class="font-display text-[18px] font-medium leading-tight">${esc(name)}</div>
+  return `<div class="pr-5 text-[18px] font-extrabold leading-tight tracking-[-0.02em]">${esc(name)}</div>
     ${risk}${networkLines(p.drainage, id, lang)}`;
 }
 
@@ -401,6 +395,6 @@ function networkLines(drainage: DrainageLayers | null, id: string, lang: Lang = 
     n.upstream.length ? t(lang).receivesFrom(n.upstream.map(name).join(", ")) : "",
   ].filter(Boolean);
   return parts.length
-    ? `<div class="mt-2 border-t border-rule pt-1.5 text-[12px] text-ink-2">${parts.join(" ")}</div>`
+    ? `<div class="mt-3 border-t border-rule pt-2 text-[13px] text-ink-2">${parts.join(" ")}</div>`
     : "";
 }

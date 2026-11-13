@@ -15,7 +15,7 @@ import ActionTable from "./ops/ActionTable";
 import AlertsPanel from "./ops/AlertsPanel";
 import { AlertLog, FeedbackLog, OrdersCard, OverrideLog, ScorecardCard } from "./ops/Sidebar";
 import SopTimeline from "./ops/SopTimeline";
-import { ExerciseBand, Kicker, TextTabs } from "./ui";
+import { ExerciseBand, TextTabs } from "./ui";
 
 type Props = {
   source: OpsSource;
@@ -134,89 +134,84 @@ export default function OpsDesk(p: Props) {
   return (
     <div className="min-h-full">
       {exercise && <ExerciseBand label="EXERCISE / अभ्यास" note="Drill on the simulator's storm. Logged separately from live operations." />}
-      <div className="mx-auto max-w-[1320px] px-5 pb-16 pt-6 md:px-8">
-        {/* Header */}
-        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-          <div className="min-w-0 max-w-[680px]">
-            <Kicker>MCG operations desk · {exercise ? "Exercise" : windowKey === "next_24h" ? "Next 24 hours" : "Day 2"}</Kicker>
-            <h1 className="mt-1 font-display text-[30px] font-medium leading-[1.12] tracking-[-0.01em] md:text-[36px]">{headline}</h1>
+      <div className="mx-auto max-w-[1360px] px-4 pb-20 pt-8 md:px-10">
+        {/* Header: the one line an officer needs, then the controls. */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="min-w-0">
+            <h1 className="h-page">{headline}</h1>
             {counts && counts.red + counts.amber > 0 && (
-              <p className="mt-2 text-[14px] text-ink-2">
+              <p className="mt-3 max-w-[72ch] text-[15px] leading-relaxed text-ink-2">
                 {counts.red > 0 && <>{plural(counts.red, "Red spot")} need a pump on site; </>}
                 {counts.amber > 0 && <>{plural(counts.amber, "Amber spot")} need{counts.amber === 1 ? "s" : ""} gullies cleared and a pump on standby.</>}
               </p>
             )}
           </div>
-          <div className="flex flex-col items-start gap-3 md:items-end">
+          <div className="flex flex-col items-start gap-3 lg:items-end">
             <TextTabs label="Source" size="md" value={p.source} onChange={p.onSource}
               options={[{ key: "live" as const, label: "Live forecast" }, { key: "exercise" as const, label: "Exercise" }]} />
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex max-w-full flex-wrap items-center gap-3 lg:justify-end">
               {!exercise && (
                 <TextTabs label="Window" value={p.riskWindow} onChange={p.onRiskWindow}
                   options={[{ key: "next_24h" as const, label: "Next 24 h" }, { key: "day_2" as const, label: "Day 2" }]} />
               )}
-              <TextTabs label="Zone" value={zone} onChange={setZone}
-                options={[{ key: "all", label: "All zones" }, ...zones.map((z) => ({ key: z, label: z === "Unassigned" ? "No zone" : `Zone ${z}` }))]} />
+              <div className="max-w-full overflow-x-auto">
+                <TextTabs label="Zone" value={zone} onChange={setZone}
+                  options={[{ key: "all", label: "All zones" }, ...zones.map((z) => ({ key: z, label: z === "Unassigned" ? "No zone" : `Zone ${z}` }))]} />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Officer + status line */}
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-rule pt-3 text-[13px]">
+        {/* Officer and status line */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y-2 border-ink py-3 text-[14px]">
           <label className="flex items-center gap-2">
-            <span className="kicker">Officer</span>
+            <span className="font-medium">Officer</span>
             <input value={officer} onChange={(e) => saveOfficer(e.target.value)} placeholder="Your name" maxLength={80}
-              className="w-44 border-b border-ink bg-transparent px-1 py-0.5 text-[13.5px] outline-none focus:border-water" />
+              name="officer" autoComplete="name" className="field w-48" />
           </label>
           {needCode && (
             <label className="flex items-center gap-2">
-              <span className="kicker">Desk code</span>
-              <input type="password" value={codeInput} onChange={(e) => setCodeInput(e.target.value)}
-                className="w-28 border-b border-ink bg-transparent px-1 py-0.5 font-mono text-[13px] outline-none" />
-              <button className="text-[12.5px] underline" onClick={() => { deskCode.set(codeInput); setNeedCode(false); setMessage(null); }}>Save</button>
+              <span className="font-medium">Desk code</span>
+              <input type="password" value={codeInput} onChange={(e) => setCodeInput(e.target.value)} name="desk_code"
+                autoComplete="off" className="field w-32" />
+              <button type="button" className="btn btn--sm" onClick={() => { deskCode.set(codeInput); setNeedCode(false); setMessage(null); }}>Save</button>
             </label>
           )}
           {!dbAvailable && (
-            <span className="text-risk-amber">Officer actions are off until the database is connected (DATABASE_URL).</span>
+            <span className="font-medium text-ink">Officer actions are off until the database is connected (DATABASE_URL).</span>
           )}
-          {dbAvailable && officer.trim().length < 2 && <span className="text-ink-3">Enter your name to tick, override or report.</span>}
+          {dbAvailable && officer.trim().length < 2 && <span className="text-muted">Enter your name to tick, override or report.</span>}
           {message && (
-            <span className={message.kind === "error" ? "text-risk-red" : "text-risk-green"} role="status">{message.text}</span>
+            <span className={`font-extrabold ${message.kind === "error" ? "text-risk-red" : "text-risk-green"}`} role="status">{message.text}</span>
           )}
-          <div className="ml-auto flex items-center gap-5">
-            {exercise && (
-              <>
-                <button className="text-[12.5px] text-ink-2 underline-offset-4 hover:underline" onClick={p.onOpenSimulator}>Change the storm</button>
-                <button className="text-[12.5px] text-ink-2 underline-offset-4 hover:underline disabled:opacity-40" disabled={!dbAvailable}
-                  onClick={() => act(resetExercise, "Exercise reset.").then(() => { setTicks([]); loadLogs(); p.onChanged(); }).catch(() => {})}>
-                  Reset drill
-                </button>
-              </>
-            )}
-          </div>
+          {exercise && (
+            <div className="ml-auto flex items-center gap-3">
+              <button type="button" className="btn btn--sm" onClick={p.onOpenSimulator}>Change the storm</button>
+              <button type="button" className="btn btn--sm" disabled={!dbAvailable}
+                onClick={() => act(resetExercise, "Exercise reset.").then(() => { setTicks([]); loadLogs(); p.onChanged(); }).catch(() => {})}>
+                Reset drill
+              </button>
+            </div>
+          )}
         </div>
 
         {/* SOP timeline */}
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between">
-            <Kicker>Pre-event checklist (SOP)</Kicker>
+        <section className="mt-10">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="h-sub">Pre-event checklist (SOP)</h2>
             {orders && orders.items.length > 0 && (
-              <button
-                disabled={!canAct}
-                onClick={() => markIssued(!listIssued)}
-                className="text-[12.5px] text-ink-2 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-              >
+              <button type="button" disabled={!canAct} onClick={() => markIssued(!listIssued)} className="btn btn--sm">
                 {listIssued ? "Undo: orders issued" : "Mark orders as issued"}
               </button>
             )}
           </div>
           <SopTimeline orders={orders} ticks={ticks} feedback={feedback} zoneKey={zoneKey} />
-        </div>
+        </section>
 
-        {/* Table + sidebar */}
-        <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+        {/* Table and sidebar */}
+        <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-14 lg:grid-cols-[minmax(0,1fr)_400px]">
           <section className="min-w-0">
-            <Kicker className="mb-2">Hotspots needing action</Kicker>
+            <h2 className="h-sub mb-4">Hotspots needing action</h2>
             {result ? (
               <ActionTable
                 hotspots={scoredInZone}
@@ -235,12 +230,12 @@ export default function OpsDesk(p: Props) {
                 onFeedback={(h, f) => act(() => postFeedback({ officer, hotspot_id: h.id, ...f }), "Report saved. Thank you.").then(loadLogs)}
               />
             ) : (
-              <div className="h-72 animate-pulse bg-paper-2" />
+              <div className="h-72 bg-paper-2" aria-label="Loading" />
             )}
             {exercise && !p.simResult && (
-              <p className="mt-3 text-[13px] text-ink-3">Running the exercise storm…</p>
+              <p className="mt-3 text-[14px] text-muted">Running the exercise storm…</p>
             )}
-            <div className="mt-10">
+            <div className="mt-14">
               <AlertsPanel
                 source={p.source}
                 windowKey={windowKey}
@@ -253,7 +248,7 @@ export default function OpsDesk(p: Props) {
               />
             </div>
           </section>
-          <aside className="space-y-9">
+          <aside className="space-y-12">
             <OrdersCard orders={orders} />
             <ScorecardCard card={card} />
             <AlertLog items={alertLog} names={names} />

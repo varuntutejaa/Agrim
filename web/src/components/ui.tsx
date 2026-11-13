@@ -1,34 +1,52 @@
-// Small shared pieces of the Agrim look: kickers, text tabs, sliders, the
-// exercise band. Kept plain on purpose: hairlines, type and space do the work.
-import type { ReactNode } from "react";
+// Small shared pieces of the Agrim look: labels, choice cells, sliders, the
+// exercise band. Signage rules: square 2px borders, one face, words over colour.
+import { type ReactNode, useEffect, useRef } from "react";
 
-export function Kicker({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`kicker ${className}`}>{children}</div>;
+/** A label or caption: the body face, a step smaller, sentence case. */
+export function Label({ children, className = "", as: Tag = "div" }: { children: ReactNode; className?: string; as?: "div" | "span" | "h3" | "p" }) {
+  return <Tag className={`label ${className}`}>{children}</Tag>;
 }
 
-/** Text tabs with an ink underline on the active one. */
+/** In a row that scrolls sideways, bring the chosen cell into view (sideways only, never the page). */
+export function useActiveInView<T extends HTMLElement>(dep: unknown) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const row = ref.current;
+    const active = row?.querySelector<HTMLElement>('[aria-selected="true"], [aria-current="page"]');
+    let box: HTMLElement | null = row;
+    while (box && box.scrollWidth <= box.clientWidth) box = box.parentElement;
+    if (!active || !box || box === document.body || box === document.documentElement) return;
+    const a = active.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (a.left < b.left) box.scrollLeft -= b.left - a.left + 16;
+    else if (a.right > b.right) box.scrollLeft += a.right - b.right + 16;
+  }, [dep]);
+  return ref;
+}
+
+/** A choice between a few: square cells sharing 2px borders; the chosen one fills ink. */
 export function TextTabs<K extends string>({
-  options, value, onChange, size = "sm", label,
+  options, value, onChange, size = "sm", label, onInk = false,
 }: {
   options: { key: K; label: ReactNode }[];
   value: K;
   onChange: (k: K) => void;
   size?: "sm" | "md";
   label: string;
+  onInk?: boolean;
 }) {
+  const ref = useActiveInView<HTMLDivElement>(value);
   return (
-    <div role="tablist" aria-label={label} className="flex gap-5">
+    <div ref={ref} role="tablist" aria-label={label} className="cells">
       {options.map((o) => {
         const active = o.key === value;
         return (
           <button
             key={o.key}
+            type="button"
             role="tab"
             aria-selected={active}
             onClick={() => onChange(o.key)}
-            className={`whitespace-nowrap border-b-2 pb-1 transition-colors ${size === "md" ? "text-[15px]" : "text-[13px]"} ${
-              active ? "border-ink font-medium text-ink" : "border-transparent text-ink-3 hover:text-ink"
-            }`}
+            className={`cell ${onInk ? "cell--on-ink" : ""} ${size === "md" ? "min-h-10 px-4 text-[15px]" : ""}`}
           >
             {o.label}
           </button>
@@ -38,7 +56,7 @@ export function TextTabs<K extends string>({
   );
 }
 
-/** Labelled slider with a large figure readout. */
+/** Labelled slider with its figure set large, like a sign. */
 export function Slider({
   label, value, min, max, step = 1, unit, onChange, note,
 }: {
@@ -54,16 +72,16 @@ export function Slider({
   const fill = `${((value - min) / (max - min)) * 100}%`;
   return (
     <label className="block">
-      <div className="flex items-baseline justify-between">
-        <span className="kicker">{label}</span>
-        <span className="font-mono tabular text-[22px] leading-none text-ink">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[14px] font-medium text-ink">{label}</span>
+        <span className="text-[28px] font-extrabold leading-none tracking-[-0.03em] text-ink">
           {value}
-          <span className="ml-1 text-[13px] text-ink-3">{unit}</span>
+          {"\u00a0"}<span className="text-[13px] font-medium tracking-normal text-muted">{unit}</span>
         </span>
       </div>
       <input
         type="range"
-        className="agrim-range mt-1"
+        className="agrim-range mt-2"
         style={{ ["--fill" as string]: fill }}
         min={min}
         max={max}
@@ -71,24 +89,27 @@ export function Slider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      {note && <div className="text-[12px] text-ink-3">{note}</div>}
+      {note && <div className="mt-1 text-[13px] text-muted">{note}</div>}
     </label>
   );
 }
+
+/** "EXERCISE / अभ्यास" from the server, shown in sentence case on its amber plate. */
+const sentence = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 export function ExerciseBand({ label, note, compact = false, className = "" }: {
   label: string; note?: string; compact?: boolean; className?: string;
 }) {
   return (
-    <div className={`exercise-band flex items-center gap-3 ${compact ? "px-3 py-1.5" : "px-4 py-2.5"} ${className}`}>
-      <span className="shrink-0 whitespace-nowrap bg-risk-amber px-1.5 py-0.5 font-mono text-[11px] font-medium tracking-wider text-ink">
-        {label}
+    <div className={`exercise-band flex items-center gap-3 ${compact ? "px-3 py-2" : "px-4 py-3"} ${className}`}>
+      <span className="shrink-0 whitespace-nowrap bg-accent-2 px-2 py-1 text-[13px] font-extrabold leading-none text-ink">
+        {sentence(label)}
       </span>
-      {note && <span className="text-[12px] text-paper/80">{note}</span>}
+      {note && <span className="text-[13px] text-paper-dim">{note}</span>}
     </div>
   );
 }
 
-export function Rule({ className = "" }: { className?: string }) {
-  return <hr className={`border-0 border-t border-rule ${className}`} />;
+export function Rule({ className = "", strong = false }: { className?: string; strong?: boolean }) {
+  return <hr className={`m-0 border-0 ${strong ? "border-t-2 border-ink" : "border-t border-rule"} ${className}`} />;
 }

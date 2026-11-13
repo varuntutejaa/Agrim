@@ -5,7 +5,7 @@ import ModelStatus from "./ModelStatus";
 import RiskLedger from "./RiskLedger";
 import RiskSummary from "./RiskSummary";
 import RoadsToAvoid from "./RoadsToAvoid";
-import { Kicker, Rule, TextTabs } from "./ui";
+import { Rule, TextTabs } from "./ui";
 import { type Lang, locale, t } from "../i18n";
 
 type Props = {
@@ -36,50 +36,49 @@ export default function ForecastPanel(p: Props) {
     : undefined;
 
   return (
-    <div className="space-y-7 px-5 pb-10 pt-5 md:px-7">
-      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
-        <div>
-          <Kicker>{s.forecast}</Kicker>
-          {win && (
-            <div className="mt-0.5 font-mono text-[11.5px] text-ink-2">
-              {fmtDay(win.start)} {fmtTime(win.start)} → {fmtDay(win.end)} {fmtTime(win.end)}
-            </div>
-          )}
-        </div>
+    <div className="space-y-8 px-4 pb-12 pt-4 md:px-6 md:pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <TextTabs
           label="Forecast window"
           options={[{ key: "next_24h" as const, label: s.next24 }, { key: "day_2" as const, label: s.day2 }]}
           value={riskWindow}
           onChange={p.onRiskWindow}
         />
+        {win && (
+          <span className="text-[13px] text-muted">
+            {fmtDay(win.start)} {fmtTime(win.start)} {lang === "hi" ? "से" : "to"} {fmtDay(win.end)} {fmtTime(win.end)}
+          </span>
+        )}
       </div>
 
       {p.ageHours !== null && p.ageHours > 12 && risk && (
-        <div role="status" className="border border-risk-amber bg-paper-2 px-3 py-2 text-[13px] text-ink">
-          <span className="kicker mr-1.5 !text-risk-amber">{lang === "hi" ? "पुराना" : "Old forecast"}</span>
+        <div role="status" className="border-2 border-ink bg-accent-2 px-3 py-2.5 text-[14px] text-ink">
+          <span className="mr-1.5 font-extrabold">{lang === "hi" ? "पुराना पूर्वानुमान." : "Old forecast."}</span>
           {s.stale(Math.round(p.ageHours), `${fmtDay(risk.meta.generated_at)} ${fmtTime(risk.meta.generated_at)} IST`)}
         </div>
       )}
 
-      <RiskSummary counts={risk?.meta.counts[riskWindow]} sub={sub} lang={lang} />
-      <p className="-mt-3 text-[12px] text-ink-3">{s.coverage}</p>
+      <div>
+        <RiskSummary counts={risk?.meta.counts[riskWindow]} sub={sub} lang={lang} />
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">{s.coverage}</p>
+      </div>
 
       <RoadsToAvoid windowKey={riskWindow} lang={lang} refreshKey={risk} onSelect={p.onSelect} />
 
       {risk && <Downstream hotspots={risk.hotspots} windowKey={riskWindow} onSelect={p.onSelect} lang={lang} />}
 
       <section>
-        <Kicker className="mb-2">{s.allHotspots}</Kicker>
+        <h3 className="h-sub mb-3">{s.allHotspots}</h3>
         {risk ? (
           <RiskLedger hotspots={risk.hotspots} windowKey={riskWindow} selectedId={p.selectedId} onSelect={p.onSelect} lang={lang} />
         ) : (
-          <div className="h-64 animate-pulse bg-paper-2" />
+          <div className="h-64 bg-paper-2" aria-label="Loading" />
         )}
       </section>
 
       <section>
-        <div className="flex items-center justify-between">
-          <Kicker>{s.rainLayer}</Kicker>
+        <h3 className="h-sub">{s.rainLayer}</h3>
+        <div className="mt-3">
           <TextTabs
             label="Rain layer"
             options={[
@@ -98,13 +97,13 @@ export default function ForecastPanel(p: Props) {
             }}
           />
         </div>
-        <p className="mt-1.5 text-[12px] text-ink-3">{s.rainLayerNote}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">{s.rainLayerNote}</p>
       </section>
 
       <ModelStatus />
 
-      <Rule />
-      <footer className="space-y-2 text-[12px] leading-relaxed text-ink-3">
+      <Rule strong />
+      <footer className="space-y-2 text-[13px] leading-relaxed text-muted">
         {risk && <p className="text-ink-2">{s.rulesNote ?? risk.meta.note}</p>}
         <p>{s.methodNote}</p>
       </footer>

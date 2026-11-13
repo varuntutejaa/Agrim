@@ -1,11 +1,11 @@
 // Compact key in the corner of the map. Changes with the view.
 import type { View } from "../types";
-import { LEVEL_COLOR } from "../risk";
+import { LEVEL_BG } from "../risk";
 import { type Lang, t } from "../i18n";
 
-const Dot = ({ c }: { c: string }) => <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c }} />;
+const Sq = ({ c }: { c: string }) => <span className={`inline-block h-2.5 w-2.5 ${c}`} />;
 const Line = ({ c, dashed = false, w = 2 }: { c: string; dashed?: boolean; w?: number }) => (
-  <span className="inline-block w-5" style={{ borderTop: `${w}px ${dashed ? "dashed" : "solid"} ${c}` }} />
+  <span className={`inline-block w-5 ${c}`} style={{ borderTopWidth: w, borderTopStyle: dashed ? "dashed" : "solid" }} />
 );
 
 export default function MapKey({ view, lang = "en", critical = false, sensors = false }: {
@@ -15,29 +15,29 @@ export default function MapKey({ view, lang = "en", critical = false, sensors = 
   const rows: [React.ReactNode, string][] =
     view === "drainage"
       ? [
-          [<Line c="#4b5058" />, "Flow between hotspots"],
-          [<Line c="#4b5058" dashed w={1.5} />, "Onward flow"],
-          [<Line c="#24527a" w={3} />, "Flow line (from ground height)"],
-          [<Line c="#2f6f73" w={1.5} />, "Mapped drain"],
-          ...(critical ? ([[<Dot c="#24527a" />, "Outfall (number = hotspots served)"]] as [React.ReactNode, string][]) : []),
+          [<Line c="border-ink-2" />, "Flow between hotspots"],
+          [<Line c="border-ink-2" dashed w={1.5} />, "Onward flow"],
+          [<Line c="border-water" w={3} />, "Flow line (from ground height)"],
+          [<Line c="border-drain" w={1.5} />, "Mapped drain"],
+          ...(critical ? ([[<Sq c="bg-water" />, "Outfall (number = hotspots served)"]] as [React.ReactNode, string][]) : []),
           ...(sensors ? ([
-            [<span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-water bg-paper" />, "Proposed rain gauge"],
-            [<Dot c="#2f6f73" />, "Proposed drain sensor"],
+            [<span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-water bg-paper-3" />, "Proposed rain gauge"],
+            [<span className="inline-block h-2.5 w-2.5 rounded-full bg-drain" />, "Proposed drain sensor"],
             [<span className="inline-block h-2.5 w-2.5 rounded-full border border-ink bg-risk-amber" />, "Proposed underpass monitor"],
           ] as [React.ReactNode, string][]) : []),
         ]
       : [
-          [<Dot c={LEVEL_COLOR.red} />, k.red],
-          [<Dot c={LEVEL_COLOR.amber} />, k.amber],
-          [<Dot c={LEVEL_COLOR.green} />, k.green],
-          ...(view === "simulator" ? ([[<Line c={LEVEL_COLOR.red} dashed />, k.flow], [<Dot c="#24527a" />, "Outfall: tap to block"]] as [React.ReactNode, string][]) : []),
+          [<Sq c={LEVEL_BG.red} />, k.red],
+          [<Sq c={LEVEL_BG.amber} />, k.amber],
+          [<Sq c={LEVEL_BG.green} />, k.green],
+          ...(view === "simulator" ? ([[<Line c="border-risk-red" dashed />, k.flow], [<Sq c="bg-water" />, "Outfall: tap to block"]] as [React.ReactNode, string][]) : []),
         ];
   return (
-    // Hidden on phones: the panel's count strip carries the same colours.
-    <div className="pointer-events-none absolute bottom-8 left-4 hidden border border-ink bg-paper/95 px-3 py-2 md:block">
-      <ul className="space-y-1">
+    // Hidden on phones: the panel's count signs carry the same colours.
+    <div className="pointer-events-none absolute bottom-8 left-4 hidden border-2 border-ink bg-paper-3 px-3 py-2.5 md:block">
+      <ul className="m-0 list-none space-y-1.5 p-0">
         {rows.map(([icon, label]) => (
-          <li key={label} className="flex items-center gap-2 text-[11.5px] text-ink-2">
+          <li key={label} className="flex items-center gap-2.5 text-[13px] text-ink">
             <span className="flex w-5 justify-center">{icon}</span>
             {label}
           </li>

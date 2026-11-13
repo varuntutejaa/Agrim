@@ -29,3 +29,6 @@ data/forecast/
 
 # Vercel project link (local)
 web/.vercel/
+
+# Design-lint working files (screenshots, records)
+.hallmark/

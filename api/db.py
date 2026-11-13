@@ -113,7 +113,9 @@ def pool() -> ConnectionPool:
         # prepare_threshold=None: Neon's pooler (PgBouncer, transaction mode)
         # can hand each transaction a different server connection, so
         # server-side prepared statements must be off.
-        _pool = ConnectionPool(url, min_size=0, max_size=4,
+        # check: test each connection before lending it out. Neon closes idle SSL
+        # connections, and a stale one would otherwise fail the first request after a quiet spell.
+        _pool = ConnectionPool(url, min_size=0, max_size=4, check=ConnectionPool.check_connection,
                                kwargs={"row_factory": dict_row, "prepare_threshold": None}, open=True)
     return _pool
 

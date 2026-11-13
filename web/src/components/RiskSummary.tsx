@@ -1,7 +1,8 @@
-// The headline sentence, the three big counts and the proportion bar.
+// The headline sentence and the three counts, set as signs: a figure in 800 in
+// a bordered cell, filled red or amber when something is at risk.
 // Used by both the live forecast and the simulator.
 import type { RiskLevel } from "../types";
-import { LEVEL_COLOR } from "../risk";
+import { LEVEL_BG } from "../risk";
 import { type Lang, t } from "../i18n";
 
 type Props = {
@@ -12,51 +13,43 @@ type Props = {
   lang?: Lang;
 };
 
+const FILL: Record<RiskLevel, string> = {
+  red: "bg-risk-red text-accent-ink",
+  amber: "bg-accent-2 text-ink",
+  green: "bg-paper-3 text-ink",
+};
+
 export default function RiskSummary({ counts, lead = "", sub, lang = "en" }: Props) {
   const s = t(lang);
   if (!counts) {
-    return <div className="h-[132px] animate-pulse bg-paper-2" aria-label="Loading" />;
+    return <div className="h-[164px] bg-paper-2" aria-label="Loading" />;
   }
   const total = counts.red + counts.amber + counts.green || 1;
-  const cells: { level: RiskLevel; label: string }[] = [
-    { level: "red", label: s.countLabel.red },
-    { level: "amber", label: s.countLabel.amber },
-    { level: "green", label: s.countLabel.green },
-  ];
+  const levels: RiskLevel[] = ["red", "amber", "green"];
   return (
     <div>
-      <h2 className="font-display text-[27px] font-medium leading-[1.15] tracking-[-0.01em] text-ink md:text-[30px]">
-        {s.headline(counts, lead)}
-      </h2>
-      {sub && <p className="mt-2 text-[13px] leading-snug text-ink-2">{sub}</p>}
+      <h2 className="h-panel text-ink">{s.headline(counts, lead)}</h2>
+      {sub && <p className="mt-3 text-[14px] leading-relaxed text-ink-2">{sub}</p>}
 
-      <div className="mt-5 grid grid-cols-3 border-t border-ink">
-        {cells.map(({ level, label }) => (
-          <div key={level} className="border-r border-rule pt-2 pr-3 last:border-r-0 [&:not(:first-child)]:pl-3">
-            <div className="kicker flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2" style={{ background: LEVEL_COLOR[level] }} />
-              {label}
+      <dl className="m-0 mt-5 grid grid-cols-3 border-2 border-ink">
+        {levels.map((level) => {
+          const on = counts[level] > 0 && level !== "green";
+          return (
+            <div key={level} className={`border-l-2 border-ink px-5 pb-3.5 pt-2.5 first:border-l-0 ${on ? FILL[level] : FILL.green}`}>
+              <dt className={`flex min-h-[2.8em] items-start gap-1.5 text-[13px] font-medium leading-snug ${on ? "" : "text-ink-2"}`}>
+                <span className={`mt-[0.35em] inline-block h-2 w-2 shrink-0 ${on && level === "red" ? "bg-accent-ink" : LEVEL_BG[level]}`} aria-hidden />
+                {s.countLabel[level]}
+              </dt>
+              <dd className="m-0 mt-2 text-[36px] font-extrabold leading-none tracking-[-0.04em]">{counts[level]}</dd>
             </div>
-            <div
-              className="font-mono tabular text-[40px] font-medium leading-none tracking-tight"
-              style={{ color: counts[level] && level !== "green" ? LEVEL_COLOR[level] : undefined }}
-            >
-              {counts[level]}
-            </div>
-          </div>
-        ))}
-      </div>
+          );
+        })}
+      </dl>
 
       {/* Share of hotspots at each level */}
-      <div className="mt-4 flex h-1.5 gap-px" aria-hidden>
-        {cells.map(({ level }) =>
-          counts[level] ? (
-            <div
-              key={level}
-              className="transition-[flex-grow] duration-300"
-              style={{ flexGrow: counts[level] / total, background: LEVEL_COLOR[level] }}
-            />
-          ) : null,
+      <div className="mt-3 flex h-1.5 gap-0.5" aria-hidden>
+        {levels.map((level) =>
+          counts[level] ? <div key={level} className={LEVEL_BG[level]} style={{ flexGrow: counts[level] / total }} /> : null,
         )}
       </div>
     </div>

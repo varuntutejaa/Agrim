@@ -1,11 +1,10 @@
-// "Roads to avoid": the citizen version of the forecast. Plain words, a time
-// window and a tip, in English or Hindi. Shown only when something is at risk.
+// "Roads to avoid": the citizen version of the forecast, set as a sign on an ink
+// plate. Plain words, a time window and a tip, in English or Hindi. Shown only
+// when something is at risk.
 import { useEffect, useState } from "react";
 import { fetchPublicAlerts } from "../api";
 import type { CitizenItem, RiskWindowKey } from "../types";
-import { LEVEL_COLOR } from "../risk";
 import { type Lang, t } from "../i18n";
-import { Kicker } from "./ui";
 
 export default function RoadsToAvoid({ windowKey, lang, refreshKey, onSelect }: {
   windowKey: RiskWindowKey;
@@ -20,19 +19,19 @@ export default function RoadsToAvoid({ windowKey, lang, refreshKey, onSelect }: 
   if (!items.length) return null;
   const s = t(lang);
   return (
-    <section className="border-l-2 border-ink pl-3.5">
-      <Kicker>{s.avoid}</Kicker>
-      <ul className="mt-2 space-y-2.5">
+    <section className="plate">
+      <h3 className="h-sub border-b-2 border-ink-rule px-4 py-3 text-paper">{s.avoid}</h3>
+      <ul className="m-0 list-none p-0">
         {items.map((i) => {
           const level = i.level as "red" | "amber";
           return (
-            <li key={i.hotspot_id}>
-              <button onClick={() => onSelect(i.hotspot_id)} className="text-left">
-                <span className="mr-2 text-[12px] font-semibold uppercase tracking-wide" style={{ color: LEVEL_COLOR[level] }}>
-                  {s.avoidLevel[level]}
+            <li key={i.hotspot_id} className="border-b border-ink-rule last:border-b-0">
+              <button type="button" onClick={() => onSelect(i.hotspot_id)} className="w-full px-4 py-3 text-left hover:bg-ink-2">
+                <span className="flex items-center gap-3">
+                  <span className={`status status--${level}`}>{s.avoidLevel[level]}</span>
+                  <span className="text-[16px] font-extrabold text-paper">{i.name}</span>
                 </span>
-                <span className="text-[15px] font-medium text-ink hover:underline">{i.name}</span>
-                <span className="block text-[13px] text-ink-2">
+                <span className="mt-1.5 block text-[14px] leading-relaxed text-paper-dim">
                   {lang === "hi" ? i.when_hi : i.when_en}. {lang === "hi" ? i.tip_hi : i.tip_en}
                 </span>
               </button>
@@ -40,7 +39,7 @@ export default function RoadsToAvoid({ windowKey, lang, refreshKey, onSelect }: 
           );
         })}
       </ul>
-      <p className="mt-2 text-[11.5px] text-ink-3">{s.avoidNote}</p>
+      <p className="border-t-2 border-ink-rule px-4 py-2.5 text-[13px] text-paper-dim">{s.avoidNote}</p>
     </section>
   );
 }

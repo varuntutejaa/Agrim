@@ -195,9 +195,9 @@ export default function App() {
     : undefined;
   const masthead = <Masthead view={view} onView={(v) => go(v)} updated={updated} lang={langChoice} onLang={onLang} stale={stale} />;
   const errorBar = error && (
-    <div className="flex items-center gap-3 border-b border-risk-amber bg-paper-2 px-5 py-2 text-[13px] text-ink md:px-7">
+    <div role="alert" className="flex items-center gap-3 border-b-2 border-ink bg-accent-2 px-4 py-2 text-[14px] font-medium text-ink md:px-6">
       {error}
-      <button className="ml-auto text-ink-3 hover:text-ink" onClick={() => { setError(null); refreshRisk(); }}>Retry</button>
+      <button type="button" className="btn btn--sm ml-auto" onClick={() => { setError(null); refreshRisk(); }}>Retry</button>
     </div>
   );
 
@@ -207,7 +207,7 @@ export default function App() {
       <div className="flex h-full flex-col">
         {masthead}
         {errorBar}
-        <div className="min-h-0 flex-1 overflow-y-auto bg-paper">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-paper">
           {view === "home" && <LandingPage risk={risk} ageHours={ageHours} go={go} />}
           {view === "about" && <AboutSection tab={route.tab} onTab={(t) => go("about", t)} />}
           {view === "ops" && (
@@ -233,13 +233,13 @@ export default function App() {
       {masthead}
       {errorBar}
       {pinMode && (
-        <div className="border-b border-rule bg-paper-2 px-5 py-1.5 text-[12px] text-water md:px-7">
+        <div className="border-b border-rule bg-paper-2 px-4 py-2 text-[13px] text-ink md:px-6">
           Pin mode: click the map to read a location's coordinates.
         </div>
       )}
 
       <main className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="relative h-[46vh] shrink-0 md:order-2 md:h-auto md:flex-1">
+        <div className="relative h-[46dvh] shrink-0 md:order-2 md:h-auto md:flex-1">
           <HotspotMap
             hotspots={mapHotspots}
             riskList={shown?.hotspots ?? null}
@@ -273,13 +273,13 @@ export default function App() {
           )}
           {view === "drainage" && showSensors && (
             <div className="pointer-events-none absolute left-0 right-0 top-0">
-              <ExerciseBand compact label="PROPOSED · ILLUSTRATIVE" note="Sensor sites are proposals, not installed sensors" />
+              <ExerciseBand compact label="Proposed, illustrative" note="Sensor sites are proposals, not installed sensors" />
             </div>
           )}
           <MapKey view={view} lang={lang} critical={drainageMode === "critical"} sensors={showSensors} />
         </div>
 
-        <aside className="min-h-0 flex-1 overflow-y-auto border-t border-ink bg-paper md:order-1 md:w-[440px] md:flex-none md:border-r md:border-t-0">
+        <aside className="min-h-0 flex-1 overflow-y-auto overflow-x-clip border-t-2 border-ink bg-paper md:order-1 md:w-[30rem] md:flex-none md:border-r-2 md:border-t-0">
           {view === "forecast" && (
             <ForecastPanel
               risk={risk}

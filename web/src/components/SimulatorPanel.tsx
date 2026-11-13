@@ -5,8 +5,7 @@ import type { CriticalNodes, ReplayEvent, SimResult, StormParams } from "../type
 import Downstream from "./Downstream";
 import RiskLedger from "./RiskLedger";
 import RiskSummary from "./RiskSummary";
-import { LEVEL_COLOR } from "../risk";
-import { ExerciseBand, Kicker, Rule, Slider, TextTabs } from "./ui";
+import { ExerciseBand, Rule, Slider, TextTabs } from "./ui";
 
 export type SimMode = "storm" | "replay";
 
@@ -61,22 +60,19 @@ export default function SimulatorPanel(p: Props) {
       {/* On phones the band on the map already says this. */}
       <ExerciseBand className="!hidden md:!flex" label={meta?.exercise_label ?? "EXERCISE / अभ्यास"} note="Simulation, not a live warning" />
       <Scoreboard result={result} busy={p.busy} />
-      <div className="space-y-7 px-5 pb-10 pt-5 md:px-7">
-        <div className="flex items-end justify-between gap-3">
-          <Kicker>Simulator</Kicker>
-          <TextTabs
-            label="Simulator mode"
-            options={[{ key: "storm" as const, label: "Design a storm" }, { key: "replay" as const, label: "Replay a day" }]}
-            value={p.mode}
-            onChange={p.onMode}
-          />
-        </div>
+      <div className="space-y-8 px-4 pb-12 pt-5 md:px-6">
+        <TextTabs
+          label="Simulator mode"
+          options={[{ key: "storm" as const, label: "Design a storm" }, { key: "replay" as const, label: "Replay a day" }]}
+          value={p.mode}
+          onChange={p.onMode}
+        />
 
         {p.mode === "storm" ? <StormControls {...p} /> : <ReplayControls {...p} />}
 
         <BlockDrain critical={p.critical} blocked={p.blocked} onToggle={p.onToggleBlock} result={result} />
 
-        <Rule />
+        <Rule strong />
 
         <div className={`transition-opacity duration-150 ${p.busy ? "opacity-60" : ""}`}>
           <RiskSummary counts={meta?.counts.next_24h} lead={meta?.mode === "replay" && event ? `With ${event.title}'s rain,` : "In this scenario,"} sub={sub} />
@@ -85,15 +81,15 @@ export default function SimulatorPanel(p: Props) {
         {result && <Downstream hotspots={result.hotspots} windowKey="next_24h" onSelect={p.onSelect} />}
 
         <section>
-          <Kicker className="mb-2">Hotspots, highest risk first</Kicker>
+          <h3 className="h-sub mb-3">Hotspots, highest risk first</h3>
           {result ? (
             <RiskLedger hotspots={result.hotspots} windowKey="next_24h" selectedId={p.selectedId} onSelect={p.onSelect} />
           ) : (
-            <div className="h-64 animate-pulse bg-paper-2" />
+            <div className="h-64 bg-paper-2" aria-label="Loading" />
           )}
         </section>
 
-        <footer className="text-[12px] leading-relaxed text-ink-3">
+        <footer className="text-[13px] leading-relaxed text-muted">
           {meta?.note} {meta?.note_hi} Same rules as the live forecast (docs/MODEL.md). Rain amounts are model-scale:
           the forecast models read lower than rain gauges in short cloudbursts.
         </footer>
@@ -105,24 +101,20 @@ export default function SimulatorPanel(p: Props) {
 function StormControls({ storm, onStorm, result }: Props) {
   const rarity = result?.meta.mode === "storm" ? result.meta.rarity : undefined;
   return (
-    <div className="space-y-6">
-      <div>
-      <Kicker className="mb-1.5">Quick storms</Kicker>
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {PRESETS.map((pr) => {
-          const active = pr.p.rain_24h === storm.rain_24h && pr.p.peak1h === storm.peak1h;
-          return (
-            <button
-              key={pr.label}
-              onClick={() => onStorm(pr.p)}
-              className={`text-[13px] underline-offset-4 ${active ? "font-medium text-ink underline decoration-2" : "text-ink-2 hover:text-ink hover:underline"}`}
-            >
-              {pr.label}
-            </button>
-          );
-        })}
-      </div>
-      </div>
+    <div className="space-y-8">
+      <fieldset className="m-0 border-0 p-0">
+        <legend className="label mb-2 p-0">Quick storms</legend>
+        <div className="cells-grid">
+          {PRESETS.map((pr) => {
+            const active = pr.p.rain_24h === storm.rain_24h && pr.p.peak1h === storm.peak1h;
+            return (
+              <button key={pr.label} type="button" aria-pressed={active} onClick={() => onStorm(pr.p)} className="cell min-h-10">
+                {pr.label}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <Slider label="Rain in 24 hours" unit="mm" min={0} max={200} value={storm.rain_24h}
         onChange={(v) => onStorm({ rain_24h: v, peak1h: Math.min(storm.peak1h, v) })}
@@ -133,24 +125,22 @@ function StormControls({ storm, onStorm, result }: Props) {
       <Slider label="Rain in the 3 days before" unit="mm" min={0} max={200} value={storm.past_72h}
         onChange={(v) => onStorm({ past_72h: v })} note="Wet ground can't soak up more water" />
 
-      <div>
-        <div className="flex items-center justify-between">
-          <span className="kicker">Where it rains</span>
-          <TextTabs
-            label="Storm footprint"
-            options={[{ key: "city" as const, label: "Whole city" }, { key: "local" as const, label: "Local storm" }]}
-            value={storm.centre ? "local" : "city"}
-            onChange={(k) => onStorm({ centre: k === "local" ? CITY_CENTRE : null })}
-          />
-        </div>
+      <fieldset className="m-0 border-0 p-0">
+        <legend className="label mb-2 p-0">Where it rains</legend>
+        <TextTabs
+          label="Storm footprint"
+          options={[{ key: "city" as const, label: "Whole city" }, { key: "local" as const, label: "Local storm" }]}
+          value={storm.centre ? "local" : "city"}
+          onChange={(k) => onStorm({ centre: k === "local" ? CITY_CENTRE : null })}
+        />
         {storm.centre && (
-          <div className="mt-4 space-y-1">
+          <div className="mt-5 space-y-2">
             <Slider label="Storm radius" unit="km" min={2} max={15} value={storm.radius_km}
               onChange={(v) => onStorm({ radius_km: v })} />
-            <p className="text-[12px] font-medium text-water">Tap the map to move the storm.</p>
+            <p className="text-[14px] font-extrabold text-accent">Tap the map to move the storm.</p>
           </div>
         )}
-      </div>
+      </fieldset>
     </div>
   );
 }
@@ -162,35 +152,36 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
   }, {});
   return (
     <div className="space-y-5">
-      <ul className="border-t border-ink">
+      <ul className="m-0 list-none border-t-2 border-ink p-0">
         {events.map((e) => {
           const active = e.date === replayDate;
           return (
             <li key={e.id} className="border-b border-rule">
               <button
+                type="button"
                 onClick={() => onReplay(e.date)}
-                className={`grid w-full grid-cols-[1fr_auto] gap-x-3 py-3 text-left hover:bg-paper-2 ${active ? "bg-paper-2" : ""}`}
+                aria-pressed={active}
+                className={`row-btn grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-1 py-3 ${active ? "bg-paper-2" : ""}`}
               >
-                <span className="font-display text-[19px] font-medium leading-tight">
+                <span className="text-[18px] font-extrabold leading-tight tracking-[-0.02em]">
                   {e.title}
-                  {active && <span className="ml-2 align-middle font-sans text-[11px] text-ink-3">▶ playing</span>}
+                  {active && <span className="ml-2 align-middle text-[13px] font-extrabold tracking-normal text-accent">Playing</span>}
                 </span>
-                <span className="font-mono tabular text-right text-[13px] text-ink-2">
-                  {e.city_mean_mm.toFixed(0)}<span className="text-ink-3"> mm</span>
+                <span className="text-right text-[16px] font-extrabold">
+                  {e.city_mean_mm.toFixed(0)}{"\u00a0"}<span className="text-[13px] font-medium text-muted">mm</span>
                 </span>
-                <span className="col-span-2 mt-0.5 text-[12px] text-ink-3">
-                  <span className="kicker mr-1.5 !text-[10px]">{e.source === "team" ? "Team date" : "Model record"}</span>
-                  {e.note}
+                <span className="col-span-2 mt-1 text-[13px] leading-relaxed text-muted">
+                  <span className="font-medium text-ink-2">{e.source === "team" ? "Team date." : "Model record."}</span> {e.note}
                 </span>
               </button>
             </li>
           );
         })}
       </ul>
-      <label className="flex items-center justify-between gap-3">
-        <span className="kicker">Any monsoon day, 2018–2026</span>
+      <label className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-[14px] font-medium">Any monsoon day, 2018 to 2026</span>
         <select
-          className="border border-ink bg-paper px-2 py-1 font-mono text-[12.5px]"
+          className="field"
           value={replayDate ?? ""}
           onChange={(e) => e.target.value && onReplay(e.target.value)}
         >
@@ -202,7 +193,7 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
           ))}
         </select>
       </label>
-      <p className="text-[12px] text-ink-3">City average rain for the day shown on the right.</p>
+      <p className="text-[13px] text-muted">City average rain for the day shown on the right.</p>
     </div>
   );
 }
@@ -211,23 +202,23 @@ function ReplayControls({ events, dates, replayDate, onReplay }: Props) {
 function Scoreboard({ result, busy }: { result: SimResult | null; busy: boolean }) {
   const c = result?.meta.counts.next_24h;
   const cells = [
-    { level: "red" as const, label: "High" },
-    { level: "amber" as const, label: "Medium" },
-    { level: "green" as const, label: "Low" },
+    { level: "red" as const, label: "High", fill: "bg-risk-red text-accent-ink" },
+    { level: "amber" as const, label: "Medium", fill: "bg-accent-2 text-ink" },
+    { level: "green" as const, label: "Low", fill: "" },
   ];
   return (
-    <div className="sticky top-0 z-10 grid grid-cols-3 border-b border-ink bg-paper px-5 py-2.5 md:px-7">
-      {cells.map(({ level, label }) => (
-        <div key={level} className="flex items-baseline gap-2">
-          <span
-            className={`font-mono tabular text-[26px] font-medium leading-none transition-opacity ${busy ? "opacity-50" : ""}`}
-            style={{ color: c && c[level] && level !== "green" ? LEVEL_COLOR[level] : undefined }}
-          >
-            {c ? c[level] : "–"}
-          </span>
-          <span className="kicker">{label}</span>
-        </div>
-      ))}
+    <div className="sticky top-0 z-10 grid grid-cols-3 border-b-2 border-ink bg-paper-3">
+      {cells.map(({ level, label, fill }) => {
+        const on = !!c && c[level] > 0 && level !== "green";
+        return (
+          <div key={level} className={`flex items-baseline gap-2 border-l-2 border-ink px-4 py-2.5 first:border-l-0 md:px-6 ${on ? fill : ""}`}>
+            <span className={`text-[28px] font-extrabold leading-none tracking-[-0.04em] transition-opacity ${busy ? "opacity-50" : ""}`}>
+              {c ? c[level] : "0"}
+            </span>
+            <span className={`text-[13px] font-medium ${on ? "" : "text-ink-2"}`}>{label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -246,39 +237,40 @@ function BlockDrain({ critical, blocked, onToggle, result }: {
   const effect = result?.meta.blocked ?? [];
   return (
     <section>
-      <div className="flex items-baseline justify-between">
-        <Kicker>Block a drain</Kicker>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="h-sub">Block a drain</h2>
         {blocked.length > 0 && (
-          <button className="text-[12px] text-ink-2 underline-offset-4 hover:underline" onClick={() => blocked.forEach(onToggle)}>Clear all</button>
+          <button type="button" className="btn btn--sm" onClick={() => blocked.forEach(onToggle)}>Clear all</button>
         )}
       </div>
-      <p className="mt-1 text-[12.5px] text-ink-3">
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">
         Tick an outfall, or tap a blue point on the map. Water that must pass a blocked drain backs up, so the hotspots
         upstream of it flood first.
       </p>
-      <ul className="mt-2 divide-y divide-rule border-y border-rule">
+      <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
         {shown.map((p) => (
-          <li key={p.id}>
-            <label className="flex cursor-pointer items-baseline gap-2.5 py-2 text-[13px]">
-              <input type="checkbox" className="accent-[#17191e]" checked={blocked.includes(p.id)} onChange={() => onToggle(p.id)} />
-              <span className="flex-1">
-                <span className="font-medium">{p.label}</span>
-                {p.upstream_names.length > 0 && <span className="block text-[11.5px] text-ink-3">drains {p.upstream_names.join(", ")}</span>}
+          <li key={p.id} className="border-b border-rule last:border-b-0">
+            <label className="flex cursor-pointer items-start gap-3 py-2.5 text-[14px] hover:bg-paper-2">
+              <input type="checkbox" className="check mt-0.5 shrink-0" checked={blocked.includes(p.id)} onChange={() => onToggle(p.id)} />
+              <span className="min-w-0 flex-1">
+                <span className="font-extrabold">{p.label}</span>
+                {p.upstream_names.length > 0 && <span className="mt-0.5 block text-[13px] text-muted">drains {p.upstream_names.join(", ")}</span>}
               </span>
-              <span className="font-mono text-[12px] text-ink-2">{p.n_hotspots}</span>
+              <span className="pr-1 text-[16px] font-extrabold">{p.n_hotspots}</span>
             </label>
           </li>
         ))}
       </ul>
       {!showAll && list.length > shown.length && (
-        <button className="mt-1.5 text-[12px] text-ink-2 underline-offset-4 hover:underline" onClick={() => setShowAll(true)}>
+        <button type="button" className="link mt-2 text-[13px]" onClick={() => setShowAll(true)}>
           Show all {list.length} outfalls
         </button>
       )}
       {effect.length > 0 && (
-        <p className="mt-2 border-l-2 border-risk-red pl-2.5 text-[12.5px] text-ink-2">
-          Blocked: {effect.map((b) => b.label).join(", ")}. {new Set(effect.flatMap((b) => b.hotspots)).size} hotspot(s)
-          back up behind it (marked "drain blocked downstream").
+        <p className="mt-3 border-2 border-ink bg-paper-3 px-3 py-2.5 text-[14px] leading-relaxed text-ink">
+          <span className="status status--red mr-2 align-middle">Blocked</span>
+          {effect.map((b) => b.label).join(", ")}. {new Set(effect.flatMap((b) => b.hotspots)).size} hotspot(s)
+          back up behind it (marked “drain blocked downstream”).
         </p>
       )}
     </section>

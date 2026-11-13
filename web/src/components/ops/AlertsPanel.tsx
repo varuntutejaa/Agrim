@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { fetchAlertDrafts, sendAlerts } from "../../api";
 import type { AlertDraft, OpsSource, RiskWindowKey, SimRequest } from "../../types";
-import { Kicker } from "../ui";
 
 type Props = {
   source: OpsSource;
@@ -67,47 +66,41 @@ export default function AlertsPanel(p: Props) {
 
   return (
     <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <Kicker>Citizen alerts (Red spots)</Kicker>
-        <span className="text-[11.5px] text-ink-3">{CHANNEL_NOTE[channel] ?? `Channel: ${channel}`}</span>
-      </div>
+      <h2 className="h-sub">Citizen alerts (Red spots)</h2>
+      <p className="mt-1.5 text-[13px] text-muted">{CHANNEL_NOTE[channel] ?? `Channel: ${channel}`}</p>
       {drafts === null ? (
-        <div className="mt-2 h-24 animate-pulse bg-paper-2" />
+        <div className="mt-3 h-24 bg-paper-2" aria-label="Loading" />
       ) : drafts.length === 0 ? (
-        <p className="mt-2 border-y border-rule py-3 text-[13.5px] text-ink-2">No Red hotspots, so no citizen alerts to send.</p>
+        <p className="mt-3 border-y-2 border-ink py-3 text-[15px] text-ink-2">No Red hotspots, so no citizen alerts to send.</p>
       ) : (
         <>
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul className="m-0 mt-3 list-none border-y-2 border-ink p-0">
             {drafts.map((a) => (
-              <li key={a.hotspot_id} className="py-2.5">
-                <label className="flex cursor-pointer items-start gap-2.5">
-                  <input type="checkbox" className="mt-1 accent-[#17191e]" checked={chosen.has(a.hotspot_id)}
+              <li key={a.hotspot_id} className="border-b border-rule py-3 last:border-b-0">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input type="checkbox" className="check mt-1 shrink-0" checked={chosen.has(a.hotspot_id)}
                     onChange={() => toggle(a.hotspot_id)} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-medium">{a.name}</span>
-                    <span className="mt-0.5 block font-mono text-[11.5px] leading-snug text-ink-2">{a.sms_hi}</span>
-                    <span className="mt-0.5 block font-mono text-[11.5px] leading-snug text-ink-2">{a.sms_en}</span>
+                    <span className="block text-[15px] font-extrabold">{a.name}</span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-ink-2" lang="hi">{a.sms_hi}</span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-ink-2">{a.sms_en}</span>
                   </span>
                 </label>
-                <button className="ml-6 mt-1 text-[11.5px] text-ink-3 underline-offset-4 hover:underline"
+                <button type="button" className="link ml-7 mt-2 text-[13px]" aria-expanded={showIvr === a.hotspot_id}
                   onClick={() => setShowIvr((s) => (s === a.hotspot_id ? null : a.hotspot_id))}>
                   {showIvr === a.hotspot_id ? "Hide" : "Show"} voice-call script (mock IVR)
                 </button>
                 {showIvr === a.hotspot_id && (
-                  <pre className="ml-6 mt-1 overflow-x-auto whitespace-pre-wrap bg-paper-2 p-2 font-mono text-[11px] text-ink-2">
+                  <pre className="ml-7 mt-2 overflow-x-auto whitespace-pre-wrap border-2 border-ink bg-paper-3 p-3 text-[13px] text-ink-2">
                     {a.ivr.replace(/></g, ">\n<")}
                   </pre>
                 )}
               </li>
             ))}
           </ul>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-[12px] text-ink-3">{chosen.size} of {drafts.length} selected · each sent in Hindi, then English</span>
-            <button
-              disabled={!p.canAct || busy || chosen.size === 0}
-              onClick={approve}
-              className="border border-ink bg-ink px-3.5 py-1.5 text-[13px] font-medium text-paper hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-40"
-            >
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-[13px] text-muted">{chosen.size} of {drafts.length} selected. Each is sent in Hindi, then English.</span>
+            <button type="button" disabled={!p.canAct || busy || chosen.size === 0} onClick={approve} className="btn btn--primary">
               {busy ? "Sending…" : `Approve and send ${chosen.size}`}
             </button>
           </div>

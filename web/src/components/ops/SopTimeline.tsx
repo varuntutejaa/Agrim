@@ -1,5 +1,5 @@
-// The SOP as a timeline: T-24 orders, T-12 gullies and pumps, T-3 pump test,
-// rain, T+24 report. Each step shows its deadline and how much is done.
+// The SOP as a route: T-24 orders, T-12 gullies and pumps, T-3 pump test,
+// rain, T+24 report. Each step is a bordered cell with its deadline and how much is done.
 import type { CheckTick, FeedbackRecord, Orders } from "../../types";
 
 const fmt = (iso: string) =>
@@ -17,13 +17,13 @@ export default function SopTimeline({ orders, ticks, feedback, zoneKey }: {
   feedback: FeedbackRecord[];
   zoneKey: string;
 }) {
-  if (!orders) return <div className="h-[92px] animate-pulse bg-paper-2" />;
+  if (!orders) return <div className="h-[112px] bg-paper-2" aria-label="Loading" />;
   const items = orders.items;
   if (!items.length) {
     return (
-      <div className="border-y border-ink py-4 text-[14px] text-ink-2">
+      <p className="border-2 border-ink bg-paper-3 px-4 py-4 text-[15px] leading-relaxed text-ink-2">
         Nothing to prepare: every hotspot in this view is low risk. The SOP steps appear here when a hotspot turns Red or Amber.
-      </div>
+      </p>
     );
   }
   const reds = items.filter((i) => i.level === "red");
@@ -45,27 +45,27 @@ export default function SopTimeline({ orders, ticks, feedback, zoneKey }: {
   ];
 
   return (
-    <ol className="grid grid-cols-2 border-y border-ink md:grid-cols-5">
-      {steps.map((s, i) => {
+    <ol className="m-0 grid list-none grid-cols-2 border-l-2 border-t-2 border-ink p-0 md:grid-cols-5">
+      {steps.map((s) => {
         const complete = s.total > 0 && s.done >= s.total;
         return (
-          <li key={s.tag} className={`border-rule py-3 pr-3 md:border-r md:pl-3 md:last:border-r-0 md:first:pl-0 ${i % 2 ? "border-l pl-3 md:border-l-0" : ""} ${i > 1 ? "border-t md:border-t-0" : ""}`}>
+          <li key={s.tag} className={`border-b-2 border-r-2 border-ink px-3 py-3 ${complete ? "bg-ink text-paper" : "bg-paper-3"}`}>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-mono text-[12px] font-medium text-ink">{s.tag}</span>
-              {s.when && <span className="font-mono text-[11px] text-ink-3">{fmt(s.when)}</span>}
+              <span className="text-[18px] font-extrabold tracking-[-0.02em]">{s.tag}</span>
+              {s.when && <span className={`text-[13px] ${complete ? "text-paper-dim" : "text-muted"}`}>{fmt(s.when)}</span>}
             </div>
-            <div className="mt-0.5 text-[13px] leading-snug text-ink-2">{s.title}</div>
+            <div className={`mt-1 text-[14px] leading-snug ${complete ? "text-paper" : "text-ink-2"}`}>{s.title}</div>
             {s.total > 0 ? (
               <>
-                <div className="mt-2 h-[3px] bg-rule">
-                  <div className="h-full bg-ink transition-[width] duration-300" style={{ width: `${(s.done / s.total) * 100}%` }} />
+                <div className={`mt-2.5 h-1 ${complete ? "bg-ink-rule" : "bg-rule"}`} role="img" aria-label={`${s.done} of ${s.total} done`}>
+                  <div className={`h-full ${complete ? "bg-accent-2" : "bg-ink"}`} style={{ width: `${(s.done / s.total) * 100}%` }} />
                 </div>
-                <div className={`mt-1 font-mono text-[11.5px] ${complete ? "text-risk-green" : "text-ink-3"}`}>
+                <div className={`mt-1.5 text-[13px] font-medium ${complete ? "text-accent-2" : "text-muted"}`}>
                   {complete ? "Done" : `${s.done} of ${s.total}`}
                 </div>
               </>
             ) : (
-              <div className="mt-[17px] font-mono text-[11.5px] text-ink-3">{s.note ?? "–"}</div>
+              <div className="mt-[22px] text-[13px] text-muted">{s.note ?? "No checks"}</div>
             )}
           </li>
         );

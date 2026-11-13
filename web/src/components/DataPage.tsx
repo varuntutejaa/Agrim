@@ -2,7 +2,6 @@
 // MCG data would add, with evidence that each item exists. The full version
 // is docs/DATA_REQUIREMENTS.md; keep the two in step.
 import type { ReactNode } from "react";
-import { Kicker } from "./ui";
 
 const TRIB_WATCH = "https://www.tribuneindia.com/news/gurugram/gurugram-municipal-corporation-puts-155-flood-points-under-24-hour-watch/";
 const TRIB_159 = "https://www.tribuneindia.com/news/gurugram/gurugram-flags-159-waterlogging-hotspots-ahead-of-monsoon-haryana-pushes-zero-flood-plan/";
@@ -12,12 +11,12 @@ const REPUBLIC = "https://www.republicworld.com/amp/india/gurugram-rain-video-sh
 const ZONES8 = "https://www.tribuneindia.com/news/delhi/mcg-expands-cluster-zone-system-to-boost-civic-services-in-gurugram/";
 
 const A = ({ href, children }: { href: string; children: ReactNode }) => (
-  <a href={href} target="_blank" rel="noreferrer" className="underline decoration-rule underline-offset-2 hover:decoration-ink">{children}</a>
+  <a href={href} target="_blank" rel="noreferrer" className="link">{children}</a>
 );
 
 const PUBLIC_NOW: [string, string][] = [
   ["Rain forecast, 3 models, next 72 h", "Open-Meteo (ECMWF, GFS, ICON)"],
-  ["Each hotspot's rain record, 2018–2026", "Open-Meteo archive (ECMWF)"],
+  ["Each hotspot's rain record, 2018 to 2026", "Open-Meteo archive (ECMWF)"],
   ["Terrain and drainage network", "Copernicus DEM, OpenStreetMap, ESA WorldCover"],
   ["21 hotspots, zones for 10", "News coverage, OpenStreetMap, Tribune (31 Jul 2026)"],
   ["Flood event dates, district level", "India Flood Inventory (IIT Delhi), CC-BY-4.0"],
@@ -70,106 +69,106 @@ const ASSUMPTIONS: string[] = [
 ];
 
 const MISSED: [string, string, string, string][] = [
-  ["9 Jul 2023", "12–21 mm", "150 mm reported", "0 of 4"],
-  ["11 Aug 2024", "11–16 mm", "53 mm by 8:30 am", "0 of 5"],
-  ["9 Jul 2025", "7–11 mm", "2.5 ft water at Subhash Chowk", "0 of 5"],
-  ["31 Jul 2024", "59–67 mm", "widespread waterlogging", "6 of 6"],
+  ["9 Jul 2023", "12 to 21 mm", "150 mm reported", "0 of 4"],
+  ["11 Aug 2024", "11 to 16 mm", "53 mm by 8:30 am", "0 of 5"],
+  ["9 Jul 2025", "7 to 11 mm", "2.5 ft water at Subhash Chowk", "0 of 5"],
+  ["31 Jul 2024", "59 to 67 mm", "widespread waterlogging", "6 of 6"],
 ];
 
 export default function DataPage() {
+  const COLS = "md:grid-cols-[48px_minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]";
   return (
-    <div className="mx-auto max-w-[1100px] px-5 pb-16 pt-6 md:px-8">
-      <Kicker>Data & assumptions</Kicker>
-      <h1 className="mt-1 max-w-[820px] font-display text-[30px] font-medium leading-[1.12] tracking-[-0.01em] md:text-[36px]">
+    <div className="mx-auto max-w-[1360px] px-4 pb-20 pt-10 md:px-10 md:pt-14">
+      <h1 className="h-page">
         Agrim runs on public data today. Here is what MCG's own data would add, and evidence that it exists.
       </h1>
-      <p className="mt-3 max-w-[760px] text-[14px] leading-relaxed text-ink-2">
+      <p className="mt-5 max-w-[65ch] text-[16px] leading-[1.7] text-ink-2">
         Nothing here depends on data that doesn't exist. MCG already collects everything we ask for below; it just isn't
         published. The one item that doesn't exist yet, drain water-level sensors, is an optional proposal, and Agrim works
         without it.
       </p>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-14 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="min-w-0">
-          <Kicker className="mb-2">Data we'd ask MCG / GMDA for</Kicker>
-          <div className="hidden border-b border-ink pb-1.5 md:grid md:grid-cols-[40px_minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)] md:gap-x-4">
-            <span className="kicker">#</span><span className="kicker">Data</span><span className="kicker">Evidence it exists</span>
-            <span className="kicker">What it unlocks</span>
+          <h2 className="h-sub">Data we'd ask MCG / GMDA for</h2>
+          <div className={`mt-4 hidden border-b-2 border-ink pb-2 md:grid md:gap-x-4 ${COLS}`} role="presentation">
+            <span className="label">#</span><span className="label">Data</span><span className="label">Evidence it exists</span>
+            <span className="label">What it adds</span>
           </div>
-          <ol>
+          <ol className="m-0 mt-4 list-none border-t-2 border-ink p-0 md:mt-0 md:border-t-0">
             {ASKS.map((a) => (
-              <li key={a.id} className="grid gap-y-1 border-b border-rule py-3 text-[13px] md:grid-cols-[40px_minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)] md:gap-x-4">
-                <span className="font-mono text-[12px] font-medium">{a.id}</span>
-                <span className="font-medium text-ink">{a.data}</span>
+              <li key={a.id} className={`grid gap-y-1.5 border-b border-rule py-4 text-[14px] leading-relaxed md:gap-x-4 ${COLS}`}>
+                <span className="text-[15px] font-extrabold">{a.id}</span>
+                <span className="font-extrabold text-ink">{a.data}</span>
                 <span className="text-ink-2">{a.evidence}</span>
                 <span className="text-ink-2">
                   {a.unlocks}
-                  <span className="mt-0.5 block text-[12px] text-ink-3">Today: {a.without}</span>
+                  <span className="mt-1 block text-[13px] text-muted">Today: {a.without}</span>
                 </span>
               </li>
             ))}
-            <li className="grid gap-y-1 border-b border-rule py-3 text-[13px] md:grid-cols-[40px_minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)] md:gap-x-4">
-              <span className="font-mono text-[12px] font-medium">P1</span>
-              <span className="font-medium text-ink">Drain water-level sensors at the 4 most critical points</span>
-              <span className="text-ink-3">Doesn't exist yet: an optional proposal</span>
-              <span className="text-ink-2">Live proof that water is rising<span className="mt-0.5 block text-[12px] text-ink-3">Today: the field stays empty; nothing depends on it</span></span>
+            <li className={`grid gap-y-1.5 border-b border-rule py-4 text-[14px] leading-relaxed md:gap-x-4 ${COLS}`}>
+              <span className="text-[15px] font-extrabold">P1</span>
+              <span className="font-extrabold text-ink">Drain water-level sensors at the 4 most critical points</span>
+              <span className="text-muted">Doesn't exist yet: an optional proposal</span>
+              <span className="text-ink-2">Live proof that water is rising<span className="mt-1 block text-[13px] text-muted">Today: the field stays empty; nothing depends on it</span></span>
             </li>
           </ol>
-          <p className="mt-3 text-[12px] text-ink-3">
+          <p className="mt-4 text-[13px] leading-relaxed text-muted">
             Import templates for each item are in data/templates; hotspot lists and post-storm records can be imported today
             with pipeline/import_mcg.py.
           </p>
         </section>
 
-        <aside className="space-y-9">
+        <aside className="space-y-12">
           <section>
-            <Kicker className="mb-2">Runs today on public data</Kicker>
-            <ul className="divide-y divide-rule border-y border-rule">
+            <h2 className="h-sub">Runs today on public data</h2>
+            <ul className="m-0 mt-4 list-none border-y-2 border-ink p-0">
               {PUBLIC_NOW.map(([what, src]) => (
-                <li key={what} className="py-2 text-[13px]">
-                  <div className="text-ink">{what}</div>
-                  <div className="text-[12px] text-ink-3">{src}</div>
+                <li key={what} className="border-b border-rule py-3 text-[14px] last:border-b-0">
+                  <div className="font-medium text-ink">{what}</div>
+                  <div className="mt-0.5 text-[13px] text-muted">{src}</div>
                 </li>
               ))}
             </ul>
           </section>
           <section>
-            <Kicker className="mb-2">Why rain gauges (D3) matter most</Kicker>
-            <p className="text-[13px] text-ink-2">
+            <h2 className="h-sub">Why rain gauges (D3) matter most</h2>
+            <p className="mt-3 text-[14px] leading-relaxed text-ink-2">
               On 39 reported floods, the rules flagged 12. Every miss was a day the forecast model under-read the rain.
             </p>
-            <table className="mt-2 w-full text-[12px]">
+            <table className="mt-4 w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-ink text-left">
-                  <th className="kicker pb-1 font-medium">Day</th><th className="kicker pb-1 font-medium">Model</th>
-                  <th className="kicker pb-1 font-medium">Reported</th><th className="kicker pb-1 text-right font-medium">Flagged</th>
+                <tr className="border-b-2 border-ink text-left">
+                  <th scope="col" className="label pb-2">Day</th><th scope="col" className="label pb-2">Model</th>
+                  <th scope="col" className="label pb-2">Reported</th><th scope="col" className="label pb-2 text-right">Flagged</th>
                 </tr>
               </thead>
               <tbody>
                 {MISSED.map(([d, m, r, f]) => (
                   <tr key={d} className="border-b border-rule align-top">
-                    <td className="whitespace-nowrap py-1.5 pr-2 font-mono">{d}</td><td className="whitespace-nowrap pr-2 font-mono">{m}</td>
-                    <td className="pr-2 text-ink-2">{r}</td><td className="text-right font-mono">{f}</td>
+                    <td className="whitespace-nowrap py-2 pr-2 font-medium">{d}</td><td className="whitespace-nowrap pr-2">{m}</td>
+                    <td className="pr-2 text-ink-2">{r}</td><td className="text-right font-extrabold">{f}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="mt-1.5 text-[11.5px] text-ink-3">From unreviewed news candidates; details in docs/MODEL.md.</p>
+            <p className="mt-2 text-[13px] text-muted">From unreviewed news candidates; details in docs/MODEL.md.</p>
           </section>
         </aside>
       </div>
 
-      <section className="mt-12">
-        <Kicker className="mb-2">Assumptions</Kicker>
-        <ol className="grid gap-x-10 gap-y-2 border-t border-ink pt-3 md:grid-cols-2">
+      <section className="mt-16">
+        <h2 className="h-sub">Assumptions</h2>
+        <ol className="m-0 mt-4 grid list-none gap-x-12 gap-y-3 border-t-2 border-ink p-0 pt-4 md:grid-cols-2">
           {ASSUMPTIONS.map((a, i) => (
-            <li key={a} className="flex gap-3 text-[13px] text-ink-2">
-              <span className="w-7 shrink-0 font-mono text-[12px] text-ink-3">A{i + 1}</span>
+            <li key={a} className="flex gap-4 text-[14px] leading-relaxed text-ink-2">
+              <span className="w-8 shrink-0 font-extrabold text-ink">A{i + 1}</span>
               {a}
             </li>
           ))}
         </ol>
-        <p className="mt-6 text-[12px] text-ink-3">
+        <p className="mt-8 max-w-[72ch] text-[13px] leading-relaxed text-muted">
           Full version, including the draft data request to MCG: docs/DATA_REQUIREMENTS.md. Drainage direction matches the
           Centre's Lok Sabha statement (Aravallis east, Najafgarh drain north-west, about 78 m drop).
         </p>

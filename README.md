@@ -331,7 +331,7 @@ Every miss was a day the forecast model under-read the rain: 7 where it saw litt
 | Layer | Choice | Why |
 |---|---|---|
 | Frontend | React 19, Vite, TypeScript, Tailwind CSS v4, MapLibre GL | Fast static build, vector map with no API key |
-| Design | Newsreader + IBM Plex (incl. Devanagari), self-hosted | Reads like a newsroom data desk; Hindi-ready ([docs/DESIGN.md](docs/DESIGN.md)) |
+| Design | Chivo Mono + IBM Plex Sans Devanagari, self-hosted; OKLCH tokens | Reads like public signage: a board you can read at a glance; Hindi-ready ([docs/DESIGN.md](docs/DESIGN.md)) |
 | API | FastAPI, Uvicorn, APScheduler | Typed endpoints, OpenAPI docs, scheduled runs |
 | Storage | Neon Postgres (psycopg 3, pooled) | Officer actions, alert log, forecast snapshot |
 | Geo pipeline | rasterio, pysheds, geopandas, shapely, networkx | DEM conditioning, flow routing, the hotspot graph |

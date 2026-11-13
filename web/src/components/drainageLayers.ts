@@ -6,8 +6,9 @@ import type maplibregl from "maplibre-gl";
 import type { GeoJSONSource } from "maplibre-gl";
 import type { DrainageLayers } from "../types";
 import { LEVEL_COLOR } from "../risk";
+import { MAP } from "../mapColors";
 
-const INK_2 = "#4b5058";
+const INK_2 = MAP.ink2;
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** Which drainage layers each mode shows. */
@@ -31,7 +32,7 @@ function arrowImage(): ImageData {
   const size = 16;
   const ctx = document.createElement("canvas").getContext("2d")!;
   ctx.canvas.width = ctx.canvas.height = size;
-  ctx.fillStyle = "#17191e";
+  ctx.fillStyle = MAP.ink;
   ctx.beginPath();
   ctx.moveTo(4, 4);
   ctx.lineTo(12, 8);
@@ -49,23 +50,23 @@ export function addDrainageLayers(map: maplibregl.Map, beforeId: string) {
   const add = (layer: maplibregl.LayerSpecification) => map.addLayer(layer, beforeId);
 
   add({ id: "catchments-fill", type: "fill", source: "catchments", layout: hidden,
-    paint: { "fill-color": "#24527a", "fill-opacity": 0.04 } });
+    paint: { "fill-color": MAP.water, "fill-opacity": 0.04 } });
   add({ id: "catchments-line", type: "line", source: "catchments", layout: hidden,
-    paint: { "line-color": "#24527a", "line-opacity": 0.35, "line-width": 0.7, "line-dasharray": [2, 2] } });
+    paint: { "line-color": MAP.water, "line-opacity": 0.35, "line-width": 0.7, "line-dasharray": [2, 2] } });
   add({ id: "catchment-selected-fill", type: "fill", source: "catchments", layout: hidden,
-    filter: ["==", ["get", "id"], ""], paint: { "fill-color": "#24527a", "fill-opacity": 0.14 } });
+    filter: ["==", ["get", "id"], ""], paint: { "fill-color": MAP.water, "fill-opacity": 0.14 } });
   add({ id: "catchment-selected-line", type: "line", source: "catchments", layout: hidden,
-    filter: ["==", ["get", "id"], ""], paint: { "line-color": "#24527a", "line-width": 1.6 } });
+    filter: ["==", ["get", "id"], ""], paint: { "line-color": MAP.water, "line-width": 1.6 } });
 
   add({ id: "streams", type: "line", source: "streams", layout: { ...hidden, "line-cap": "round" },
     paint: {
-      "line-color": "#24527a",
+      "line-color": MAP.water,
       "line-opacity": ["interpolate", ["linear"], ["ln", ["max", 1, ["get", "acc_km2"]]], 0, 0.14, 6.5, 0.45],
       "line-width": ["interpolate", ["linear"], ["ln", ["max", 1, ["get", "acc_km2"]]], 0, 0.5, 6.5, 3.2],
     } });
   add({ id: "drains", type: "line", source: "drains", layout: hidden,
     paint: {
-      "line-color": ["match", ["get", "waterway"], "canal", "#8a6d3b", "#2f6f73"],
+      "line-color": ["match", ["get", "waterway"], "canal", MAP.canal, MAP.drain],
       "line-width": 1.1,
       "line-dasharray": ["case", ["get", "covered"], ["literal", [2, 1.5]], ["literal", [1, 0]]],
     } });
@@ -82,7 +83,7 @@ export function addDrainageLayers(map: maplibregl.Map, beforeId: string) {
     filter: ["all", ["==", ["get", "kind"], "hotspot"], ["in", ["get", "level"], ["literal", ["red", "amber"]]]],
     paint: { "line-color": levelColor, "line-width": 4, "line-dasharray": [0, 4, 3] } });
   add({ id: "edges-highlight", type: "line", source: "edges", layout: { ...hidden, "line-cap": "round" },
-    filter: ["==", ["get", "from"], ""], paint: { "line-color": "#17191e", "line-width": 4.5 } });
+    filter: ["==", ["get", "from"], ""], paint: { "line-color": MAP.ink, "line-width": 4.5 } });
   add({ id: "edges-arrows", type: "symbol", source: "edges", filter: ["==", ["get", "kind"], "hotspot"], layout: {
     ...hidden,
     "symbol-placement": "line",
