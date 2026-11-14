@@ -20,8 +20,8 @@ Steps
    because a drain often passes 50-100 m beside a junction.
 6. Rank "critical intervention nodes" by how many hotspots lie downstream.
 7. Terrain features per hotspot for the risk model (milestone 3):
-   elevation, HAND (height above nearest drainage, idea from JalNetra's
-   corridor.py), local relief, built-up share, catchment size.
+   elevation, HAND (height above nearest drainage), local relief, built-up
+   share, catchment size.
 8. Which rain-forecast grid points to use for each hotspot: the nearest one
    ("on the spot") and those inside its upstream area (own catchment plus
    the catchments of upstream hotspots).

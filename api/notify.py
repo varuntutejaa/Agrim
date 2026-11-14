@@ -4,7 +4,7 @@ ALERT_CHANNEL (in .env):
   console  (default)  writes the alert to the server log; nothing leaves the server
   twilio              Twilio SMS, sandbox use only (see below)
 
-Safety rules (from JalNetra's escalation code):
+Safety rules:
   - Recipients come only from the server's environment (ALERT_TEST_NUMBERS),
     never from a request, so the API can't be used to text arbitrary people.
   - With no test numbers set, Twilio refuses to send.

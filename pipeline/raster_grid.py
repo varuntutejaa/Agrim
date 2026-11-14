@@ -2,7 +2,7 @@
 
 UTM 43N, 30 m cells, covering config.DEM_BBOX. Because the DEM, land cover
 and every derived raster share this grid, a (row, col) means the same place
-in all of them. (Same idea as JalNetra's grid.py, but in metres.)
+in all of them.
 """
 import math
 

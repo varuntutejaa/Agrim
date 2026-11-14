@@ -14,8 +14,7 @@ Events come from two places, and each says which:
   - "model record": the wettest days in the ECMWF record (derived, factual)
   - "team": dates the team picked; add a sourced flood report to
     data/incidents.csv before presenting one as a confirmed flood.
-Following JalNetra's demo scenarios, the list is fixed and versioned so the
-jury demo is repeatable.
+The list is fixed and versioned so the jury demo is repeatable.
 """
 import glob
 import json

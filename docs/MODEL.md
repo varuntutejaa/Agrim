@@ -19,9 +19,7 @@ In ECMWF's 2018–2026 monsoon record over Gurugram:
 
 Scoring model rain against gauge thresholds would therefore almost never
 flag anything. Instead, the forecast is compared with **the same model's own
-history at that hotspot**: "wetter than 99% of monsoon hours here". This is
-the approach JalNetra's river monitor used, where each river point was
-judged against its own record.
+history at that hotspot**: "wetter than 99% of monsoon hours here".
 
 `model/climatology.py` computes, for each hotspot and every monsoon hour of
 2018–2026 (ECMWF IFS), three rolling windows: 24 h total, wettest hour in

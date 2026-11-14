@@ -51,7 +51,7 @@ so the Aravalli ridge (south/south-east) and the route to the Najafgarh drain
 | Column | Meaning |
 |--------|---------|
 | `elevation_m` | Ground height (surface model) at the snapped cell |
-| `hand_m` | Height above the nearest drainage line: low = floods first (idea from JalNetra) |
+| `hand_m` | Height above the nearest drainage line: low = floods first |
 | `relief_1km_m` | Height minus the average height of the surrounding 1 km. Negative = a dip |
 | `builtup_share_500m` | Share of built-up land within ~500 m |
 | `builtup_share_catchment` | Share of built-up land in the upstream catchment |

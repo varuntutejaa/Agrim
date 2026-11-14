@@ -4,7 +4,7 @@ Run from the repo root:
     python -m pipeline.fetch_dem
 
 Source: Copernicus DEM GLO-30, read directly from the public AWS bucket
-(no account or key). Ported from JalNetra's pipeline/dem.py.
+(no account or key).
 Writes data/dem/dem_utm30.tif (UTM 43N, 30 m).
 
 Caveat: Copernicus GLO-30 is a *surface* model (it sees roofs and tree

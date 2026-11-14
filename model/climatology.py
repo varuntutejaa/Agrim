@@ -8,8 +8,7 @@ Why: the forecast models are much smoother than a rain gauge. In 9 monsoons
 (64.5 mm/day) on only 2 days, and its wettest hour was ~30 mm. So fixed
 gauge thresholds would almost never fire. Instead, each forecast is compared
 with the same model's own history at that hotspot: "wetter than 99% of
-monsoon hours here". This idea comes from JalNetra's river monitor, which
-classified each river point against its own record.
+monsoon hours here".
 
 For every hotspot and every monsoon hour, three rolling windows are computed:
   rain_24h    total rain in the 24 h ending at that hour

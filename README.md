@@ -680,7 +680,6 @@ Agrim/
 │   └── synthetic/        illustrative data only, flagged (proposed sensor sites)
 ├── docs/                 model, network, data requirements, SOP, design, sources, demo
 ├── tests/                40 tests
-├── reference/jalnetra/   reference code from an earlier project (not run)
 ├── scripts/              macOS XGBoost helper
 ├── .github/workflows/    CI, twice-daily forecast job, daytime keep-awake ping
 └── render.yaml           API deployment (Render)

@@ -6,7 +6,7 @@ Run from the repo root:
 
 Writes data/forecast/latest_risk.json (what GET /forecast/latest serves) and
 an archived copy data/forecast/risk_<run_id>.json for the scorecard later.
-Precomputing like this (an idea from JalNetra's river monitor) means a
+Precomputing like this means a
 visitor's page never waits on, or rate-limits, the weather service.
 
 Two windows are scored: the next 24 h and the 24 h after that ("day 2").

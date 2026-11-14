@@ -4,8 +4,7 @@ Run from the repo root:
     python -m pipeline.fetch_landcover
 
 Source: ESA WorldCover 10 m v200 (2021), read from ESA's public AWS bucket
-(no key). Ported from JalNetra's pipeline/lc.py, which read the same data
-through Planetary Computer.
+(no key).
 
 Writes data/landcover/builtup_frac_utm30.tif: for each 30 m cell, the share
 (0-1) of its 10 m pixels that WorldCover classes as "built-up" (class 50).
