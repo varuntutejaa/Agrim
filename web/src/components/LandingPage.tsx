@@ -123,7 +123,7 @@ export default function LandingPage({ risk, ageHours, stored, go }: Props) {
 
       <footer className="mt-12 border-t border-rule py-8 md:mt-16">
         <p className="max-w-[72ch] text-[14px] leading-relaxed text-muted">
-          21 of MCG's 159 hotspots are mapped, from public reports; the full list needs MCG data. Rain comes from three
+          21 listed, 19 on the map, out of MCG's 159 hotspots, from public reports; the full list needs MCG data. Rain comes from three
           global weather models, judged against each hotspot's own 2018 to 2026 record, plus terrain and drains. Everything
           simulated is marked as an exercise. Gurugram, a SustainX 2026 prototype.
         </p>

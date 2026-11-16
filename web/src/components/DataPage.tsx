@@ -18,7 +18,7 @@ const PUBLIC_NOW: [string, string][] = [
   ["Rain forecast, 3 models, next 72 h", "Open-Meteo (ECMWF, GFS, ICON)"],
   ["Each hotspot's rain record, 2018 to 2026", "Open-Meteo archive (ECMWF)"],
   ["Terrain and drainage network", "Copernicus DEM, OpenStreetMap, ESA WorldCover"],
-  ["21 hotspots, zones for 10", "News coverage, OpenStreetMap, Tribune (31 Jul 2026)"],
+  ["21 hotspots listed, 19 on the map, zones for 10", "News coverage, OpenStreetMap, Tribune (31 Jul 2026)"],
   ["Flood event dates, district level", "India Flood Inventory (IIT Delhi), CC-BY-4.0"],
   ["48 candidate flood reports", "News articles, each linked, awaiting review"],
 ];
@@ -28,7 +28,7 @@ const ASKS: Ask[] = [
   { id: "D1", data: "Graded hotspot list: name, zone, grade, location",
     evidence: <>159 hotspots graded 4 / 39 / 56 / 60 (<A href={TRIB_159}>Tribune, Apr 2026</A>); 155 under 24-hour watch, an officer for each (<A href={TRIB_WATCH}>Tribune, Jul 2026</A>)</>,
     unlocks: "Every hotspot with an exact pin and zone; MCG grade feeds Red; a real critical-points ranking",
-    without: "21 hotspots from news, pins from OpenStreetMap" },
+    without: "21 hotspots listed from news, 19 on the map with OpenStreetMap pins" },
   { id: "D2", data: "Post-storm records: each watched point, waterlogged or clear, depth, hours",
     evidence: <>154 locations listed after one storm (<A href={TRIB_154}>Tribune, May 2025</A>); geotagged field reports to the control room (<A href={TRIB_WATCH}>Tribune, Jul 2026</A>)</>,
     unlocks: "Flood and dry labels: recalibrated thresholds, the scorecard, and the machine-learning model",
@@ -57,7 +57,7 @@ const ASKS: Ask[] = [
 
 const ASSUMPTIONS: string[] = [
   "Forecast-model rain shows when and roughly where it rains, but under-reads short cloudbursts.",
-  "The 21 seed hotspots are representative of MCG's list (they match the localities MCG's watch-list coverage names).",
+  "The 21 listed hotspots are representative of MCG's list (they match the localities MCG's watch-list coverage names).",
   "OpenStreetMap pins are within about 150 m of each hotspot until the team or MCG confirms them.",
   "A 30 m terrain model plus mapped drains captures the main flow direction, not local drain capacity.",
   "Rule thresholds are starting values, to be recalibrated on real outcomes.",
@@ -84,8 +84,7 @@ export default function DataPage() {
       </h1>
       <p className="mt-5 max-w-[65ch] text-[16px] leading-[1.7] text-ink-2">
         Nothing here depends on data that doesn't exist. MCG already collects everything we ask for below; it just isn't
-        published. The one item that doesn't exist yet, drain water-level sensors, is an optional proposal, and Agrim works
-        without it.
+        published. The one item that doesn't exist yet, a sensor network, is a proposal, and Agrim works without it.
       </p>
 
       <div className="mt-14 grid grid-cols-[minmax(0,1fr)] gap-14 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -109,9 +108,10 @@ export default function DataPage() {
             ))}
             <li className={`grid gap-y-1.5 border-b border-rule py-4 text-[14px] leading-relaxed md:gap-x-4 ${COLS}`}>
               <span className="text-[15px] font-semibold">P1</span>
-              <span className="font-semibold text-ink">Drain water-level sensors at the 4 most critical points</span>
-              <span className="text-muted">Doesn't exist yet: an optional proposal</span>
-              <span className="text-ink-2">Live proof that water is rising<span className="mt-1 block text-[13px] text-muted">Today: the field stays empty; nothing depends on it</span></span>
+              {/* Counts from data/synthetic/proposed_sensors.geojson (meta.counts); tests/test_consistency.py checks them. */}
+              <span className="font-semibold text-ink">Proposed sensor network: 25 rain gauges, 43 drain-level sensors, 8 underpass monitors</span>
+              <span className="text-muted">Doesn't exist yet: a proposal, with illustrative sites on the Drainage map</span>
+              <span className="text-ink-2">Gauge rain for the cloudburst days, and live proof that water is rising<span className="mt-1 block text-[13px] text-muted">Today: the sensor fields stay empty; nothing depends on them</span></span>
             </li>
           </ol>
           <p className="mt-4 text-[13px] leading-relaxed text-muted">

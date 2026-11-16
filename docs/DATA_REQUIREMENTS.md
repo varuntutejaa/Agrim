@@ -24,7 +24,7 @@ Checked 8 Nov 2026. All links are news reports or official statements.
 | Rain forecast, next 72 h, 3 models | Open-Meteo (ECMWF, GFS, ICON) | `pipeline/fetch_rain_forecast.py` |
 | Each hotspot's rain record, 2018–2026 monsoons | Open-Meteo archive (ECMWF IFS, ERA5) | `pipeline/fetch_rain_history.py`, `model/climatology.py` |
 | Terrain, drainage network, upstream areas | Copernicus DEM, OpenStreetMap drains, ESA WorldCover | `pipeline/build_network.py` |
-| Hotspot list (21) and locations | News coverage + OpenStreetMap geocoding | `data/hotspots.csv` |
+| Hotspot list (21 listed, 19 on the map; 2 still need a pin) | News coverage + OpenStreetMap geocoding | `data/hotspots.csv` |
 | Zones for 10 of the 21 hotspots | [Tribune, 31 Jul 2026](https://www.tribuneindia.com/news/gurugram/gurugram-municipal-corporation-puts-155-flood-points-under-24-hour-watch/) | `data/hotspots.csv` |
 | Flood event dates (district level) | India Flood Inventory, CC-BY-4.0 | `pipeline/fetch_ifi.py` |
 | 48 candidate flood reports (awaiting review) | News coverage, each with its link | `data/incidents_candidates.csv` |
@@ -62,7 +62,7 @@ category, not the complainant's identity.
 
 | # | Proposal | Why | Agrim without it |
 |---|---|---|---|
-| P1 | Drain water-level sensors (e.g. ultrasonic, 5-minute readings) at the 4 "extremely critical" hotspots | Live proof that water is rising; the field `drain_level_m` is already in every forecast | Works fully; the field stays empty |
+| P1 | Proposed sensor network: 25 rain gauges, 43 drain-level sensors, 8 underpass monitors (illustrative sites from `pipeline/propose_sensors.py`, shown on the Drainage map) | Gauge rain for the cloudburst days the models miss; live proof that water is rising (the field `drain_level_m` is already in every forecast) | Works fully; the sensor fields stay empty |
 
 ---
 
@@ -71,7 +71,7 @@ category, not the complainant's identity.
 | # | Assumption | Basis | If it's wrong |
 |---|---|---|---|
 | A1 | Model rain (ECMWF) shows *when* and roughly *where* it rains, but under-reads short cloudbursts | 12 of 39 reported floods flagged; misses were low model-rain days | Already the case: hence rarity scoring and D3 |
-| A2 | The 21 seed hotspots are representative of MCG's list | They match the localities MCG's own watch-list coverage names (Tribune, 31 Jul 2026) | D1 replaces them |
+| A2 | The 21 listed hotspots are representative of MCG's list | They match the localities MCG's own watch-list coverage names (Tribune, 31 Jul 2026) | D1 replaces them |
 | A3 | OpenStreetMap pins are within ~150 m of the real hotspot | Geocoder matches, checked by name | Team checks pins (`?pin=1`) or D1 supplies them |
 | A4 | A 30 m surface DEM + OSM drains captures the main flow direction, not local drain capacity | Matches the Centre's Lok Sabha statement on the gradient | D4 improves local detail |
 | A5 | Rule thresholds are starting values | No labelled outcomes yet | Recalibrate on D2 (and reviewed candidates) |

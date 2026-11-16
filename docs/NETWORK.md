@@ -56,7 +56,7 @@ so the Aravalli ridge (south/south-east) and the route to the Najafgarh drain
 | `builtup_share_500m` | Share of built-up land within ~500 m |
 | `builtup_share_catchment` | Share of built-up land in the upstream catchment |
 | `catchment_km2` | Area draining to the snapped cell |
-| `max_drained_km2_150m` | Largest drained area within 150 m. Usable even when a hotspot is off any flow line |
+| `max_drained_km2_150m` | Largest drained area within 150 m. Usable even when a hotspot is off any flow line. **This is the "drains" figure shown everywhere** (Drainage list, reasons, risk score, critical points), because pins can be up to 150 m off. Example: Golf Course Extension Road, 145 km² (its snapped cell's `catchment_km2` is 138.8 km²) |
 | `catchment_truncated` | Catchment reaches the edge of the terrain box (area is a lower bound) |
 | `on_flow_line`, `snap_dist_m` | Whether and how far the hotspot was moved onto a flow line |
 

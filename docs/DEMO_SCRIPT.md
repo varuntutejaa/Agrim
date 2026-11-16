@@ -59,7 +59,7 @@ docs/SOURCES.md. Times are cumulative.
   > cloudburst it under-read. That's why our first ask to MCG is rain-gauge
   > data. The machine-learning model is built and waiting for MCG's
   > post-storm records. We won't train it on made-up floods."
-- One line on coverage: "21 of MCG's 159 hotspots are mapped, from public reports. The full list needs MCG data."
+- One line on coverage: "21 listed, 19 on the map, out of MCG's 159 hotspots. Taken from public reports; the full list needs MCG data."
 
 ## 2:50–3:00 · Close
 

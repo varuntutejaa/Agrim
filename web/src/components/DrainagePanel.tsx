@@ -76,7 +76,8 @@ function LinksView({ drainage, loading, selectedId, onSelect }: {
       <section>
         <h3 className="h-sub">Hotspots and where their water goes</h3>
         <p className="mt-2 text-[13px] text-muted">
-          Which hotspot flows into which. For where to intervene first, see Critical points.
+          Which hotspot flows into which. For where to intervene first, see Critical points. Drains: the land that drains
+          to within 150 m of the hotspot's pin (pins can be up to 150 m off), the figure the risk model uses.
         </p>
         <div className="mt-3 grid grid-cols-[28px_minmax(0,1fr)_72px] gap-x-2 border-b border-rule pb-2" role="presentation">
           <span className="label">#</span>
