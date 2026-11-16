@@ -66,7 +66,10 @@ export function OrdersCard({ orders }: { orders: Orders | null }) {
   );
 }
 
-export function OverrideLog({ items, names }: { items: OverrideRecord[]; names: Record<string, string> }) {
+export function OverrideLog({ items, names, officer, canAct, onApprove }: {
+  items: OverrideRecord[]; names: Record<string, string>; officer: string; canAct: boolean;
+  onApprove: (id: number) => Promise<void>;
+}) {
   return (
     <section>
       <h2 className="h-sub">Override log</h2>
@@ -89,6 +92,17 @@ export function OverrideLog({ items, names }: { items: OverrideRecord[]; names: 
                 {o.revoked_at && <span className="text-muted">(cancelled by {o.revoked_by})</span>}
               </div>
               <div className="mt-1 text-muted">“{o.reason}”</div>
+              {o.requested_by && <div className="mt-1 text-ink-2">Requested by: {o.requested_by}</div>}
+              {o.needs_approval && !o.revoked_at && (o.approved_at ? (
+                <div className="mt-1 text-ink-2">Signed off by {o.approved_by}</div>
+              ) : (
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span className="tag">Awaiting second sign-off</span>
+                  {o.officer.trim().toLowerCase() !== officer.trim().toLowerCase() && (
+                    <button type="button" className="btn btn--sm" disabled={!canAct} onClick={() => onApprove(o.id)}>Sign off</button>
+                  )}
+                </div>
+              ))}
             </li>
           ))}
         </ul>

@@ -259,13 +259,27 @@ class OverrideRequest(BaseModel):
     is_exercise: bool = False
     model_level: str | None = None
     run_id: str | None = None
+    requested_by: str = "own field check"   # see ops.REQUESTERS
+
+
+def _live_model_level(hotspot_id: str) -> str | None:
+    """The model's own (un-overridden) worst level for a hotspot in the live forecast,
+    so the Red-to-Green sign-off can't be skipped by sending a different model_level."""
+    result = scheduler.ensure_forecast()
+    h = next((x for x in (result or {}).get("hotspots", []) if x["id"] == hotspot_id and x["scored"]), None)
+    if h is None:
+        return None
+    return min((w["level"] for w in h["windows"].values()), key=lambda l: ("red", "amber", "green").index(l))
 
 
 @app.post("/override")
 def create_override(body: OverrideRequest, x_agrim_desk: str | None = Header(default=None)):
     _desk_guard(x_agrim_desk, live=not body.is_exercise)
+    model_level = body.model_level if body.is_exercise else (_live_model_level(body.hotspot_id) or body.model_level)
     return _ops_call(ops.create_override, body.officer, body.hotspot_id, body.new_level, body.reason,
-                     body.valid_hours, body.is_exercise, body.model_level, body.run_id, _known_ids())
+                     body.valid_hours, body.is_exercise, model_level, body.run_id, _known_ids(),
+                     requested_by=body.requested_by)
+
 
 
 class RevokeRequest(BaseModel):
@@ -276,6 +290,13 @@ class RevokeRequest(BaseModel):
 def revoke_override(override_id: int, body: RevokeRequest, x_agrim_desk: str | None = Header(default=None)):
     _desk_guard(x_agrim_desk, live=not (db.configured() and ops.override_is_exercise(override_id)))
     return _ops_call(ops.revoke_override, override_id, body.officer)
+
+
+@app.post("/override/{override_id}/approve")
+def approve_override(override_id: int, body: RevokeRequest, x_agrim_desk: str | None = Header(default=None)):
+    """Second officer's sign-off on a Red-to-Green override."""
+    _desk_guard(x_agrim_desk, live=not (db.configured() and ops.override_is_exercise(override_id)))
+    return _ops_call(ops.approve_override, override_id, body.officer)
 
 
 @app.get("/overrides")

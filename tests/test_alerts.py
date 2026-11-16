@@ -60,3 +60,12 @@ def test_alert_log_and_scorecard(ops_db):
     assert ops_db.alert_log()[0]["officer"] == "Asha"
     card = ops_db.scorecard()
     assert card["counts"] == {"hits": 0, "misses": 0, "false_alarms": 0, "correct_clear": 0}
+
+
+def test_all_clear_template_hindi_then_english():
+    from model.alerts import all_clear_for
+    c = all_clear_for("Hero Honda Chowk")
+    assert "Hero Honda Chowk" in c["sms_hi"] and "Hero Honda Chowk" in c["sms_en"]
+    assert c["sms_en"].startswith("Agrim pilot: All clear") and "MCG" not in c["sms_en"]   # never claims to be MCG
+    ex = all_clear_for("Hero Honda Chowk", exercise=True)
+    assert ex["sms_en"].startswith("EXERCISE:") and ex["sms_hi"].startswith("अभ्यास:")

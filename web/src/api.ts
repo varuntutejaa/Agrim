@@ -2,7 +2,7 @@
 import { tracked } from "./server";
 import type {
   CheckItem, CheckTick, DrainageLayers, FeedbackRecord, HotspotCollection, Orders, OverrideRecord, RainCollection,
-  AlertDraft, AlertRecord, Backtest, CitizenItem, CriticalNodes, ModelStatus, ProposedSensors, PublicOverride, ReplayEvent, RiskLevel, RiskResult, Scorecard, SimRequest,
+  AlertDraft, AlertRecord, Backtest, CitizenItem, CriticalNodes, ModelStatus, ProposedSensors, PublicOverride, ReplayEvent, Requester, RiskLevel, RiskResult, Scorecard, SimRequest,
   SimResult,
 } from "./types";
 
@@ -114,8 +114,9 @@ export const fetchChecklist = (runKey: string) =>
 
 export const postOverride = (body: {
   officer: string; hotspot_id: string; new_level: RiskLevel; reason: string; valid_hours: number;
-  is_exercise: boolean; model_level: RiskLevel | null; run_id: string | null;
+  is_exercise: boolean; model_level: RiskLevel | null; run_id: string | null; requested_by: Requester;
 }) => send<OverrideRecord>("/override", body);
+export const approveOverride = (id: number, officer: string) => send<OverrideRecord>(`/override/${id}/approve`, { officer });
 export const revokeOverride = (id: number, officer: string) => send<OverrideRecord>(`/override/${id}/revoke`, { officer });
 export const postFeedback = (body: {
   officer: string; hotspot_id: string; event_date: string; flooded: boolean;

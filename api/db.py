@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS {alerts_log} (
     sms_hi       TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS overrides_active ON {overrides} (hotspot_id, is_exercise, valid_until);
+-- Added Nov 2026: who asked for an override, and a second officer's sign-off
+-- before a Red spot can be set to Green (older rows count as signed off).
+ALTER TABLE {overrides} ADD COLUMN IF NOT EXISTS requested_by TEXT;
+ALTER TABLE {overrides} ADD COLUMN IF NOT EXISTS needs_approval BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE {overrides} ADD COLUMN IF NOT EXISTS approved_by TEXT;
+ALTER TABLE {overrides} ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 CREATE TABLE IF NOT EXISTS {snapshots} (
     key          TEXT PRIMARY KEY,           -- 'latest_forecast' (see api/snapshot.py)
     generated_at TIMESTAMPTZ NOT NULL,       -- when that forecast run was made

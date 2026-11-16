@@ -93,5 +93,15 @@ def alert_for(item: dict, exercise: bool = False) -> dict:
            f'<Say language="en-IN">{escape(en)}</Say><Pause length="1"/>'
            f'<Say language="hi-IN">{escape(hi)}</Say>'
            "</Response>")
+    clear = all_clear_for(item["name"], exercise)
     return {"hotspot_id": item["hotspot_id"], "name": item["name"], "level": item["level"],
-            "sms_en": en, "sms_hi": hi, "ivr": ivr}
+            "sms_en": en, "sms_hi": hi, "ivr": ivr,
+            "all_clear_en": clear["sms_en"], "all_clear_hi": clear["sms_hi"]}
+
+
+def all_clear_for(name: str, exercise: bool = False) -> dict:
+    """The all-clear, Hindi then English. An officer sends it after the rain, once the
+    spot has been checked; until then the warning stands. Never sent automatically."""
+    tag_en, tag_hi = ("EXERCISE: ", "अभ्यास: ") if exercise else ("", "")
+    return {"sms_hi": f"{tag_hi}Agrim पायलट: {name} पर जलभराव का खतरा टल गया है और जगह की जाँच हो चुकी है। सावधानी से चलें।",
+            "sms_en": f"{tag_en}Agrim pilot: All clear at {name}. The waterlogging risk has passed and the spot has been checked. Drive with care."}

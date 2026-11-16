@@ -5,7 +5,7 @@ import type { CheckTick, FeedbackRecord, Orders } from "../../types";
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", { weekday: "short", hour: "numeric", hour12: true }).replace(",", "");
 
-type Step = { tag: string; title: string; when: string | null; done: number; total: number; note?: string };
+type Step = { tag: string; title: string; who: string; when: string | null; done: number; total: number; note?: string };
 
 export function done(ticks: CheckTick[], zone: string, hotspotId: string, item: CheckTick["item"]) {
   return ticks.some((t) => t.zone === zone && t.hotspot_id === hotspotId && t.item === item && t.done);
@@ -37,11 +37,11 @@ export default function SopTimeline({ orders, ticks, feedback, zoneKey }: {
     feedback.some((f) => f.hotspot_id === i.hotspot_id && f.created_at >= orders.issued_at)).length;
 
   const steps: Step[] = [
-    { tag: "T-24 h", title: "Orders issued", when: orders.issued_at, done: ticks.some((t) => t.zone === zoneKey && t.item === "list_issued" && t.done) ? 1 : 0, total: 1 },
-    { tag: "T-12 h", title: "Gullies cleared, pumps placed", when: earliest("t12"), done: prepDone, total: items.length },
-    { tag: "T-3 h", title: "Pumps tested", when: earliest("t3", reds), done: tested, total: reds.length, note: reds.length ? undefined : "No Red spots" },
-    { tag: "T 0", title: "Rain expected", when: earliest("onset"), done: 0, total: 0 },
-    { tag: "T+24 h", title: "Reports in", when: latestT24, done: reported, total: items.length },
+    { tag: "T-24 h", title: "Orders issued", who: "Zone control room", when: orders.issued_at, done: ticks.some((t) => t.zone === zoneKey && t.item === "list_issued" && t.done) ? 1 : 0, total: 1 },
+    { tag: "T-12 h", title: "Gullies cleared, pumps placed", who: "Zone JE and crews", when: earliest("t12"), done: prepDone, total: items.length },
+    { tag: "T-3 h", title: "Pumps tested", who: "Pump operators", when: earliest("t3", reds), done: tested, total: reds.length, note: reds.length ? undefined : "No Red spots" },
+    { tag: "T 0", title: "Rain expected", who: "", when: earliest("onset"), done: 0, total: 0 },
+    { tag: "T+24 h", title: "Reports in", who: "Zone JE", when: latestT24, done: reported, total: items.length },
   ];
 
   return (
@@ -55,6 +55,7 @@ export default function SopTimeline({ orders, ticks, feedback, zoneKey }: {
               {s.when && <span className={`text-[13px] text-muted`}>{fmt(s.when)}</span>}
             </div>
             <div className={`mt-1 text-[14px] leading-snug text-ink-2`}>{s.title}</div>
+            {s.who && <div className="mt-0.5 text-[13px] text-muted">{s.who}</div>}
             {s.total > 0 ? (
               <>
                 <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-rule" role="img" aria-label={`${s.done} of ${s.total} done`}>

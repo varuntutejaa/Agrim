@@ -17,8 +17,18 @@ export default function PublicOverridesPage() {
       <h1 className="h-page">When an MCG officer changes Agrim's call for a hotspot, it's shown here, with the reason.</h1>
       <p className="mt-5 max-w-[65ch] text-[16px] leading-[1.7] text-ink-2">
         Residents and RWAs can see every change to the public map: the place, the date, what the model said, what it was
-        changed to, and why. Officer names are kept internal. Drills (exercises) aren't listed.
+        changed to, why, and who asked for it. Officer names are kept internal. Drills (exercises) aren't listed.
       </p>
+      <section className="mt-8 max-w-[65ch] border-l-2 border-accent-2 pl-4">
+        <h2 className="h-sub">When someone pushes for a change</h2>
+        <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+          Requests from residents, RWAs, councillors or MLAs are welcome as information, not as instructions. An officer
+          changes a hotspot's level only for something seen or confirmed on the ground, such as a cleared drain, a pump
+          already on site or a blockage, and records who asked. Setting a spot the model rates Red to Green needs a second
+          officer's sign-off before it applies. Every change is listed here, and after the rain the scorecard shows whether
+          each override was right. Pumps and crews follow the ranked list, not who asks loudest.
+        </p>
+      </section>
       {!available && <p className="mt-5 font-semibold text-ink">The log needs the database, which isn't connected here.</p>}
       {rows === null ? (
         <div className="mt-10 h-32 bg-paper-2" aria-label="Loading" />
@@ -36,6 +46,7 @@ export default function PublicOverridesPage() {
                 <span>
                   <b>{o.hotspot_name}</b>
                   <span className="mt-1 block text-ink-2">“{o.reason}”</span>
+                  {o.requested_by && <span className="mt-1 block text-[13px] text-muted">Requested by: {o.requested_by}</span>}
                 </span>
                 <span>
                   <span className="flex flex-wrap items-center gap-2">
@@ -43,7 +54,11 @@ export default function PublicOverridesPage() {
                     <span aria-label="changed to">→</span>
                     <span className={`status status--${o.new_level}`}>{LEVEL_LABEL[o.new_level]}</span>
                   </span>
-                  <span className="mt-1 block text-[13px] text-muted">{o.revoked_at ? "Cancelled" : `Until ${when(o.valid_until)}`}</span>
+                  <span className="mt-1 block text-[13px] text-muted">
+                    {o.revoked_at ? "Cancelled"
+                      : o.needs_approval && !o.approved_at ? "Waiting for a second officer's sign-off; not applied"
+                      : `${o.needs_approval ? "Signed off by a second officer. " : ""}Until ${when(o.valid_until)}`}
+                  </span>
                 </span>
               </li>
             ))}

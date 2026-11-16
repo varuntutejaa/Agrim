@@ -1,10 +1,12 @@
 """MCG operations: officer overrides, post-event feedback, and the SOP checklist.
 
 Overrides
-  An officer can set a hotspot to Red/Amber/Green with a name and a reason.
-  It applies until `valid_until` (default 24 h) and changes what everyone
-  sees, including the public map, while the model's own call is kept and
-  shown next to it. Exercise overrides (made on a simulation) never touch
+  An officer can set a hotspot to Red/Amber/Green with a name, a reason and
+  who asked for the change (REQUESTERS). It applies until `valid_until`
+  (default 24 h) and changes what everyone sees, including the public map,
+  while the model's own call is kept and shown next to it. Setting a spot
+  the model rates Red to Green needs a second, different officer's sign-off
+  before it applies. Exercise overrides (made on a simulation) never touch
   the live forecast, and live ones never touch exercises.
 
 Feedback (T+24 h)
@@ -31,6 +33,8 @@ IST = ZoneInfo(TIMEZONE)
 LEVELS = ("red", "amber", "green")
 DEPTHS = ("ankle", "knee", "waist", "unknown")
 CHECK_ITEMS = ("list_issued", "gullies_cleared", "pump_moved", "pump_tested")
+# Who asked for an override. Shown on the public Overrides page (no names).
+REQUESTERS = ("own field check", "field crew", "resident or RWA", "councillor or MLA", "other")
 EXERCISE_RUN = "exercise"
 
 
@@ -50,8 +54,11 @@ class OpsError(ValueError):
 # --- Overrides ----------------------------------------------------------------------
 
 def create_override(officer: str, hotspot_id: str, new_level: str, reason: str, valid_hours: float,
-                    is_exercise: bool, model_level: str | None, run_id: str | None, known_ids: set) -> dict:
+                    is_exercise: bool, model_level: str | None, run_id: str | None, known_ids: set,
+                    requested_by: str = "own field check") -> dict:
     officer, reason = _clean(officer, 80), _clean(reason, 500)
+    if requested_by not in REQUESTERS:
+        raise OpsError("Say who asked for this change.")
     if len(officer) < 2:
         raise OpsError("Enter your name (at least 2 characters).")
     if len(reason) < 10:
@@ -64,11 +71,30 @@ def create_override(officer: str, hotspot_id: str, new_level: str, reason: str, 
         raise OpsError("An override can last between 1 and 72 hours.")
     with db.connect() as conn:
         row = conn.execute(db.q(
-            """INSERT INTO {overrides} (officer, hotspot_id, model_level, new_level, reason, valid_until, is_exercise, run_id)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""),
+            """INSERT INTO {overrides} (officer, hotspot_id, model_level, new_level, reason, valid_until, is_exercise,
+                                        run_id, requested_by, needs_approval)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *"""),
             (officer, hotspot_id, model_level, new_level, reason, now() + timedelta(hours=valid_hours),
-             is_exercise, run_id),
+             is_exercise, run_id, requested_by, model_level == "red" and new_level == "green"),
         ).fetchone()
+    _forget_active()
+    return _jsonable(row)
+
+
+def approve_override(override_id: int, officer: str) -> dict:
+    """Second sign-off on a Red-to-Green override, by a different officer."""
+    officer = _clean(officer, 80)
+    if len(officer) < 2:
+        raise OpsError("Enter your name to sign off.")
+    with db.connect() as conn:
+        row = conn.execute(db.q("SELECT * FROM {overrides} WHERE id = %s"), (override_id,)).fetchone()
+        if row is None or row["revoked_at"] is not None or not row["needs_approval"] or row["approved_at"] is not None:
+            raise OpsError("No override waiting for sign-off with that id.")
+        if row["officer"].casefold() == officer.casefold():
+            raise OpsError("A second, different officer must sign this off.")
+        row = conn.execute(db.q(
+            "UPDATE {overrides} SET approved_by = %s, approved_at = now() WHERE id = %s RETURNING *"),
+            (officer, override_id)).fetchone()
     _forget_active()
     return _jsonable(row)
 
@@ -121,6 +147,7 @@ def _load_active(is_exercise: bool) -> dict:
         found = conn.execute(
             db.q("""SELECT DISTINCT ON (hotspot_id) * FROM {overrides}
                WHERE is_exercise = %s AND revoked_at IS NULL AND valid_until > now()
+                 AND (NOT needs_approval OR approved_at IS NOT NULL)
                ORDER BY hotspot_id, created_at DESC"""),
             (is_exercise,),
         ).fetchall()
@@ -131,7 +158,8 @@ def public_overrides(limit: int = 100) -> list[dict]:
     """Live overrides for the public page: place, dates, change and reason; no officer names."""
     with db.connect() as conn:
         found = conn.execute(db.q(
-            """SELECT id, created_at, hotspot_id, model_level, new_level, reason, valid_until, revoked_at
+            """SELECT id, created_at, hotspot_id, model_level, new_level, reason, valid_until, revoked_at,
+                      requested_by, needs_approval, approved_at
                FROM {overrides} WHERE NOT is_exercise ORDER BY created_at DESC LIMIT %s"""), (limit,)).fetchall()
     return [_jsonable(r) for r in found]
 

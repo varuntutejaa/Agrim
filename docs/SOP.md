@@ -24,6 +24,21 @@ and lasts 6–72 h. The change shows everywhere, including the public map,
 with the model's original call alongside. Every override is logged and can be
 cancelled. Exercise overrides never affect the live forecast.
 
+**Who asks for an override, and Red to Green.** The form records who asked
+for the change: own field check, field crew, resident or RWA, councillor or
+MLA, or other. Setting a spot the model rates Red to Green needs a second,
+different officer's sign-off in the override log before it applies (for live
+overrides the server checks the model's level itself).
+
+**When someone pushes for a change (RWA pressure).** Requests from residents,
+RWAs, councillors or MLAs are welcome as information, not as instructions.
+An officer changes a hotspot's level only for something seen or confirmed on
+the ground (a cleared drain, a pump already on site, a blockage) and records
+who asked. Every change, with who asked and why, is public on the Overrides
+page (officer names stay internal), and after the rain the scorecard shows
+whether each override was right. Pumps and crews follow the ranked list, not
+who asks loudest.
+
 **Citizen alerts.** For each Red hotspot the desk drafts a short SMS in
 Hindi and English ("Waterlogging likely at …, 6–10 pm today. …") and a mock
 voice-call (IVR) script. An officer reviews, chooses and approves; only then is
@@ -32,6 +47,12 @@ configured channel: `console` by default (server log), or the Twilio sandbox to
 the test numbers set on the server. Every send is logged with the approving
 officer; numbers are masked. Messages say "Agrim pilot" and never claim to be
 from MCG. Exercise alerts are marked EXERCISE / अभ्यास.
+
+**All-clear.** Each alert comes with its all-clear text, Hindi then English
+("All clear at …. The waterlogging risk has passed and the spot has been
+checked."). An officer sends it after the rain, once the spot has been
+checked; it is never sent automatically. (Sending it from the desk is a next
+step; today the officer copies it.)
 
 **Scorecard.** Built from officers' after-rain reports: floods caught, floods
 missed, false alarms (Red/Amber that stayed clear), correct all-clears, and

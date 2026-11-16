@@ -75,3 +75,20 @@ def test_desk_code_guards_live_writes_only(monkeypatch):
     assert e.value.status_code == 401
     with pytest.raises(HTTPException):
         main._desk_guard("wrong", live=True)
+
+
+def test_red_to_green_needs_a_second_officer(ops_db):
+    ops = ops_db
+    o = ops.create_override("Asha", "H002", "green", "Drain cleared and checked on site", 24, True, "red", "exercise",
+                            KNOWN, requested_by="resident or RWA")
+    assert o["needs_approval"] is True and o["requested_by"] == "resident or RWA"
+    assert "H002" not in ops.active_overrides(True)            # not applied until signed off
+    with pytest.raises(ops.OpsError):
+        ops.approve_override(o["id"], " asha ")                # the same officer can't sign it off
+    ops.approve_override(o["id"], "Ravi")
+    assert ops.active_overrides(True)["H002"]["approved_by"] == "Ravi"
+    amber = ops.create_override("Asha", "H003", "amber", "Pump already on site, checked", 24, True, "red", "exercise", KNOWN)
+    assert amber["needs_approval"] is False                    # only Red to Green needs a second officer
+    with pytest.raises(ops.OpsError):
+        ops.create_override("Asha", "H003", "green", "Some long enough reason", 24, True, "amber", "exercise", KNOWN,
+                            requested_by="the mayor")          # unknown requester

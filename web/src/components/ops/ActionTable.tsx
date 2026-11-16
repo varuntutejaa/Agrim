@@ -1,7 +1,7 @@
 // The desk's main table: what each at-risk hotspot needs, by when, and what's done.
 // Low-risk hotspots are folded away underneath.
 import { useState } from "react";
-import type { CheckItem, CheckTick, HotspotRisk, OrderItem, RiskLevel, RiskWindowKey } from "../../types";
+import type { CheckItem, CheckTick, HotspotRisk, OrderItem, Requester, RiskLevel, RiskWindowKey } from "../../types";
 import { LEVEL_LABEL, confidenceLabel } from "../../risk";
 import { done } from "./SopTimeline";
 import { FeedbackForm, OverrideForm } from "./Forms";
@@ -22,7 +22,7 @@ type Props = {
   canAct: boolean;
   canReport: boolean;              // after-rain reports are real data, so never during a drill
   onTick: (h: Scored, item: CheckItem, value: boolean) => void;
-  onOverride: (h: Scored, level: RiskLevel, reason: string, hours: number) => Promise<void>;
+  onOverride: (h: Scored, level: RiskLevel, reason: string, hours: number, requestedBy: Requester) => Promise<void>;
   onRevoke: (overrideId: number) => Promise<void>;
   onFeedback: (h: Scored, f: Parameters<Parameters<typeof FeedbackForm>[0]["onSave"]>[0]) => Promise<void>;
 };
@@ -108,7 +108,7 @@ export default function ActionTable(p: Props) {
           <div className="mb-4 rounded-card border border-rule bg-paper-3 p-4 md:max-w-[680px]">
             {open.panel === "override" ? (
               <OverrideForm h={h} windowKey={p.windowKey} disabled={!p.canAct}
-                onSave={(l, r, hrs) => p.onOverride(h, l, r, hrs).then(() => setOpen(null))} onRevoke={p.onRevoke} />
+                onSave={(l, r, hrs, who) => p.onOverride(h, l, r, hrs, who).then(() => setOpen(null))} onRevoke={p.onRevoke} />
             ) : (
               <FeedbackForm disabled={!p.canAct} onSave={(f) => p.onFeedback(h, f).then(() => setOpen(null))} />
             )}

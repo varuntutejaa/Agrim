@@ -237,9 +237,15 @@ export type Orders = {
   zones: string[];
 };
 
+export type Requester = "own field check" | "field crew" | "resident or RWA" | "councillor or MLA" | "other";
+export const REQUESTERS: Requester[] = ["own field check", "field crew", "resident or RWA", "councillor or MLA", "other"];
+
 export type OverrideRecord = OverrideInfo & {
   hotspot_id: string; new_level: RiskLevel; is_exercise: boolean; run_id: string | null;
   revoked_at: string | null; revoked_by: string | null;
+  requested_by: Requester | null;
+  needs_approval: boolean;        // Red to Green: applies only after a second officer signs off
+  approved_by: string | null; approved_at: string | null;
 };
 
 export type FeedbackRecord = {
@@ -285,7 +291,10 @@ export type CitizenItem = {
   when_en: string; when_hi: string; tip_en: string; tip_hi: string; tip_sourced: boolean;
 };
 
-export type AlertDraft = { hotspot_id: string; name: string; level: RiskLevel; sms_en: string; sms_hi: string; ivr: string };
+export type AlertDraft = {
+  hotspot_id: string; name: string; level: RiskLevel; sms_en: string; sms_hi: string; ivr: string;
+  all_clear_en?: string; all_clear_hi?: string;   // sent by an officer after the rain, once the spot is checked
+};
 
 export type AlertRecord = {
   id: number; created_at: string; officer: string; hotspot_id: string; level: RiskLevel; is_exercise: boolean;
@@ -335,6 +344,7 @@ export type Backtest = {
 export type PublicOverride = {
   id: number; created_at: string; hotspot_id: string; hotspot_name: string; model_level: RiskLevel | null;
   new_level: RiskLevel; reason: string; valid_until: string; revoked_at: string | null;
+  requested_by: Requester | null; needs_approval: boolean; approved_at: string | null;
 };
 
 export type SensorKind = "rain_gauge" | "drain_sensor" | "underpass_monitor";

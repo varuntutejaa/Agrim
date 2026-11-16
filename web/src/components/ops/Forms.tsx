@@ -1,6 +1,6 @@
 // Officer forms: override a hotspot's level, and report what happened after the rain.
 import { useState } from "react";
-import type { HotspotRisk, RiskLevel, RiskWindowKey } from "../../types";
+import { REQUESTERS, type HotspotRisk, type Requester, type RiskLevel, type RiskWindowKey } from "../../types";
 import { LEVEL_BG, LEVEL_LONG } from "../../risk";
 import { TextTabs } from "../ui";
 
@@ -8,7 +8,7 @@ export function OverrideForm({ h, windowKey, disabled, onSave, onRevoke }: {
   h: Extract<HotspotRisk, { scored: true }>;
   windowKey: RiskWindowKey;
   disabled: boolean;
-  onSave: (level: RiskLevel, reason: string, hours: number) => Promise<void>;
+  onSave: (level: RiskLevel, reason: string, hours: number, requestedBy: Requester) => Promise<void>;
   onRevoke: (overrideId: number) => Promise<void>;
 }) {
   const w = h.windows[windowKey];
@@ -16,7 +16,9 @@ export function OverrideForm({ h, windowKey, disabled, onSave, onRevoke }: {
   const [level, setLevel] = useState<RiskLevel>(w.level);
   const [reason, setReason] = useState("");
   const [hours, setHours] = useState(24);
+  const [requestedBy, setRequestedBy] = useState<Requester | "">("");
   const [busy, setBusy] = useState(false);
+  const needsSignOff = modelLevel === "red" && level === "green";
   const run = (fn: () => Promise<void>) => async () => {
     setBusy(true);
     try { await fn(); } finally { setBusy(false); }
@@ -57,6 +59,19 @@ export function OverrideForm({ h, windowKey, disabled, onSave, onRevoke }: {
         <textarea className="field mt-1.5 h-20 w-full resize-none" maxLength={500} value={reason} name="reason"
           placeholder="e.g. Drain desilted yesterday; pump already on site" onChange={(e) => setReason(e.target.value)} />
       </label>
+      <label className="flex flex-wrap items-center gap-2 text-[14px] text-ink-2">
+        Who asked for this change?
+        <select className="field" value={requestedBy} name="requested_by"
+          onChange={(e) => setRequestedBy(e.target.value as Requester)}>
+          <option value="">Choose…</option>
+          {REQUESTERS.map((r) => <option key={r} value={r}>{r[0].toUpperCase() + r.slice(1)}</option>)}
+        </select>
+      </label>
+      <p className="text-[13px] leading-relaxed text-muted">
+        Requests from residents, RWAs or elected representatives are information, not instructions: change the level
+        only for something seen or confirmed on the ground. Every change and who asked for it is public (without names).
+        {needsSignOff && <b className="block pt-1 font-semibold text-ink">Red to Green needs a second officer's sign-off before it applies.</b>}
+      </p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-[14px] text-ink-2">
           Applies for
@@ -64,9 +79,9 @@ export function OverrideForm({ h, windowKey, disabled, onSave, onRevoke }: {
             {[6, 12, 24, 48, 72].map((n) => <option key={n} value={n}>{n} h</option>)}
           </select>
         </label>
-        <button type="button" className="btn" disabled={disabled || busy || reason.trim().length < 10 || level === w.level}
-          onClick={run(() => onSave(level, reason, hours))}>
-          {busy ? "Saving…" : "Save override"}
+        <button type="button" className="btn" disabled={disabled || busy || reason.trim().length < 10 || level === w.level || !requestedBy}
+          onClick={run(() => onSave(level, reason, hours, requestedBy as Requester))}>
+          {busy ? "Saving…" : needsSignOff ? "Save, ask for sign-off" : "Save override"}
         </button>
       </div>
     </div>

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ApiError, deskCode, fetchAlertLog, fetchChecklist, fetchExerciseOrders, fetchFeedback, fetchOrders, fetchOverrides,
-  fetchScorecard, postCheck, postFeedback, postOverride, resetExercise, revokeOverride,
+  approveOverride, fetchScorecard, postCheck, postFeedback, postOverride, resetExercise, revokeOverride,
 } from "../api";
 import type {
   AlertRecord, CheckItem, CheckTick, FeedbackRecord, HotspotRisk, Orders, OpsSource, OverrideRecord, RiskResult,
@@ -221,12 +221,15 @@ export default function OpsDesk(p: Props) {
                 canAct={canAct}
                 canReport={!exercise}
                 onTick={onTick}
-                onOverride={(h, level, reason, hours) =>
+                onOverride={(h, level, reason, hours, requestedBy) =>
                   act(() => postOverride({
                     officer, hotspot_id: h.id, new_level: level, reason, valid_hours: hours, is_exercise: exercise,
+                    requested_by: requestedBy,
                     model_level: h.windows[windowKey].model_level ?? h.windows[windowKey].level,
                     run_id: exercise ? "exercise" : p.risk?.meta.run_id ?? null,
-                  }), "Override saved.").then(() => { loadLogs(); p.onChanged(); })}
+                  }), level === "green" && (h.windows[windowKey].model_level ?? h.windows[windowKey].level) === "red"
+                    ? "Saved. It applies once a second officer signs it off in the override log."
+                    : "Override saved.").then(() => { loadLogs(); p.onChanged(); })}
                 onRevoke={(id) => act(() => revokeOverride(id, officer), "Override cancelled.").then(() => { loadLogs(); p.onChanged(); })}
                 onFeedback={(h, f) => act(() => postFeedback({ officer, hotspot_id: h.id, ...f }), "Report saved. Thank you.").then(loadLogs)}
               />
@@ -253,7 +256,8 @@ export default function OpsDesk(p: Props) {
             <OrdersCard orders={orders} />
             <ScorecardCard card={card} />
             <AlertLog items={alertLog} names={names} />
-            <OverrideLog items={overrides} names={names} />
+            <OverrideLog items={overrides} names={names} officer={officer} canAct={canAct}
+              onApprove={(id) => act(() => approveOverride(id, officer), "Signed off; the override now applies.").then(() => { loadLogs(); p.onChanged(); })} />
             <FeedbackLog items={feedback} names={names} />
           </aside>
         </div>

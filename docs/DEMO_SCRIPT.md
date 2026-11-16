@@ -57,10 +57,11 @@ and Sources pages. Times are cumulative.
 
 **Click: MCG desk.** It should already be on **Exercise** with your name in.
 
-- Point at the headline and the **SOP timeline**: T-24 orders, T-12 gullies and pumps, T-3 pump test, T+24 report.
+- Point at the headline and the **SOP timeline**: T-24 orders, T-12 gullies and pumps, T-3 pump test, T+24 report, each with who does it.
 - **Tick: Gullies cleared** on Hero Honda Chowk; the timeline moves.
-- **Click: Override** on one row, set **Medium**, reason "Pump already on site, checked at 5 pm". Save.
-  > "Every change is logged with who, why and when, and the model's call stays beside it."
+- **Click: Override** on one row, set **Medium**, reason "Pump already on site, checked at 5 pm", who asked: **Own field check**. Save.
+  > "Every change is logged with who made it, who asked for it, why and when, and the model's call stays
+  > beside it. Setting a Red spot to Green needs a second officer to sign off."
 - **Click: Orders → Crew SMS.**
   > "One SMS per crew, under 160 characters."
 - **Citizen alerts**: point at the Hindi and English text.

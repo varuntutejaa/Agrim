@@ -86,6 +86,13 @@ export default function AlertsPanel(p: Props) {
                       <span className="block" lang="hi">{a.sms_hi}</span>
                       <span className="mt-1.5 block">{a.sms_en}</span>
                     </span>
+                    {a.all_clear_en && (
+                      <span className="mt-2 block text-[13px] text-muted">
+                        After the rain, once the spot is checked, the all-clear (Hindi, then English):
+                        <span className="mt-1 block text-ink-2" lang="hi">{a.all_clear_hi}</span>
+                        <span className="mt-0.5 block text-ink-2">{a.all_clear_en}</span>
+                      </span>
+                    )}
                   </span>
                 </label>
                 <button type="button" className="link ml-7 mt-2 text-[13px]" aria-expanded={showIvr === a.hotspot_id}
