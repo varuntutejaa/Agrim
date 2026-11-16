@@ -623,7 +623,7 @@ Performance, measured on the live site with an emulated mid-range phone over 4G:
 1. Open `https://agrim-api.onrender.com/health` 2 minutes before.
 2. Open the app on the laptop and on a phone.
 3. MCG desk → officer name → **Exercise** → **Reset drill**.
-4. Simulator → **Once a decade**, whole city.
+4. Simulator opens on **Once a monsoon** (40 mm), whole city; block the Hero Honda Chowk outfall to show 0 → 6 High.
 5. Keep `docs/screenshots/` open as an offline fallback.
 
 The full 3-minute script is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).

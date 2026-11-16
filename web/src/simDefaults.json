@@ -1,3 +1,3 @@
 {
-  "storm": { "rain_24h": 90, "peak1h": 25, "past_72h": 40, "centre": null, "radius_km": 6 }
+  "storm": { "rain_24h": 40, "peak1h": 12, "past_72h": 30, "centre": null, "radius_km": 6 }
 }

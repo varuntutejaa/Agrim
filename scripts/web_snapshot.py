@@ -9,6 +9,7 @@ Run it before each web deploy. It only READS from the API (the one POST,
 /simulate, runs a storm and saves nothing):
 
     python scripts/web_snapshot.py                                  # from the live API
+    python scripts/web_snapshot.py simulate_default                 # just some files
     AGRIM_API=http://localhost:8000 python scripts/web_snapshot.py  # from a local API
 
 Writes web/public/snapshot/*.json (served by Vercel next to the app).
@@ -65,17 +66,22 @@ def save(name: str, obj) -> None:
 
 
 def main() -> int:
+    only = set(sys.argv[1:])           # optional: just these files
+    want = lambda name: not only or name in only
     OUT.mkdir(parents=True, exist_ok=True)
     print(f"Reading {API} (waking it if needed) ...")
     t0 = time.time()
     call("/health")
     print(f"  server answered after {time.time() - t0:.0f} s")
     for name, path in GETS.items():
-        save(name, call(path))
-    save("drainage", {k: call(p) for k, p in DRAINAGE.items()})
-    # The simulator's opening storm, exactly as the web app asks for it.
-    storm = json.loads((ROOT / "web" / "src" / "simDefaults.json").read_text())["storm"]
-    save("simulate_default", call("/simulate", {"mode": "storm", **storm, "blocked": []}))
+        if want(name):
+            save(name, call(path))
+    if want("drainage"):
+        save("drainage", {k: call(p) for k, p in DRAINAGE.items()})
+    if want("simulate_default"):
+        # The simulator's opening storm, exactly as the web app asks for it.
+        storm = json.loads((ROOT / "web" / "src" / "simDefaults.json").read_text())["storm"]
+        save("simulate_default", call("/simulate", {"mode": "storm", **storm, "blocked": []}))
     forecast = json.loads((OUT / "forecast.json").read_text())
     save("meta", {"taken_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "api": API,
                   "forecast_generated_at": forecast["meta"]["generated_at"]})
