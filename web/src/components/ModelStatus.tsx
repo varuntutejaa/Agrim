@@ -1,7 +1,7 @@
 // Tier B (machine-learning) status, told plainly: trained or not, on how many
 // real flood reports, and how it did against the rules on storms it hadn't seen.
 import { useEffect, useState } from "react";
-import { fetchModelStatus } from "../api";
+import { fetchModelStatus, liveOrStored } from "../api";
 import type { ModelStatus as Status } from "../types";
 
 const pct = (v: number | null | undefined) => (v == null ? "none" : `${Math.round(v * 100)}%`);
@@ -24,7 +24,7 @@ function Bar({ label, have, need }: { label: string; have: number; need: number 
 export default function ModelStatus() {
   const [st, setSt] = useState<Status | null>(null);
   useEffect(() => {
-    fetchModelStatus().then(setSt).catch(() => {});
+    liveOrStored(fetchModelStatus, "model_status", setSt).catch(() => {});
   }, []);
   if (!st) return null;
 

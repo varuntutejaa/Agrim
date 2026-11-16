@@ -1,4 +1,5 @@
 // Thin wrappers around the Agrim API.
+import { tracked } from "./server";
 import type {
   CheckItem, CheckTick, DrainageLayers, FeedbackRecord, HotspotCollection, Orders, OverrideRecord, RainCollection,
   AlertDraft, AlertRecord, Backtest, CitizenItem, CriticalNodes, ModelStatus, ProposedSensors, PublicOverride, ReplayEvent, RiskLevel, RiskResult, Scorecard, SimRequest,
@@ -8,9 +9,39 @@ import type {
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
+  const res = await tracked(fetch(`${API_URL}${path}`));
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+// --- Stored copy -------------------------------------------------------------
+// web/public/snapshot holds a copy of the public API answers, taken before each
+// deploy by scripts/web_snapshot.py. It is shown only while the live server is
+// slow to answer (asleep) or unreachable, always labelled with its age, and
+// replaced as soon as live data arrives.
+
+const STORED_AFTER_MS = 1500;   // a warm server answers well within this
+
+export async function fetchStored<T>(name: string): Promise<T> {
+  const res = await fetch(`${import.meta.env.BASE_URL}snapshot/${name}.json`);
+  if (!res.ok) throw new Error(`stored ${name} missing`);
+  return res.json() as Promise<T>;
+}
+
+/** Live data; if it is slow or fails, the stored copy meanwhile. `on` gets (data, isStored). */
+export function liveOrStored<T>(live: () => Promise<T>, name: string, on: (data: T, stored: boolean) => void): Promise<void> {
+  let liveArrived = false;
+  let storedAsked = false;
+  const useStored = () => {
+    if (storedAsked) return;
+    storedAsked = true;
+    fetchStored<T>(name).then((d) => { if (!liveArrived) on(d, true); }).catch(() => {});
+  };
+  const timer = setTimeout(useStored, STORED_AFTER_MS);
+  return live().then(
+    (d) => { liveArrived = true; clearTimeout(timer); on(d, false); },
+    (e) => { clearTimeout(timer); useStored(); throw e; },
+  );
 }
 
 export const fetchHotspots = () => getJson<HotspotCollection>("/hotspots");
@@ -35,12 +66,12 @@ export const fetchReplayEvents = () =>
 export const fetchReplayDates = () => getJson<{ dates: string[] }>("/simulate/dates");
 
 export async function simulate(req: SimRequest, signal?: AbortSignal): Promise<SimResult> {
-  const res = await fetch(`${API_URL}/simulate`, {
+  const res = await tracked(fetch(`${API_URL}/simulate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
     signal,
-  });
+  }));
   if (!res.ok) throw new Error(`simulate failed: ${res.status}`);
   return res.json() as Promise<SimResult>;
 }
@@ -59,11 +90,11 @@ export class ApiError extends Error {
 }
 
 async function send<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await tracked(fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(deskCode.get() ? { "x-agrim-desk": deskCode.get() } : {}) },
     body: JSON.stringify(body),
-  });
+  }));
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     const msg = typeof detail.detail === "string" ? detail.detail : `Request failed (${res.status})`;

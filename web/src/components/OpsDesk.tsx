@@ -219,6 +219,7 @@ export default function OpsDesk(p: Props) {
                 items={orders?.items ?? []}
                 ticks={ticks}
                 canAct={canAct}
+                canReport={!exercise}
                 onTick={onTick}
                 onOverride={(h, level, reason, hours) =>
                   act(() => postOverride({

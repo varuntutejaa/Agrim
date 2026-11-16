@@ -21,6 +21,7 @@ type Props = {
   onSelect: (id: string) => void;
   lang: Lang;
   ageHours: number | null;
+  stored: boolean;                 // showing the stored copy while the live server wakes
 };
 
 export default function ForecastPanel(p: Props) {
@@ -51,10 +52,10 @@ export default function ForecastPanel(p: Props) {
         )}
       </div>
 
-      {p.ageHours !== null && p.ageHours > 12 && risk && (
+      {risk && p.ageHours !== null && (p.stored || p.ageHours > 12) && (
         <div role="status" className="notice px-3 py-2.5 text-[14px]">
-          <span className="mr-1.5 font-semibold">{lang === "hi" ? "पुराना पूर्वानुमान." : "Old forecast."}</span>
-          {s.stale(Math.round(p.ageHours), `${fmtDay(risk.meta.generated_at)} ${fmtTime(risk.meta.generated_at)} IST`)}
+          <span className="mr-1.5 font-semibold">{p.stored ? s.storedTitle : lang === "hi" ? "पुराना पूर्वानुमान।" : "Old forecast."}</span>
+          {(p.stored ? s.stored : s.stale)(s.ago(p.ageHours), `${fmtDay(risk.meta.generated_at)} ${fmtTime(risk.meta.generated_at)} IST`)}
         </div>
       )}
 

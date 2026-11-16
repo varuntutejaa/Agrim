@@ -13,6 +13,7 @@ type Props = {
   lang: Lang;
   onLang: (l: Lang) => void;
   stale?: boolean;         // forecast older than 12 h
+  stored?: boolean;        // showing the stored copy while the live server wakes
 };
 
 function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
@@ -34,7 +35,7 @@ function LangSwitch({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void })
   );
 }
 
-export default function Masthead({ view, onView, updated, lang, onLang, stale = false }: Props) {
+export default function Masthead({ view, onView, updated, lang, onLang, stale = false, stored = false }: Props) {
   const s = t(lang);
   const phoneNav = useActiveInView<HTMLElement>(view);
   return (
@@ -64,8 +65,8 @@ export default function Masthead({ view, onView, updated, lang, onLang, stale = 
         </nav>
         <div className="ml-auto flex items-center gap-4 md:ml-0">
           {updated && (
-            <span className={`hidden text-[13px] xl:inline ${stale ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
-              {s.updated} {updated}{stale ? `, ${lang === "hi" ? "पुराना" : "old"}` : ""}
+            <span className={`hidden text-[13px] xl:inline ${stale || stored ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
+              {stored ? (lang === "hi" ? "सहेजी गई प्रति" : "Stored copy") : s.updated} {updated}{stale ? `, ${lang === "hi" ? "पुराना" : "old"}` : ""}
             </span>
           )}
           <LangSwitch lang={lang} onLang={onLang} />

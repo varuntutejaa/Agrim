@@ -60,3 +60,18 @@ def test_feedback_and_checklist(ops_db):
     ops_db.set_check("exercise", "Unassigned", "H003", "pump_moved", False, "Ravi")   # upsert, not duplicate
     ticks = ops_db.checklist("exercise")
     assert len(ticks) == 1 and ticks[0]["done"] is False and ticks[0]["officer"] == "Ravi"
+
+
+def test_desk_code_guards_live_writes_only(monkeypatch):
+    """With OPS_TOKEN set, live writes need the desk code; drills don't."""
+    from fastapi import HTTPException
+    from api import main
+    monkeypatch.setenv("OPS_TOKEN", "test-code")
+    monkeypatch.setattr(main.db, "configured", lambda: True)
+    main._desk_guard(None, live=False)
+    main._desk_guard("test-code", live=True)
+    with pytest.raises(HTTPException) as e:
+        main._desk_guard(None, live=True)
+    assert e.value.status_code == 401
+    with pytest.raises(HTTPException):
+        main._desk_guard("wrong", live=True)

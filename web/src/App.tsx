@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchCritical, fetchDrainage, fetchHotspots, fetchProposedSensors, fetchRain, fetchReplayDates, fetchReplayEvents,
-  fetchRisk, simulate,
+  fetchRisk, fetchStored, liveOrStored, simulate,
 } from "./api";
 import AboutSection from "./components/about/AboutSection";
 import DrainagePanel, { type DrainageMode } from "./components/DrainagePanel";
@@ -20,10 +20,13 @@ import MapKey from "./components/MapKey";
 import MapStamp from "./components/MapStamp";
 import Masthead from "./components/Masthead";
 import OpsDesk from "./components/OpsDesk";
+import ServerBanner from "./components/ServerBanner";
 import SimulatorPanel, { type SimMode } from "./components/SimulatorPanel";
 import { ExerciseBand } from "./components/ui";
-import { type Lang, savedLang, saveLang } from "./i18n";
+import { type Lang, savedLang, saveLang, t } from "./i18n";
 import { useRoute } from "./route";
+import { useServerState } from "./server";
+import SIM_DEFAULTS from "./simDefaults.json";
 import type {
   CriticalNodes, DrainageLayers, HotspotCollection, OpsSource, ProposedSensors, RainCollection, RainWindow, ReplayEvent,
   RiskResult, RiskWindowKey, SimRequest, SimResult, StormParams,
@@ -34,6 +37,10 @@ const pinMode = new URLSearchParams(window.location.search).has("pin");
 const SIM_DEBOUNCE_MS = 120;
 const STALE_HOURS = 12;
 const NO_BLOCKS: string[] = [];   // blocked drains only show in the simulator
+// The simulator's opening storm; scripts/web_snapshot.py stores a run of it for when the server is asleep.
+const DEFAULT_STORM = SIM_DEFAULTS.storm as StormParams;
+const isDefaultRequest = (r: SimRequest) =>
+  JSON.stringify(r) === JSON.stringify({ mode: "storm", ...DEFAULT_STORM, blocked: [] });
 
 export default function App() {
   const [route, go] = useRoute();
@@ -56,20 +63,26 @@ export default function App() {
   const [hotspots, setHotspots] = useState<HotspotCollection | null>(null);
   const [rain, setRain] = useState<RainCollection | null>(null);
   const [risk, setRisk] = useState<RiskResult | null>(null);
+  const [riskStored, setRiskStored] = useState(false);   // showing the stored copy, not live data
+  const riskLive = useRef(false);
+  const server = useServerState();
   const [riskWindow, setRiskWindow] = useState<RiskWindowKey>("next_24h");
   const [showRain, setShowRain] = useState(false);
   const [rainWindow, setRainWindow] = useState<RainWindow>("next_24h");
 
+  // Live data where the server answers; the stored copy meanwhile (never over live data).
+  // Connection problems are shown by the ServerBanner, not as errors.
   const refreshRisk = useCallback(() => {
-    fetchRisk()
-      .then(setRisk)
-      .catch((e) => setError(/503/.test(String(e))
-        ? "The forecast is being refreshed. Try again in a minute."
-        : "Couldn't reach the Agrim server. The free server may be waking up (up to a minute)."));
+    liveOrStored(fetchRisk, "forecast", (r, stored) => {
+      if (stored && riskLive.current) return;
+      if (!stored) riskLive.current = true;
+      setRisk(r);
+      setRiskStored(stored);
+    }).catch((e) => { if (/503/.test(String(e))) setError("The forecast is being refreshed. Try again in a minute."); });
   }, []);
   useEffect(() => {
-    fetchHotspots().then(setHotspots).catch(() => setError("Couldn't reach the Agrim server. It may be waking up."));
-    fetchRain().then(setRain).catch(() => {});
+    liveOrStored(fetchHotspots, "hotspots", setHotspots).catch(() => {});
+    liveOrStored(fetchRain, "rain", setRain).catch(() => {});
     refreshRisk();
   }, [refreshRisk]);
 
@@ -88,22 +101,25 @@ export default function App() {
     if ((view !== "drainage" && view !== "simulator") || drainageRequested.current) return;
     drainageRequested.current = true;
     setDrainageLoading(true);
-    fetchDrainage().then(setDrainage).catch(() => setError("Couldn't load the drainage network.")).finally(() => setDrainageLoading(false));
-    fetchCritical().then(setCritical).catch(() => {});
+    liveOrStored(fetchDrainage, "drainage", (d) => { setDrainage(d); setDrainageLoading(false); })
+      .catch(() => {}).finally(() => setDrainageLoading(false));
+    liveOrStored(fetchCritical, "critical", setCritical).catch(() => {});
   }, [view]);
   useEffect(() => {
-    if (showSensors && !sensors) fetchProposedSensors().then(setSensors).catch(() => {});
+    if (showSensors && !sensors) liveOrStored(fetchProposedSensors, "sensors", setSensors).catch(() => {});
   }, [showSensors, sensors]);
 
   // Simulator
   const [simMode, setSimMode] = useState<SimMode>("storm");
-  const [storm, setStorm] = useState<StormParams>({ rain_24h: 90, peak1h: 25, past_72h: 40, centre: null, radius_km: 6 });
+  const [storm, setStorm] = useState<StormParams>(DEFAULT_STORM);
   const [replayDate, setReplayDate] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<string[]>([]);
   const [events, setEvents] = useState<ReplayEvent[]>([]);
   const [dates, setDates] = useState<string[]>([]);
   const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [simBusy, setSimBusy] = useState(false);
+  const [simStored, setSimStored] = useState(false);   // the stored run of the default storm
+  const simLive = useRef(false);
   const [simNonce, setSimNonce] = useState(0); // bump to re-run after an exercise override
   const simListsRequested = useRef(false);
   const [opsSource, setOpsSource] = useState<OpsSource>("live");
@@ -117,8 +133,8 @@ export default function App() {
   useEffect(() => {
     if (view !== "simulator" || simListsRequested.current) return;
     simListsRequested.current = true;
-    fetchReplayEvents().then((r) => setEvents(r.events)).catch(() => {});
-    fetchReplayDates().then((r) => setDates(r.dates)).catch(() => {});
+    liveOrStored(fetchReplayEvents, "simulate_events", (r) => setEvents(r.events)).catch(() => {});
+    liveOrStored(fetchReplayDates, "simulate_dates", (r) => setDates(r.dates)).catch(() => {});
   }, [view]);
 
   // Re-run the simulation whenever its inputs change (debounced; older requests cancelled).
@@ -130,12 +146,14 @@ export default function App() {
       setSimBusy(true);
       simulate(simRequest, ctrl.signal)
         .then((r) => {
+          simLive.current = true;
           setSimResult(r);
+          setSimStored(false);
           setSimBusy(false);
         })
         .catch((e) => {
           if (e.name !== "AbortError") {
-            setError("The simulator couldn't reach the server. It may be waking up.");
+            if (!(e instanceof TypeError)) setError("The simulator couldn't run that storm. Try again.");
             setSimBusy(false);
           }
         });
@@ -145,6 +163,20 @@ export default function App() {
       ctrl.abort();
     };
   }, [simActive, simRequest, simNonce]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // While the server wakes, show the stored run of the opening storm (only for that storm).
+  useEffect(() => {
+    if (!simActive || simResult || !isDefaultRequest(simRequest)) return;
+    const timer = setTimeout(() => {
+      fetchStored<SimResult>("simulate_default")
+        .then((r) => { if (!simLive.current) { setSimResult(r); setSimStored(true); } })
+        .catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [simActive, simResult, simRequest]);
+  useEffect(() => {
+    if (simStored && !isDefaultRequest(simRequest)) { setSimResult(null); setSimStored(false); }
+  }, [simStored, simRequest]);
 
   const onSimMode = (m: SimMode) => {
     setSimMode(m);
@@ -193,7 +225,11 @@ export default function App() {
   const updated = risk
     ? new Date(risk.meta.generated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }) + " IST"
     : undefined;
-  const masthead = <Masthead view={view} onView={(v) => go(v)} updated={updated} lang={langChoice} onLang={onLang} stale={stale} />;
+  const masthead = <Masthead view={view} onView={(v) => go(v)} updated={updated} lang={langChoice} onLang={onLang} stale={stale} stored={riskStored} />;
+  const storedNote = view === "simulator"
+    ? (simStored ? "Showing a stored run of the opening storm." : null)
+    : (riskStored && ageHours !== null && (view === "home" || view === "forecast") ? t(lang).storedNote(t(lang).ago(ageHours)) : null);
+  const banner = <ServerBanner state={server} lang={lang} note={storedNote} />;
   const errorBar = error && (
     <div role="alert" className="flex items-center gap-3 border-b border-accent-2 bg-paper-2 px-4 py-2 text-[14px] font-medium text-ink md:px-6">
       <span className="h-2 w-2 shrink-0 rounded-full bg-accent-2" aria-hidden />
@@ -207,9 +243,10 @@ export default function App() {
     return (
       <div className="flex h-full flex-col">
         {masthead}
+        {banner}
         {errorBar}
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-paper">
-          {view === "home" && <LandingPage risk={risk} ageHours={ageHours} go={go} />}
+          {view === "home" && <LandingPage risk={risk} ageHours={ageHours} stored={riskStored} go={go} />}
           {view === "about" && <AboutSection tab={route.tab} onTab={(t) => go("about", t)} />}
           {view === "ops" && (
             <OpsDesk
@@ -232,6 +269,7 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       {masthead}
+      {banner}
       {errorBar}
       {pinMode && (
         <div className="border-b border-rule bg-paper-2 px-4 py-2 text-[13px] text-ink md:px-6">
@@ -295,6 +333,7 @@ export default function App() {
               onSelect={setSelectedId}
               lang={lang}
               ageHours={ageHours}
+              stored={riskStored}
             />
           )}
           {view === "simulator" && (

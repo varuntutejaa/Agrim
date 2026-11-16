@@ -210,12 +210,14 @@ def simulate_dates():
 
 # --- MCG operations (milestone 5) -------------------------------------------------------
 
-def _desk_guard(x_agrim_desk: str | None):
-    """Writes need the database, and the desk code if OPS_TOKEN is set."""
+def _desk_guard(x_agrim_desk: str | None, live: bool = True):
+    """Writes need the database. Live writes also need the desk code when OPS_TOKEN
+    is set; exercise (drill) writes don't, so judges and trainees can run a drill.
+    Drills are logged separately and never change the live forecast or scorecard."""
     if not db.configured():
         raise HTTPException(503, "Database not configured: add DATABASE_URL (Neon) to .env.")
     token = os.getenv("OPS_TOKEN", "")
-    if token and x_agrim_desk != token:
+    if live and token and x_agrim_desk != token:
         raise HTTPException(401, "Desk code missing or wrong.")
 
 
@@ -261,7 +263,7 @@ class OverrideRequest(BaseModel):
 
 @app.post("/override")
 def create_override(body: OverrideRequest, x_agrim_desk: str | None = Header(default=None)):
-    _desk_guard(x_agrim_desk)
+    _desk_guard(x_agrim_desk, live=not body.is_exercise)
     return _ops_call(ops.create_override, body.officer, body.hotspot_id, body.new_level, body.reason,
                      body.valid_hours, body.is_exercise, body.model_level, body.run_id, _known_ids())
 
@@ -272,7 +274,7 @@ class RevokeRequest(BaseModel):
 
 @app.post("/override/{override_id}/revoke")
 def revoke_override(override_id: int, body: RevokeRequest, x_agrim_desk: str | None = Header(default=None)):
-    _desk_guard(x_agrim_desk)
+    _desk_guard(x_agrim_desk, live=not (db.configured() and ops.override_is_exercise(override_id)))
     return _ops_call(ops.revoke_override, override_id, body.officer)
 
 
@@ -325,13 +327,13 @@ def get_checklist(run_key: str):
 
 @app.post("/checklist")
 def set_checklist(body: CheckRequest, x_agrim_desk: str | None = Header(default=None)):
-    _desk_guard(x_agrim_desk)
+    _desk_guard(x_agrim_desk, live=body.run_key != "exercise")
     return _ops_call(ops.set_check, body.run_key, body.zone, body.hotspot_id, body.item, body.done, body.officer)
 
 
 @app.post("/exercise/reset")
 def exercise_reset(x_agrim_desk: str | None = Header(default=None)):
-    _desk_guard(x_agrim_desk)
+    _desk_guard(x_agrim_desk, live=False)
     ops.reset_exercise()
     return {"ok": True}
 
@@ -390,7 +392,7 @@ def alerts_send(req: SendRequest, x_agrim_desk: str | None = Header(default=None
     """Re-creates the messages on the server (never sends text from the request) and sends them."""
     from api import notify
     from model.alerts import alert_for, citizen_items
-    _desk_guard(x_agrim_desk)
+    _desk_guard(x_agrim_desk, live=req.source != "exercise")
     officer = " ".join(req.officer.split())[:80]
     if len(officer) < 2:
         raise HTTPException(422, "Enter your name to approve alerts.")

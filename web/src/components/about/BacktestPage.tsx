@@ -1,6 +1,6 @@
 // How the rules would have done on past floods: reviewed reports only.
 import { useEffect, useState } from "react";
-import { fetchBacktest } from "../../api";
+import { fetchBacktest, liveOrStored } from "../../api";
 import type { Backtest } from "../../types";
 import { LEVEL_LABEL } from "../../risk";
 
@@ -13,7 +13,10 @@ const REASON_TEXT: Record<string, string> = {
 export default function BacktestPage() {
   const [bt, setBt] = useState<Backtest | null>(null);
   const [err, setErr] = useState(false);
-  useEffect(() => { fetchBacktest().then(setBt).catch(() => setErr(true)); }, []);
+  useEffect(() => {
+    let got = false;
+    liveOrStored(fetchBacktest, "backtest", (b) => { got = true; setBt(b); }).catch(() => { if (!got) setErr(true); });
+  }, []);
 
   return (
     <div className="mx-auto max-w-[1360px] px-4 pb-20 pt-10 md:px-10 md:pt-14">

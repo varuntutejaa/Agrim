@@ -2,8 +2,9 @@
 // The hero carries the product itself: today's live forecast set as a departure board.
 import type { HotspotRisk, RiskLevel, RiskResult, View } from "../types";
 import { LEVEL_BG, LEVEL_LABEL } from "../risk";
+import { t } from "../i18n";
 
-type Props = { risk: RiskResult | null; ageHours: number | null; go: (v: View, tab?: "backtest" | "data" | "sources") => void };
+type Props = { risk: RiskResult | null; ageHours: number | null; stored: boolean; go: (v: View, tab?: "backtest" | "data" | "sources") => void };
 
 const BOARD_ROWS = 6;
 const MORE = "row-btn whitespace-nowrap border-b border-rule py-4 text-[15px] font-medium underline decoration-1 underline-offset-[0.2em] md:pr-4";
@@ -13,15 +14,18 @@ function Status({ level }: { level: RiskLevel }) {
 }
 
 /** Today's forecast as a board: the counts, then the hotspots most at risk. */
-function Board({ risk, ageHours }: { risk: RiskResult | null; ageHours: number | null }) {
+function Board({ risk, ageHours, stored }: { risk: RiskResult | null; ageHours: number | null; stored: boolean }) {
   const c = risk?.meta.counts.next_24h;
   const rows = (risk?.hotspots ?? []).filter((h): h is Extract<HotspotRisk, { scored: true }> => h.scored).slice(0, BOARD_ROWS);
   const updated = risk && new Date(risk.meta.generated_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
   const old = ageHours !== null && ageHours > 12;
+  const ago = ageHours !== null ? t("en").ago(ageHours) : "";
   return (
     <figure className="plate m-0 w-full" aria-label="Today's forecast board">
       <div className="flex items-baseline justify-between gap-4 border-b border-ink-rule px-5 py-4">
-        <span className="text-[18px] font-display font-medium tracking-[-0.02em]">Today, next 24 h</span>
+        <span className="text-[18px] font-display font-medium tracking-[-0.02em]">
+          {risk && (old || stored) ? `Forecast of ${updated}` : "Today, next 24 h"}
+        </span>
         <span className="text-[13px] text-paper-dim">Gurugram</span>
       </div>
       {c ? (
@@ -60,8 +64,8 @@ function Board({ risk, ageHours }: { risk: RiskResult | null; ageHours: number |
               })}
             </tbody>
           </table>
-          <figcaption className={`border-t border-ink-rule px-5 py-3 text-[13px] ${old ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
-            Live forecast, updated {updated} IST{old ? `, ${Math.round(ageHours!)} h old` : ""}. The {rows.length} hotspots most at risk.
+          <figcaption className={`border-t border-ink-rule px-5 py-3 text-[13px] ${old || stored ? "font-semibold text-accent-2" : "text-paper-dim"}`}>
+            {stored ? "Stored copy" : "Live forecast"}, updated {updated} IST{old || stored ? ` (${ago})` : ""}. The {rows.length} hotspots most at risk.
           </figcaption>
         </>
       ) : (
@@ -83,7 +87,7 @@ function Way({ title, text, onClick }: { title: string; text: string; onClick: (
   );
 }
 
-export default function LandingPage({ risk, ageHours, go }: Props) {
+export default function LandingPage({ risk, ageHours, stored, go }: Props) {
   return (
     <div className="mx-auto w-full max-w-[1360px] px-4 md:px-10">
       {/* Hero: the promise on the left, today's board on the right. */}
@@ -100,7 +104,7 @@ export default function LandingPage({ risk, ageHours, go }: Props) {
             <button type="button" className="btn btn--lg" onClick={() => go("simulator")}>Run a storm</button>
           </div>
         </div>
-        <Board risk={risk} ageHours={ageHours} />
+        <Board risk={risk} ageHours={ageHours} stored={stored} />
       </section>
 
       {/* The three ways in, set as a route: plates joined by a 2px rule. */}

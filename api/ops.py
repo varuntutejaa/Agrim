@@ -73,6 +73,13 @@ def create_override(officer: str, hotspot_id: str, new_level: str, reason: str, 
     return _jsonable(row)
 
 
+def override_is_exercise(override_id: int) -> bool:
+    """True if that override belongs to a drill (unknown ids count as live)."""
+    with db.connect() as conn:
+        row = conn.execute(db.q("SELECT is_exercise FROM {overrides} WHERE id = %s"), (override_id,)).fetchone()
+    return bool(row and row["is_exercise"])
+
+
 def revoke_override(override_id: int, officer: str) -> dict:
     officer = _clean(officer, 80)
     if len(officer) < 2:

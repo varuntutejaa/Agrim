@@ -20,6 +20,7 @@ type Props = {
   items: OrderItem[];
   ticks: CheckTick[];
   canAct: boolean;
+  canReport: boolean;              // after-rain reports are real data, so never during a drill
   onTick: (h: Scored, item: CheckItem, value: boolean) => void;
   onOverride: (h: Scored, level: RiskLevel, reason: string, hours: number) => Promise<void>;
   onRevoke: (overrideId: number) => Promise<void>;
@@ -97,8 +98,10 @@ export default function ActionTable(p: Props) {
           <div className="flex gap-2 md:justify-end">
             <button type="button" aria-pressed={isOpen && open.panel === "override"} className="btn btn--sm"
               onClick={() => toggle(h.id, "override")}>Override</button>
-            <button type="button" aria-pressed={isOpen && open.panel === "feedback"} className="btn btn--sm"
-              onClick={() => toggle(h.id, "feedback")}>Report</button>
+            {p.canReport && (
+              <button type="button" aria-pressed={isOpen && open.panel === "feedback"} className="btn btn--sm"
+                onClick={() => toggle(h.id, "feedback")}>Report</button>
+            )}
           </div>
         </div>
         {isOpen && (

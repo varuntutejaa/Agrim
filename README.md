@@ -594,10 +594,12 @@ flowchart LR
 | Component | Where | How to release |
 |---|---|---|
 | API | Render web service `agrim-api` (free, Ohio, next to Neon) | `render deploys create srv-dbo2uqs9v7es73e5hl40` (config in `render.yaml`) |
-| Web | Vercel project `agrim` → [agrim-two.vercel.app](https://agrim-two.vercel.app) | `cd web && vercel deploy --prod --build-env VITE_API_URL=https://agrim-api.onrender.com` |
+| Web | Vercel project `agrim` → [agrim-two.vercel.app](https://agrim-two.vercel.app) | `python scripts/web_snapshot.py` (refreshes the stored copy), then `cd web && vercel deploy --prod --build-env VITE_API_URL=https://agrim-api.onrender.com` |
 | Database | Neon Postgres | Tables created automatically |
 | Forecast refresh | Render scheduler + GitHub Actions job (05:05 / 17:05 IST) | Needs a `DATABASE_URL` repository secret (Settings → Secrets and variables → Actions) |
-| Keep-awake | GitHub Actions, every 10 min, 06:30–23:30 IST, until 30 Nov 2026 | `.github/workflows/keep-awake.yml`; stops itself after the date |
+| Keep-awake | An external pinger (cron-job.org) on `/health` every 10 min in the daytime; the GitHub Actions ping is a backup, because GitHub runs `*/10` schedules only a few times a day | `.github/workflows/keep-awake.yml` stops itself after 30 Nov 2026 |
+| Stored copy | `web/public/snapshot/*.json`, shown (labelled, with its age) while the API wakes | `python scripts/web_snapshot.py` before each web deploy |
+| Desk code | `OPS_TOKEN` on Render: live desk actions need it; drills (Exercise) don't | Render → agrim-api → Environment |
 
 Performance, measured on the live site with an emulated mid-range phone over 4G: the forecast headline appears in **3.9 s** on a first visit and **1.3 s** when cached (server awake).
 
@@ -607,7 +609,7 @@ Performance, measured on the live site with an emulated mid-range phone over 4G:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| First page load takes 30–60 s | Free Render instance was asleep (the keep-awake ping covers daytime until 30 Nov) | Open `/health` a couple of minutes before a demo |
+| Banner: "Connecting to the live server" | Free Render instance was asleep; pages show the stored copy meanwhile | Wait up to a minute; open `/health` a couple of minutes before a demo |
 | Masthead says "· old", amber banner on the forecast | Forecast over 12 h old: the refresh job isn't running | Check the `DATABASE_URL` secret, then run the **Forecast** workflow |
 | "No forecast yet" (503) | Open-Meteo refused the server (429) and no snapshot exists | Locally: `python -m model.run_forecast --fetch && python -m api.snapshot push`, or run the **Forecast** workflow |
 | Forecast is old | Server blocked from Open-Meteo | Same as above; the site keeps showing the last saved forecast with its time |
