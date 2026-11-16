@@ -108,7 +108,7 @@ export type DrainageLayers = {
 };
 
 export type View = "home" | "forecast" | "simulator" | "drainage" | "ops" | "about";
-export type AboutTab = "about" | "backtest" | "overrides" | "data" | "sources";
+export type AboutTab = "about" | "backtest" | "overrides" | "data" | "sensors" | "sources";
 
 // --- Risk forecast (milestone 3, see model/rules.py and docs/MODEL.md) ---
 

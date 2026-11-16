@@ -40,7 +40,8 @@ export default function DrainagePanel(p: Props) {
             {p.sensorCounts
               ? `${p.sensorCounts.rain_gauge} rain gauges, ${p.sensorCounts.drain_sensor} drain-level sensors, ${p.sensorCounts.underpass_monitor} underpass monitors.`
               : "Loading…"} Not installed: where new sensors would do the most good. Gauges cover each hotspot's catchment;
-            drain sensors sit at outfalls and along flow paths; monitors go in the mapped underpasses nearest hotspots.
+            drain sensors sit at outfalls and along flow paths; monitors go in the mapped underpasses nearest hotspots.{" "}
+            <a className="link" href="#/about/sensors">Specification, upkeep and cost</a>
           </div>
         )}
       </section>

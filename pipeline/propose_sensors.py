@@ -13,7 +13,9 @@ sites are placed by simple, documented rules:
                   weakness: model rain under-reads cloudbursts.
   drain sensors   at each hotspot outfall, then midway along each flow path
                   between hotspots, then on the onward flow below the last
-                  hotspot (1 km, then 2.5 km), until the count is reached.
+                  hotspot (a quarter, then three fifths, of the way along the
+                  drawn onward path: about 2-4.5 km, then 6-9 km), until the
+                  count is reached.
   underpass       mapped underpasses (OpenStreetMap: tunnel=yes or "underpass" in
   monitors        the name) nearest to hotspots, one per underpass, at least 500 m apart.
 
@@ -78,7 +80,7 @@ def drain_sensors(nodes, edges, critical):
             out.append(point(line[len(line) // 2], "drain_sensor", "Drain sensor · between hotspots",
                              "Shows water travelling from one hotspot towards the next"))
     exits = [e for e in edges if e["properties"]["kind"] == "exit"]
-    for frac in (0.25, 0.6):       # roughly 1 km and 2.5 km along the drawn onward path
+    for frac in (0.25, 0.6):       # about 2-4.5 km and 6-9 km along the drawn onward path (measured 16 Nov 2026)
         for e in exits:
             if len(out) >= N_DRAIN:
                 break

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { AboutTab, View } from "./types";
 
 const VIEWS: View[] = ["home", "forecast", "simulator", "drainage", "ops", "about"];
-const ABOUT: AboutTab[] = ["about", "backtest", "overrides", "data", "sources"];
+const ABOUT: AboutTab[] = ["about", "backtest", "overrides", "data", "sensors", "sources"];
 const ALIAS: Record<string, View> = { desk: "ops", "": "home" };
 
 export type Route = { view: View; tab: AboutTab };

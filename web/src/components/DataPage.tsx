@@ -110,7 +110,7 @@ export default function DataPage() {
               <span className="text-[15px] font-semibold">P1</span>
               {/* Counts from data/synthetic/proposed_sensors.geojson (meta.counts); tests/test_consistency.py checks them. */}
               <span className="font-semibold text-ink">Proposed sensor network: 25 rain gauges, 43 drain-level sensors, 8 underpass monitors</span>
-              <span className="text-muted">Doesn't exist yet: a proposal, with illustrative sites on the Drainage map</span>
+              <span className="text-muted">Doesn't exist yet: a proposal, with illustrative sites on the Drainage map. Spec, upkeep and cost: <a className="link" href="#/about/sensors">Sensors & infrastructure</a></span>
               <span className="text-ink-2">Gauge rain for the cloudburst days, and live proof that water is rising<span className="mt-1 block text-[13px] text-muted">Today: the sensor fields stay empty; nothing depends on them</span></span>
             </li>
           </ol>

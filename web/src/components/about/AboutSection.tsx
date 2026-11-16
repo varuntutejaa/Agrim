@@ -1,11 +1,12 @@
 // The "About" area: who built it, how it did on past floods, public overrides,
-// data and assumptions, and every source.
+// data and assumptions, the proposed sensor network, and every source.
 import type { AboutTab } from "../../types";
 import DataPage from "../DataPage";
 import { TextTabs } from "../ui";
 import AboutPage from "./AboutPage";
 import BacktestPage from "./BacktestPage";
 import PublicOverridesPage from "./PublicOverridesPage";
+import SensorsPage from "./SensorsPage";
 import SourcesPage from "./SourcesPage";
 
 // Short names on phones so the row stays short; it scrolls sideways if it must.
@@ -17,6 +18,7 @@ const TABS: { key: AboutTab; label: React.ReactNode }[] = [
   { key: "backtest", label: "Backtest" },
   { key: "overrides", label: both("Overrides", "Public overrides") },
   { key: "data", label: both("Data", "Data & assumptions") },
+  { key: "sensors", label: both("Sensors", "Sensors & infrastructure") },
   { key: "sources", label: both("Sources", "Sources & credits") },
 ];
 
@@ -32,6 +34,7 @@ export default function AboutSection({ tab, onTab }: { tab: AboutTab; onTab: (t:
       {tab === "backtest" && <BacktestPage />}
       {tab === "overrides" && <PublicOverridesPage />}
       {tab === "data" && <DataPage />}
+      {tab === "sensors" && <SensorsPage />}
       {tab === "sources" && <SourcesPage />}
     </div>
   );

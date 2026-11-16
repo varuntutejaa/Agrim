@@ -719,6 +719,7 @@ Agrim/
 | [docs/DATA_REQUIREMENTS.md](docs/DATA_REQUIREMENTS.md) | Assumptions, MCG data requests with evidence, draft request |
 | [docs/SOURCES.md](docs/SOURCES.md) | Every data source, licence and derived file |
 | [docs/SOP.md](docs/SOP.md) | How the MCG desk maps to the monsoon SOP |
+| [docs/SENSORS.md](docs/SENSORS.md) | Proposed sensor network: vendor-neutral spec, placement, weatherproofing, upkeep, cost table (costs to be sourced) |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens, typography, rules, language |
 | [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | The 3-minute demo, beat by beat |
 
