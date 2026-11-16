@@ -33,19 +33,20 @@ const STR = {
     fetched: (d: string, t: string) => `Forecast from ECMWF, GFS and ICON, fetched ${d} at ${t} IST.`,
     methodNote: "Each forecast is compared with ECMWF's 2018 to 2026 monsoon record at that hotspot, then combined with terrain (Copernicus DEM), drains (OpenStreetMap) and built-up land (ESA WorldCover). Method in docs/MODEL.md; sources in docs/SOURCES.md.",
     rulesNote: null as string | null, // English uses the server's note
+    confidenceNote: "Confidence (the three dots) shows how many of the three weather models agree that the spot will flood. It is agreement between models, not a calibrated probability.",
+    imdNote: "Why not IMD yet: Agrim needs free, hourly, machine-readable rain for every hotspot, plus a 2018 to 2026 record at the same points to judge it against. Open-Meteo serves that for ECMWF, GFS and ICON. IMD gauge and nowcast data are the next input to add.",
     level: { red: "High", amber: "Medium", green: "Low" } as Record<RiskLevel, string>,
     levelLong: { red: "High, flooding likely", amber: "Medium, flooding possible", green: "Low risk" } as Record<RiskLevel, string>,
     countLabel: { red: "High, likely", amber: "Medium, possible", green: "Low" } as Record<RiskLevel, string>,
     col: { hotspot: "Hotspot", rain: "Rain 24h", status: "Status" },
     mm: "mm",
     needsPin: "Needs a pin",
-    action: "Action",
+    action: "What MCG should do",
     why: "Why",
     whyWatched: "Why it is watched",
     modelEstimate: "Model estimate",
     chance: "chance of flooding",
     wettestAt: "Wettest",
-    score: "Score",
     pinUnchecked: "Map pin not yet checked by the team.",
     adjusted: "Adjusted by MCG",
     adjustedText: (who: string, from: string) => `${who} changed this from ${from}`,
@@ -95,20 +96,21 @@ const STR = {
     noRain: "किसी भी हॉटस्पॉट पर बारिश का अनुमान नहीं।",
     fetched: (d: string, t: string) => `ECMWF, GFS और ICON का पूर्वानुमान, ${d} को ${t} बजे (IST) लिया गया।`,
     methodNote: "हर पूर्वानुमान की तुलना उस हॉटस्पॉट के 2018 से 2026 के मानसूनी रिकॉर्ड से की जाती है, फिर ज़मीन की ऊँचाई, नालों और पक्की ज़मीन के आँकड़े जोड़े जाते हैं। तरीका: docs/MODEL.md; स्रोत: docs/SOURCES.md।",
-    rulesNote: "ये स्कोर लिखित नियमों से बनते हैं; इन्हें अभी पिछली बाढ़ की घटनाओं से जाँचा नहीं गया है। ये प्रायिकता (probability) नहीं हैं।",
+    confidenceNote: "भरोसा (तीन बिंदु) बताता है कि तीन में से कितने मौसम मॉडल इस जगह जलभराव दिखाते हैं। यह मॉडलों की आपसी सहमति है, जाँची हुई संभावना नहीं।",
+    imdNote: "IMD का डेटा अभी क्यों नहीं: Agrim को हर हॉटस्पॉट के लिए मुफ़्त, घंटेवार और मशीन से पढ़ी जा सकने वाली बारिश चाहिए, और उन्हीं जगहों का 2018 से 2026 का रिकॉर्ड भी, ताकि उससे तुलना हो सके। Open-Meteo यह ECMWF, GFS और ICON के लिए देता है। IMD के रेन गेज और नाउकास्ट डेटा अगला कदम हैं।",
+    rulesNote: "ये स्कोर लिखित नियमों से बनते हैं; इन्हें अभी पिछली बाढ़ की घटनाओं से जाँचा नहीं गया है। ये संभावना का प्रतिशत नहीं हैं।",
     level: { red: "उच्च", amber: "मध्यम", green: "कम" } as Record<RiskLevel, string>,
     levelLong: { red: "उच्च, जलभराव की प्रबल संभावना", amber: "मध्यम, जलभराव की संभावना", green: "कम जोखिम" } as Record<RiskLevel, string>,
     countLabel: { red: "उच्च, प्रबल", amber: "मध्यम, संभव", green: "कम" } as Record<RiskLevel, string>,
     col: { hotspot: "हॉटस्पॉट", rain: "24 घं. बारिश", status: "स्थिति" },
     mm: "मिमी",
     needsPin: "स्थान तय नहीं",
-    action: "क्या करें",
+    action: "MCG को क्या करना चाहिए",
     why: "क्यों",
     whyWatched: "इस पर नज़र क्यों",
     modelEstimate: "मॉडल का अनुमान",
     chance: "जलभराव की संभावना",
     wettestAt: "सबसे तेज़ बारिश",
-    score: "स्कोर",
     pinUnchecked: "नक्शे पर स्थान की जाँच अभी बाकी है।",
     adjusted: "MCG ने बदला",
     adjustedText: (who: string, from: string) => `${who} ने इसे ${from} से बदला`,
@@ -144,12 +146,22 @@ const STR = {
 
 export const t = (l: Lang) => STR[l];
 
-const ACTIONS_HI: Record<RiskLevel, string> = {
-  red: "यहाँ पंप लगाएँ और T-12 घंटे तक नालियाँ साफ़ करें; T-3 घंटे पर पंप जाँचें।",
-  amber: "T-12 घंटे तक नालियाँ साफ़ करें; पास में एक पंप तैयार रखें।",
-  green: "कोई कार्रवाई ज़रूरी नहीं।",
+// The public Forecast view says what MCG should do in plain words; crew timings
+// (T-12, T-3) stay on the officer tools (Simulator, MCG desk), which are English.
+const PUBLIC_ACTIONS: Record<Lang, Record<RiskLevel, string>> = {
+  en: {
+    red: "Before the rain, MCG crews should place a pump here and clear the drains.",
+    amber: "Before the rain, MCG crews should clear the drains here and keep a pump nearby.",
+    green: "No action needed.",
+  },
+  hi: {
+    red: "बारिश से पहले MCG की टीम यहाँ पंप लगाए और नालियाँ साफ़ करे।",
+    amber: "बारिश से पहले MCG की टीम यहाँ नालियाँ साफ़ करे और पास में पंप तैयार रखे।",
+    green: "कोई कार्रवाई ज़रूरी नहीं।",
+  },
 };
-export const actionText = (w: WindowRisk, l: Lang) => (l === "hi" ? ACTIONS_HI[w.level] : w.action);
+export const actionText = (w: WindowRisk, l: Lang, publicView: boolean) =>
+  (publicView || l === "hi" ? PUBLIC_ACTIONS[l][w.level] : w.action);
 
 /** "about once in 11 monsoons" in Hindi, from the rarity value e (see model/rules.how_often). */
 function howOftenHi(e: number | null): string {

@@ -9,12 +9,13 @@ type Props = {
   windowKey: RiskWindowKey;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  publicView?: boolean;            // the public Forecast view: plain wording, no crew timings
   lang?: Lang;
 };
 
 const COLS = "grid grid-cols-[28px_minmax(0,1fr)_72px_92px] gap-x-2";
 
-export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, lang = "en" }: Props) {
+export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, lang = "en", publicView = false }: Props) {
   const s = t(lang);
   let rank = 0;
   return (
@@ -59,7 +60,7 @@ export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, 
                   <ModelDots models={w.models} lang={lang} />
                 </span>
               </button>
-              {open && <Details h={h} windowKey={windowKey} lang={lang} />}
+              {open && <Details h={h} windowKey={windowKey} lang={lang} publicView={publicView} />}
             </li>
           );
         })}
@@ -68,7 +69,7 @@ export default function RiskLedger({ hotspots, windowKey, selectedId, onSelect, 
   );
 }
 
-function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: true }>; windowKey: RiskWindowKey; lang: Lang }) {
+function Details({ h, windowKey, lang, publicView }: { h: Extract<HotspotRisk, { scored: true }>; windowKey: RiskWindowKey; lang: Lang; publicView: boolean }) {
   const s = t(lang);
   const w = h.windows[windowKey];
   const active = w.level !== "green";
@@ -78,7 +79,6 @@ function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: tru
   const facts: [string, string][] = [
     ...(w.confidence ? [[lang === "hi" ? "भरोसा" : "Confidence", s.confidence[w.confidence]] as [string, string]] : []),
     ...(when ? [[s.wettestAt, when] as [string, string]] : []),
-    [s.score, `${w.score} / 100`],
   ];
   return (
     <div className="space-y-4 px-2 pb-5 pl-[36px] pt-1 text-[14px]">
@@ -92,7 +92,7 @@ function Details({ h, windowKey, lang }: { h: Extract<HotspotRisk, { scored: tru
       {active && (
         <div className="rounded-card border border-rule bg-paper-3 px-3 py-2.5">
           <div className="label">{s.action}</div>
-          <div className="mt-1 font-semibold leading-snug text-ink">{actionText(w, lang)}</div>
+          <div className="mt-1 font-semibold leading-snug text-ink">{actionText(w, lang, publicView)}</div>
         </div>
       )}
       <div>

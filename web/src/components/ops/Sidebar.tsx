@@ -61,7 +61,7 @@ export function OrdersCard({ orders }: { orders: Orders | null }) {
           ))}
         </ul>
       )}
-      <p className="mt-2 text-[13px] text-muted">Copy and send through your usual channel. Automatic SMS comes in milestone 7, sandbox only.</p>
+      <p className="mt-2 text-[13px] text-muted">Copy and send through your usual channel.</p>
     </section>
   );
 }
@@ -126,7 +126,7 @@ export function FeedbackLog({ items, names }: { items: FeedbackRecord[]; names: 
 
 export function ScorecardCard({ card }: { card: Scorecard | null }) {
   if (!card) return null;
-  const pct = (v: number | null | undefined) => (v == null ? "none yet" : `${Math.round(v * 100)}%`);
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
   return (
     <section>
       <h2 className="h-sub">Scorecard (live operations)</h2>
@@ -148,7 +148,12 @@ export function ScorecardCard({ card }: { card: Scorecard | null }) {
             ))}
           </dl>
           <p className="mt-3 text-[14px] text-ink-2">
-            Catches {pct(card.flood_catch_rate)} of reported floods; {pct(card.alarm_accuracy)} of alarms were right.
+            {card.flood_catch_rate == null && card.alarm_accuracy == null
+              ? "No after-rain reports yet, so there is nothing to score. The first reports after a storm fill this in."
+              : [
+                  card.flood_catch_rate != null && `Agrim flagged ${pct(card.flood_catch_rate)} of the floods officers reported.`,
+                  card.alarm_accuracy != null && `${pct(card.alarm_accuracy)} of its Red and Amber calls were followed by flooding.`,
+                ].filter(Boolean).join(" ")}
           </p>
           {card.overrides && card.overrides.length > 0 && (
             <ul className="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-ink-2">

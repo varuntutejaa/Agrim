@@ -131,6 +131,8 @@ export default function DataPage() {
                 </li>
               ))}
             </ul>
+            <p className="mt-3 text-[13px] leading-relaxed text-muted">Why not IMD yet: Agrim needs free, hourly, machine-readable rain for every hotspot, plus a 2018 to 2026 record at the same points to judge it against. Open-Meteo serves that for ECMWF, GFS and ICON. IMD gauge and nowcast data are the next input to add.</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted">Confidence (the three dots) shows how many of the three weather models agree that the spot will flood. It is agreement between models, not a calibrated probability.</p>
           </section>
           <section>
             <h2 className="h-sub">Why rain gauges (D3) matter most</h2>

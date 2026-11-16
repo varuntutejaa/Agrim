@@ -378,7 +378,7 @@ function popupHtml(id: string, name: string, p: Props): string {
       <div class="mt-2"><span class="status status--${w.level}">${esc(s.levelLong[w.level])}</span></div>
       ${sub ? `<div class="mt-2 text-[13px] text-muted">${esc(sub)}</div>` : ""}
       ${w.models ? `<div class="mt-1 text-[13px] text-ink-2">${esc(s.models(w.models.flooding, w.models.total))}</div>` : ""}
-      ${w.level !== "green" ? `<div class="mt-2 text-[14px] font-semibold leading-snug">${esc(actionText(w, lang))}</div>` : ""}
+      ${w.level !== "green" ? `<div class="mt-2 text-[14px] font-semibold leading-snug">${esc(actionText(w, lang, p.view === "forecast"))}</div>` : ""}
       <ul class="m-0 mt-2 list-none space-y-1 p-0 text-[13px] text-ink-2">${reasons(w, lang).map((d) => `<li>${esc(d)}</li>`).join("")}</ul>
       <div class="mt-2 text-[13px] text-muted">${esc(s.popupRain(w.rain.rain_24h, w.rain.peak1h))}</div>`;
   } else {

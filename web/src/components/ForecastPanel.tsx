@@ -71,7 +71,7 @@ export default function ForecastPanel(p: Props) {
       <section>
         <h3 className="h-sub mb-3">{s.allHotspots}</h3>
         {risk ? (
-          <RiskLedger hotspots={risk.hotspots} windowKey={riskWindow} selectedId={p.selectedId} onSelect={p.onSelect} lang={lang} />
+          <RiskLedger hotspots={risk.hotspots} windowKey={riskWindow} selectedId={p.selectedId} onSelect={p.onSelect} lang={lang} publicView />
         ) : (
           <div className="h-64 bg-paper-2" aria-label="Loading" />
         )}
@@ -106,7 +106,9 @@ export default function ForecastPanel(p: Props) {
       <Rule strong />
       <footer className="space-y-2 text-[13px] leading-relaxed text-muted">
         {risk && <p className="text-ink-2">{s.rulesNote ?? risk.meta.note}</p>}
+        <p>{s.confidenceNote}</p>
         <p>{s.methodNote}</p>
+        <p>{s.imdNote}</p>
       </footer>
     </div>
   );

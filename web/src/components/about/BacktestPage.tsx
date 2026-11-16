@@ -30,7 +30,6 @@ export default function BacktestPage() {
             place checked, and accepted or rejected. Then this page shows which floods the rules would have caught, which
             they missed, and why.
           </p>
-          <pre className="plate mt-6 inline-block px-4 py-3 text-[14px]">python -m pipeline.review_candidates</pre>
         </>
       )}
       {bt && bt.n > 0 && (
