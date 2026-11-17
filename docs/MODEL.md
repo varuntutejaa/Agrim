@@ -171,12 +171,14 @@ rain for that IST day) and lists, per hotspot-day, whether it was caught
 | Model saw moderate rain | 90th–99th percentile (1 ≤ e < 2) |
 | Model saw extreme rain | above the 99th percentile; the rules should have caught it |
 
-**It only uses reviewed reports** (`data/incidents.csv`). Until a person
-has checked the 48 news candidates, the page says "Not published yet" and
-the API returns `candidates_pending: 48`. A private preview on the
-unreviewed candidates (`python -m model.backtest --candidates`) gives
-**12 of 39 caught**; 27 missed (7 little rain, 20 moderate, 0 extreme).
-8 candidates have no map pin and are skipped.
+**The result only uses reviewed reports** (`data/incidents.csv`). Until a
+person has checked the 48 news candidates, the page says "Not published
+yet". The API also returns `unreviewed_preview`: the same rules on the
+candidates still pending review (`python -m model.backtest --candidates`),
+**12 of 39 caught**; 27 missed (7 little rain, 20 moderate, 0 extreme);
+8 have no map pin and are skipped. The Backtest and Data pages show it from
+that one field, always labelled "Unreviewed: an early check, not a result",
+and never mixed into the result. To review: docs/REVIEWING_NEWS_REPORTS.md.
 
 ## Tier B: XGBoost + SHAP (milestone 6)
 

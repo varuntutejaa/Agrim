@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchBacktest, liveOrStored } from "../../api";
 import type { Backtest } from "../../types";
 import { LEVEL_LABEL } from "../../risk";
+import Unreviewed from "./Unreviewed";
 
 const REASON_TEXT: Record<string, string> = {
   "model saw little rain": "The weather model's rain that day was ordinary for this spot, so the rules couldn't see the storm. Typical of a short, local cloudburst that 9 to 25 km models smooth out.",
@@ -30,6 +31,11 @@ export default function BacktestPage() {
             place checked, and accepted or rejected. Then this page shows which floods the rules would have caught, which
             they missed, and why.
           </p>
+          {bt.unreviewed_preview && (
+            <div className="mt-8 max-w-[70ch]">
+              <Unreviewed p={bt.unreviewed_preview} note="The same figures are on the Data & assumptions page." />
+            </div>
+          )}
         </>
       )}
       {bt && bt.n > 0 && (

@@ -1,7 +1,10 @@
 // "Data & assumptions": what Agrim runs on today, what it assumes, and what
 // MCG data would add, with evidence that each item exists. The full version
 // is docs/DATA_REQUIREMENTS.md; keep the two in step.
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { fetchBacktest, liveOrStored } from "../api";
+import type { Backtest } from "../types";
+import Unreviewed from "./about/Unreviewed";
 
 const TRIB_WATCH = "https://www.tribuneindia.com/news/gurugram/gurugram-municipal-corporation-puts-155-flood-points-under-24-hour-watch/";
 const TRIB_159 = "https://www.tribuneindia.com/news/gurugram/gurugram-flags-159-waterlogging-hotspots-ahead-of-monsoon-haryana-pushes-zero-flood-plan/";
@@ -68,14 +71,20 @@ const ASSUMPTIONS: string[] = [
   "Zones follow MCG's 8-zone structure (2026).",
 ];
 
-const MISSED: [string, string, string, string][] = [
-  ["9 Jul 2023", "12 to 21 mm", "150 mm reported", "0 of 4"],
-  ["11 Aug 2024", "11 to 16 mm", "53 mm by 8:30 am", "0 of 5"],
-  ["9 Jul 2025", "7 to 11 mm", "2.5 ft water at Subhash Chowk", "0 of 5"],
-  ["31 Jul 2024", "59 to 67 mm", "widespread waterlogging", "6 of 6"],
+// What the news reports said on four of the storm days (from the linked articles in
+// data/incidents_candidates.csv). Model rain and how many were flagged come from the API.
+const REPORTED: [string, string][] = [
+  ["2023-07-09", "150 mm reported"],
+  ["2024-08-11", "53 mm by 8:30 am"],
+  ["2025-07-09", "2.5 ft water at Subhash Chowk"],
+  ["2024-07-31", "widespread waterlogging"],
 ];
+const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
 export default function DataPage() {
+  const [bt, setBt] = useState<Backtest | null>(null);
+  useEffect(() => { liveOrStored(fetchBacktest, "backtest", setBt).catch(() => {}); }, []);
+  const preview = bt?.unreviewed_preview ?? null;
   const COLS = "md:grid-cols-[48px_minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]";
   return (
     <div className="mx-auto max-w-[1360px] px-4 pb-20 pt-10 md:px-10 md:pt-14">
@@ -136,26 +145,37 @@ export default function DataPage() {
           </section>
           <section>
             <h2 className="h-sub">Why rain gauges (D3) matter most</h2>
-            <p className="mt-3 text-[14px] leading-relaxed text-ink-2">
-              On 39 reported floods, the rules flagged 12. Every miss was a day the forecast model under-read the rain.
-            </p>
-            <table className="mt-4 w-full border-collapse text-[13px]">
-              <thead>
-                <tr className="border-b border-rule text-left">
-                  <th scope="col" className="label pb-2">Day</th><th scope="col" className="label pb-2">Model</th>
-                  <th scope="col" className="label pb-2">Reported</th><th scope="col" className="label pb-2 text-right">Flagged</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MISSED.map(([d, m, r, f]) => (
-                  <tr key={d} className="border-b border-rule align-top">
-                    <td className="whitespace-nowrap py-2 pr-2 font-medium">{d}</td><td className="whitespace-nowrap pr-2">{m}</td>
-                    <td className="pr-2 text-ink-2">{r}</td><td className="text-right font-semibold">{f}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-2 text-[13px] text-muted">From unreviewed news candidates; details in docs/MODEL.md.</p>
+            {preview ? (
+              <>
+                <div className="mt-3"><Unreviewed p={preview} note="The same figures are on the Backtest page." /></div>
+                <table className="mt-4 w-full border-collapse text-[13px]">
+                  <thead>
+                    <tr className="border-b border-rule text-left">
+                      <th scope="col" className="label pb-2">Day</th><th scope="col" className="label pb-2">Model</th>
+                      <th scope="col" className="label pb-2">Reported</th><th scope="col" className="label pb-2 text-right">Flagged</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {REPORTED.map(([date, said]) => {
+                      const d = preview.days.find((x) => x.date === date);
+                      if (!d) return null;
+                      return (
+                        <tr key={date} className="border-b border-rule align-top">
+                          <td className="whitespace-nowrap py-2 pr-2 font-medium">{fmtDay(date)}</td>
+                          <td className="whitespace-nowrap pr-2">{d.model_rain_min.toFixed(0)} to {d.model_rain_max.toFixed(0)} mm</td>
+                          <td className="pr-2 text-ink-2">{said}</td>
+                          <td className="text-right font-semibold">{d.caught} of {d.caught + d.missed}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p className="mt-3 text-[14px] leading-relaxed text-ink-2">
+                {bt ? "The news reports have been reviewed; the result is on the Backtest page." : "Loading…"}
+              </p>
+            )}
           </section>
         </aside>
       </div>

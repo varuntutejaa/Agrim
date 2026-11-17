@@ -333,8 +333,14 @@ export type BacktestRow = {
   outcome: "caught" | "missed" | "false alarm" | "correct"; reason: string | null;
   model_rain_mm: number; model_peak_mm: number; how_unusual: string; source_url: string;
 };
+export type UnreviewedPreview = {
+  reviewed: false; label: string; n: number; caught: number; missed: number;
+  skipped: Record<string, number>; miss_reasons: Record<string, number>;
+  days: { date: string; caught: number; missed: number; model_rain_min: number; model_rain_max: number }[];
+};
 export type Backtest = {
   reviewed_only: boolean; n: number; candidates_pending: number;
+  unreviewed_preview?: UnreviewedPreview | null;   // news reports not yet reviewed; never part of the result
   counts: Record<"caught" | "missed" | "false alarm" | "correct", number>;
   catch_rate: number | null; miss_reasons: Record<string, number>; skipped: Record<string, number>;
   days: { date: string; caught: number; missed: number; model_rain_min: number; model_rain_max: number }[];

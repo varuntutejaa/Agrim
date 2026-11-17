@@ -1,8 +1,9 @@
 """Backtest: run the rules on past days and compare with what really happened.
 
-Public numbers use REVIEWED labels only (data/incidents.csv: sourced reports
-the team checked, plus imported MCG records). Unreviewed news candidates are
-never published; the team can preview them locally:
+The result uses REVIEWED labels only (data/incidents.csv: sourced reports
+the team checked, plus imported MCG records). Candidates still waiting for
+review are summarised separately (the API's `unreviewed_preview`, always
+labelled "Unreviewed" in the app) and never mixed into the result:
 
     python -m model.backtest              # reviewed labels (what the app shows)
     python -m model.backtest --candidates # private preview of the unreviewed candidates
@@ -39,6 +40,8 @@ def _labels(candidates: bool) -> list[dict]:
     path = CANDIDATES_CSV if candidates else INCIDENTS_CSV
     with open(path, newline="") as f:
         rows = [r for r in csv.DictReader(f) if r.get("flooded") in ("yes", "no")]
+    if candidates:           # the preview covers only reports still waiting for review
+        rows = [r for r in rows if r.get("status", "pending") == "pending"]
     seen, out = set(), []
     for r in rows:           # one label per hotspot and day (any "yes" wins)
         key = (r["date"], r["hotspot_id"])

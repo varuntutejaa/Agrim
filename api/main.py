@@ -462,12 +462,24 @@ def overrides_public():
 
 @app.get("/backtest")
 def backtest():
-    """Rules re-run on reviewed past floods (unreviewed news candidates are never published)."""
+    """Rules re-run on reviewed past floods. The news reports still waiting for review are
+    summarised separately as `unreviewed_preview`, always labelled as such in the app
+    (Backtest and Data pages show the same figures from here), never mixed into the result."""
     from model import backtest as bt
     import csv as _csv
     out = bt.run(candidates=False)
     with open(bt.CANDIDATES_CSV, newline="") as f:
         out["candidates_pending"] = sum(r["status"] == "pending" for r in _csv.DictReader(f))
+    out["unreviewed_preview"] = None
+    if out["candidates_pending"]:
+        p = bt.run(candidates=True)
+        out["unreviewed_preview"] = {
+            "reviewed": False,
+            "label": "Unreviewed news reports: an early check, not a result",
+            "n": p["n"], "caught": p["counts"]["caught"], "missed": p["counts"]["missed"],
+            "skipped": p["skipped"], "miss_reasons": p["miss_reasons"],
+            "days": [{k: d[k] for k in ("date", "caught", "missed", "model_rain_min", "model_rain_max")} for d in p["days"]],
+        }
     return out
 
 

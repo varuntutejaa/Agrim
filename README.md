@@ -315,12 +315,12 @@ Unreviewed news reports of floods at mapped hotspots (9 storm days, 2020–2025)
 
 ```mermaid
 pie showData
-  title Rules on 39 news-reported floods
+  title Unreviewed: rules on 39 news-reported floods
   "Flagged Red or Amber" : 12
   "Missed (Green)" : 27
 ```
 
-Every miss was a day the forecast model under-read the rain: 7 where it saw little rain, 20 moderate, none extreme. For example, on 9 Jul 2023 the model shows 12–21 mm, while reports give 150 mm. The app's **About → Backtest** page lists each flood and why it was missed, and goes live only after a person has reviewed the reports. That's why **rain-gauge data is the first thing Agrim asks MCG for** ([D3 in the data requirements](docs/DATA_REQUIREMENTS.md)).
+**These 39 reports haven't been reviewed by a person yet**, so this is an early check, not a result (the app shows it labelled "Unreviewed" on the Backtest and Data pages, from the same API field). In every miss the forecast model saw ordinary or moderately wet weather at that spot (7 little rain, 20 moderate, none extreme), far less than was reported. For example, on 9 Jul 2023 the model shows 12–21 mm, while reports give 150 mm. The full **About → Backtest** result goes live once the reports are reviewed ([how to review them](docs/REVIEWING_NEWS_REPORTS.md)). That's why **rain-gauge data is the first thing Agrim asks MCG for** ([D3 in the data requirements](docs/DATA_REQUIREMENTS.md)).
 
 </details>
 
@@ -719,6 +719,7 @@ Agrim/
 | [docs/DATA_REQUIREMENTS.md](docs/DATA_REQUIREMENTS.md) | Assumptions, MCG data requests with evidence, draft request |
 | [docs/SOURCES.md](docs/SOURCES.md) | Every data source, licence and derived file |
 | [docs/SOP.md](docs/SOP.md) | How the MCG desk maps to the monsoon SOP |
+| [docs/REVIEWING_NEWS_REPORTS.md](docs/REVIEWING_NEWS_REPORTS.md) | Reviewing the 48 news reports in a spreadsheet, then importing the decisions |
 | [docs/SENSORS.md](docs/SENSORS.md) | Proposed sensor network: vendor-neutral spec, placement, weatherproofing, upkeep, cost table (costs to be sourced) |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design tokens, typography, rules, language |
 | [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | The 3-minute demo, beat by beat |
