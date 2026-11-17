@@ -173,7 +173,9 @@ export default function DataPage() {
               </>
             ) : (
               <p className="mt-3 text-[14px] leading-relaxed text-ink-2">
-                {bt ? "The news reports have been reviewed; the result is on the Backtest page." : "Loading…"}
+                {!bt ? "Loading…"
+                  : bt.candidates_pending === 0 ? "The news reports have been reviewed; the result is on the Backtest page."
+                  : `${bt.candidates_pending} news reports of past floods are waiting for review; see the Backtest page.`}
               </p>
             )}
           </section>
