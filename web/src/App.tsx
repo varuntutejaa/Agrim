@@ -6,7 +6,7 @@
 //   MCG desk   orders, SOP checklist, overrides, alerts, scorecard
 //   About      team, backtest, public overrides, data & assumptions, sources
 // Phone: map on top, panel below. Desktop: panel on the left, map on the right.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchCritical, fetchDrainage, fetchHotspots, fetchProposedSensors, fetchRain, fetchReplayDates, fetchReplayEvents,
   fetchRisk, fetchStored, liveOrStored, simulate,
@@ -14,7 +14,7 @@ import {
 import AboutSection from "./components/about/AboutSection";
 import DrainagePanel, { type DrainageMode } from "./components/DrainagePanel";
 import ForecastPanel from "./components/ForecastPanel";
-import HotspotMap, { type Storm } from "./components/HotspotMap";
+import type { Storm } from "./components/HotspotMap";
 import LandingPage from "./components/LandingPage";
 import MapKey from "./components/MapKey";
 import MapStamp from "./components/MapStamp";
@@ -31,6 +31,11 @@ import type {
   CriticalNodes, DrainageLayers, HotspotCollection, OpsSource, ProposedSensors, RainCollection, RainWindow, ReplayEvent,
   RiskResult, RiskWindowKey, SimRequest, SimResult, StormParams,
 } from "./types";
+
+// The map (MapLibre) is most of the code, so it loads as its own file: Home, About and
+// the desk open without it, and it is fetched in the background a moment later.
+const loadMap = () => import("./components/HotspotMap");
+const HotspotMap = lazy(loadMap);
 
 // ?pin=1 turns on the "click to read coordinates" helper for the team.
 const pinMode = new URLSearchParams(window.location.search).has("pin");
@@ -66,6 +71,10 @@ export default function App() {
   const [riskStored, setRiskStored] = useState(false);   // showing the stored copy, not live data
   const riskLive = useRef(false);
   const server = useServerState();
+  useEffect(() => {
+    const timer = setTimeout(() => { loadMap().catch(() => {}); }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
   const [riskWindow, setRiskWindow] = useState<RiskWindowKey>("next_24h");
   const [showRain, setShowRain] = useState(false);
   const [rainWindow, setRainWindow] = useState<RainWindow>("next_24h");
@@ -279,6 +288,7 @@ export default function App() {
 
       <main className="flex min-h-0 flex-1 flex-col md:flex-row">
         <div className="relative h-[46dvh] shrink-0 md:order-2 md:h-auto md:flex-1">
+          <Suspense fallback={<div className="h-full w-full bg-paper-2" aria-label="Loading map" />}>
           <HotspotMap
             hotspots={mapHotspots}
             riskList={shown?.hotspots ?? null}
@@ -302,6 +312,7 @@ export default function App() {
             sensors={sensors}
             showSensors={view === "drainage" && showSensors}
           />
+          </Suspense>
           {view === "simulator" && (
             <>
               <div className="pointer-events-none absolute left-0 right-0 top-0">
